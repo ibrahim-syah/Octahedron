@@ -9,7 +9,7 @@
 
 class UInputComponent;
 class USkeletalMeshComponent;
-//class UCameraComponent;
+class UCameraComponent;
 class USpringArmComponent;
 class UInputAction;
 class UInputMappingContext;
@@ -49,8 +49,8 @@ class AOctahedronCharacter : public ACharacter
 	
 
 	/** First person camera -> instantiate in bp instead! */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	//UCameraComponent* FirstPersonCameraComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* FirstPersonCameraComponent;
 
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
@@ -104,7 +104,7 @@ public:
 	/** Returns Mesh1P subobject **/
 	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
 	/** Returns FirstPersonCameraComponent subobject **/
-	//UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 };
 

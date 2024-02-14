@@ -7,8 +7,10 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Camera/CameraComponent.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -43,6 +45,52 @@ void UTP_WeaponComponent::Fire()
 			// Spawn the projectile at the muzzle
 			World->SpawnActor<AOctahedronProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
+	}
+	else // hitscan weapon
+	{
+		// Trace from center screen to max weapon range
+		UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
+		FVector StartVector = Camera->GetComponentLocation();
+		FVector ForwardVector = Camera->GetForwardVector();
+		FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, Spread);
+		FVector ResultingVector = RandomDirection * Range;
+		FVector EndVector = StartVector + ResultingVector;
+
+		FHitResult CameraTraceResult{};
+		auto Params = FCollisionQueryParams();
+		Params.AddIgnoredActor(Character);
+		bool isHit = GetWorld()->LineTraceSingleByChannel(
+			CameraTraceResult,
+			StartVector,
+			EndVector,
+			ECollisionChannel::ECC_Visibility,
+			Params
+		);
+
+		// Trace from weapon muzzle to center trace hit location
+		
+		FVector EndTrace{};
+		if (isHit)
+		{
+			FVector ScaledDirection = RandomDirection * 10.f;
+			EndTrace = CameraTraceResult.Location + ScaledDirection;
+		}
+		else
+		{
+			EndTrace = CameraTraceResult.TraceEnd;
+		}
+
+		const FName TraceTag("MyTraceTag");
+		GetWorld()->DebugDrawTraceTag = TraceTag;
+		Params.TraceTag = TraceTag;
+		FHitResult MuzzleTraceResult{};
+		GetWorld()->LineTraceSingleByChannel(
+			MuzzleTraceResult,
+			GetSocketLocation("Muzzle"),
+			EndTrace,
+			ECollisionChannel::ECC_Visibility,
+			Params
+		);
 	}
 	
 	// Try and play the sound if specified

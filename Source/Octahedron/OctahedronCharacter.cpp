@@ -3,7 +3,7 @@
 #include "OctahedronCharacter.h"
 #include "OctahedronProjectile.h"
 #include "Animation/AnimInstance.h"
-//#include "Camera/CameraComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -69,17 +69,14 @@ AOctahedronCharacter::AOctahedronCharacter()
 	Cam_Skel = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Cam_Skel"));
 	Cam_Skel->SetupAttachment(Cam_Root);
 
+	
+
 	// Create a CameraComponent	
 	// can't attach to parent socket for some reason, so instantiate in bp instead
 	//FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-	//FirstPersonCameraComponent->SetupAttachment(Cam_Skel, FName(TEXT("Camera")));
+	//FirstPersonCameraComponent->SetupAttachment(Cam_Skel, "Camera");
 	//FirstPersonCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, 65.f)); // Position the camera
 	//UE_LOG(LogTemp, Warning, TEXT("CharacterConstructor => socket name: %s"), *FirstPersonCameraComponent->socket);
-
-	
-
-	
-
 }
 
 void AOctahedronCharacter::BeginPlay()
@@ -95,7 +92,14 @@ void AOctahedronCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-
+	if (auto camera = Cast<UCameraComponent>(Cam_Skel->GetChildComponent(0)))
+	{
+		FirstPersonCameraComponent = camera;
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Error, TEXT("The camera component is not set!"));
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
