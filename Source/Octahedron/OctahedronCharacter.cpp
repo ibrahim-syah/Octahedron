@@ -3,7 +3,7 @@
 #include "OctahedronCharacter.h"
 #include "OctahedronProjectile.h"
 #include "Animation/AnimInstance.h"
-#include "Camera/CameraComponent.h"
+//#include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -23,7 +23,7 @@ AOctahedronCharacter::AOctahedronCharacter()
 	bHasRifle = false;
 	
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+	GetCapsuleComponent()->InitCapsuleSize(35.f, 96.0f);
 
 	FP_Root = CreateDefaultSubobject<USceneComponent>(TEXT("FP_Root"));
 	FP_Root->SetupAttachment(GetCapsuleComponent());
