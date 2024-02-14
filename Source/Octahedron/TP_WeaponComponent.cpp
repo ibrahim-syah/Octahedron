@@ -111,6 +111,18 @@ void UTP_WeaponComponent::Fire()
 	}
 }
 
+void UTP_WeaponComponent::Stow()
+{
+}
+
+void UTP_WeaponComponent::Equip()
+{
+}
+
+void UTP_WeaponComponent::Reload()
+{
+}
+
 void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 {
 	Character = TargetCharacter;
