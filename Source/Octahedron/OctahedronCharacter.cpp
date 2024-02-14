@@ -70,12 +70,11 @@ AOctahedronCharacter::AOctahedronCharacter()
 	Cam_Skel->SetupAttachment(Cam_Root);
 
 	// Create a CameraComponent	
-	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-	FirstPersonCameraComponent->SetupAttachment(Cam_Skel, FName(TEXT("CameraSocket")));
-	FirstPersonCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, 65.f)); // Position the camera
-
-	// successfully attached, but in bp it's blank
-	//UE_LOG(LogTemp, Warning, TEXT("CharacterConstructor => socket name: %s"), *FirstPersonCameraComponent->GetAttachSocketName().ToString());
+	// can't attach to parent socket for some reason, so instantiate in bp instead
+	//FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	//FirstPersonCameraComponent->SetupAttachment(Cam_Skel, FName(TEXT("Camera")));
+	//FirstPersonCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, 65.f)); // Position the camera
+	//UE_LOG(LogTemp, Warning, TEXT("CharacterConstructor => socket name: %s"), *FirstPersonCameraComponent->socket);
 
 	
 
@@ -96,8 +95,6 @@ void AOctahedronCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-	// successfully attached, but in bp it's blank
-	//UE_LOG(LogTemp, Warning, TEXT("BeginPlay => socket name: %s"), *FirstPersonCameraComponent->GetAttachSocketName().ToString());
 
 }
 
