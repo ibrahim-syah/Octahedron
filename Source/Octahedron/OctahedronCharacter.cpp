@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
+#include "Components/TimelineComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -50,13 +51,6 @@ AOctahedronCharacter::AOctahedronCharacter()
 	Mesh1P->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 	Mesh1P->SetRelativeLocation(FVector(0.f, 0.f, -96.f));
 
-
-
-
-
-
-
-
 	Cam_Root = CreateDefaultSubobject<USpringArmComponent>(TEXT("Cam_Root"));
 	Cam_Root->SetupAttachment(FP_Root);
 	Cam_Root->TargetArmLength = 0;
@@ -69,14 +63,22 @@ AOctahedronCharacter::AOctahedronCharacter()
 	Cam_Skel = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Cam_Skel"));
 	Cam_Skel->SetupAttachment(Cam_Root);
 
-	
 
-	// Create a CameraComponent	
-	// can't attach to parent socket for some reason, so instantiate in bp instead
-	//FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-	//FirstPersonCameraComponent->SetupAttachment(Cam_Skel, "Camera");
-	//FirstPersonCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, 65.f)); // Position the camera
-	//UE_LOG(LogTemp, Warning, TEXT("CharacterConstructor => socket name: %s"), *FirstPersonCameraComponent->socket);
+
+	CrouchTL = CreateDefaultSubobject<UTimelineComponent>(FName("CrouchTL"));
+	CrouchTL->SetTimelineLength(0.2f);
+	CrouchTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+	FOnTimelineFloat onTimelineCallback;
+	onTimelineCallback.BindUFunction(this, FName{ TEXT("CrouchTLCallback") });
+	CrouchAlphaCurve = CreateDefaultSubobject<UCurveFloat>(FName("CrouchAlphaCurve"));
+	FKeyHandle KeyHandle1 = CrouchAlphaCurve->FloatCurve.AddKey(0.f, 0.f);
+	CrouchAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle1, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	FKeyHandle KeyHandle2 = CrouchAlphaCurve->FloatCurve.AddKey(0.2f, 1.f);
+	CrouchAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle2, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	CrouchTL->AddInterpFloat(CrouchAlphaCurve, onTimelineCallback);
+
+	
 }
 
 void AOctahedronCharacter::BeginPlay()
@@ -92,6 +94,8 @@ void AOctahedronCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	// Ensure camera is set in blueprint class
 	if (auto camera = Cast<UCameraComponent>(Cam_Skel->GetChildComponent(0)))
 	{
 		FirstPersonCameraComponent = camera;
@@ -118,11 +122,39 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::Look);
+
+		// Crouch
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &AOctahedronCharacter::CustomCrouch);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::ReleaseCrouch);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+}
+
+void AOctahedronCharacter::CrouchTLCallback(float val)
+{
+	CrouchAlpha = val;
+	UE_LOG(LogTemplateCharacter, Display, TEXT("crouch alpha: %f"), CrouchAlpha);
+}
+
+void AOctahedronCharacter::CustomCrouch()
+{
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(UnCrouchTimerHandle);
+	UE_LOG(LogTemplateCharacter, Display, TEXT("timer cleared"));
+	CrouchTL->Play();
+}
+
+void AOctahedronCharacter::ReleaseCrouch()
+{
+	GetWorldTimerManager().SetTimer(UnCrouchTimerHandle, this, &AOctahedronCharacter::OnCheckCanStand, (1.f/30.f), true);
+}
+
+void AOctahedronCharacter::OnCheckCanStand()
+{
+	UE_LOG(LogTemplateCharacter, Display, TEXT("check can stand"));
 }
 
 
