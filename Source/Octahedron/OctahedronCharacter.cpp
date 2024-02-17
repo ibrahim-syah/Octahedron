@@ -20,7 +20,7 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 AOctahedronCharacter::AOctahedronCharacter()
 {
 	// Character doesnt have a rifle at start
-	bHasRifle = false;
+	bHasWeapon = false;
 	
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(35.f, 96.0f);
@@ -152,12 +152,12 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void AOctahedronCharacter::SetHasRifle(bool bNewHasRifle)
+void AOctahedronCharacter::SetHasWeapon(bool bNewHasRifle)
 {
-	bHasRifle = bNewHasRifle;
+	bHasWeapon = bNewHasRifle;
 }
 
-bool AOctahedronCharacter::GetHasRifle()
+bool AOctahedronCharacter::GetHasWeapon()
 {
-	return bHasRifle;
+	return bHasWeapon;
 }
