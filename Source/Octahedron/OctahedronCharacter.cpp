@@ -29,6 +29,15 @@ AOctahedronCharacter::AOctahedronCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(35.f, 96.0f);
 
+	GetCharacterMovement()->GravityScale = 1.5f;
+	GetCharacterMovement()->MaxAcceleration = 3072.f;
+	GetCharacterMovement()->BrakingFrictionFactor = 1.f;
+	GetCharacterMovement()->PerchRadiusThreshold = 30.f;
+	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
+	GetCharacterMovement()->JumpZVelocity = 750.f;
+	GetCharacterMovement()->BrakingDecelerationFalling = 200.f;
+	GetCharacterMovement()->AirControl = 0.275f;
+
 	FP_Root = CreateDefaultSubobject<USceneComponent>(TEXT("FP_Root"));
 	FP_Root->SetupAttachment(GetCapsuleComponent());
 
