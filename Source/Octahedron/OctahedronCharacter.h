@@ -75,6 +75,9 @@ class AOctahedronCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* CrouchAlphaCurve;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float BaseWalkSpeed{ 600.f };
+
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void CrouchTLCallback(float val);
 	
@@ -123,8 +126,11 @@ public:
 private:
 	FTimerHandle UnCrouchTimerHandle;
 	float CrouchAlpha;
+	float StandHeight{ 96.f };
+	float CrouchHeight{ 55.f };
 
-	void CustomCrouch();
+
+	void CustomCrouch(); // it's called CustomCrouch because Crouch is already provided from ACharacter
 	void ReleaseCrouch();
 	void OnCheckCanStand();
 	void StandUp();

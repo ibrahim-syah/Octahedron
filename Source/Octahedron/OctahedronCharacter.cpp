@@ -12,6 +12,8 @@
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
 #include "Components/TimelineComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -136,14 +138,20 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 void AOctahedronCharacter::CrouchTLCallback(float val)
 {
 	CrouchAlpha = val;
-	UE_LOG(LogTemplateCharacter, Display, TEXT("crouch alpha: %f"), CrouchAlpha);
+	// Update ground movement speed
+	float newWalkSpeed = FMath::Lerp(BaseWalkSpeed, (BaseWalkSpeed * .5f), CrouchAlpha);
+	GetCharacterMovement()->MaxWalkSpeed = newWalkSpeed;
+
+	// Update capsule half height
+	float newCapsuleHalfHeight = FMath::Lerp(StandHeight, CrouchHeight, CrouchAlpha);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(newCapsuleHalfHeight);
 }
 
 void AOctahedronCharacter::CustomCrouch()
 {
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(UnCrouchTimerHandle);
-	UE_LOG(LogTemplateCharacter, Display, TEXT("timer cleared"));
+	UnCrouchTimerHandle.Invalidate();
 	CrouchTL->Play();
 }
 
@@ -154,7 +162,38 @@ void AOctahedronCharacter::ReleaseCrouch()
 
 void AOctahedronCharacter::OnCheckCanStand()
 {
-	UE_LOG(LogTemplateCharacter, Display, TEXT("check can stand"));
+
+	FVector sphereTraceLocation = FVector(GetActorLocation().X, GetActorLocation().Y, (GetActorLocation().Z + CrouchHeight));
+
+	FVector SphereStart = FVector(GetActorLocation().X, GetActorLocation().Y, (GetActorLocation().Z + CrouchHeight));
+
+	float lerpedHeight = FMath::Lerp(0.f, (StandHeight - CrouchHeight), CrouchAlpha);
+	float scaledLerpedHeight = lerpedHeight * 1.1f;
+	float sphereEndZ = (GetActorLocation().Z + CrouchHeight) + scaledLerpedHeight;
+	FVector SphereEnd = FVector(GetActorLocation().X, GetActorLocation().Y, sphereEndZ);
+	float sphereRadius = GetCapsuleComponent()->GetScaledCapsuleRadius() * 0.5f;
+	FCollisionShape Sphere{ FCollisionShape::MakeSphere(sphereRadius)};
+	FCollisionQueryParams Params = FCollisionQueryParams();
+	Params.AddIgnoredActor(this);
+	FHitResult HitResult;
+
+	bool isStuck = GetWorld()->SweepSingleByChannel(HitResult, SphereStart, SphereEnd, FQuat::Identity, ECollisionChannel::ECC_Visibility, Sphere, Params);
+	bool isFalling = GetCharacterMovement()->IsFalling();
+
+	if (!isStuck || isFalling)
+	{
+		StandUp();
+		GetWorld()->GetTimerManager().ClearTimer(UnCrouchTimerHandle);
+		UnCrouchTimerHandle.Invalidate();
+	}
+
+
+
+}
+
+void AOctahedronCharacter::StandUp()
+{
+	CrouchTL->Reverse();
 }
 
 
