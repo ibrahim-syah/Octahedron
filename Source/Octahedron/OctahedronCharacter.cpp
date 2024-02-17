@@ -14,6 +14,7 @@
 #include "Components/TimelineComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -71,16 +72,33 @@ AOctahedronCharacter::AOctahedronCharacter()
 	CrouchTL->SetTimelineLength(0.2f);
 	CrouchTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 
-	FOnTimelineFloat onTimelineCallback;
-	onTimelineCallback.BindUFunction(this, FName{ TEXT("CrouchTLCallback") });
+	FOnTimelineFloat onCrouchTLCallback;
+	onCrouchTLCallback.BindUFunction(this, FName{ TEXT("CrouchTLCallback") });
 	CrouchAlphaCurve = CreateDefaultSubobject<UCurveFloat>(FName("CrouchAlphaCurve"));
 	FKeyHandle KeyHandle1 = CrouchAlphaCurve->FloatCurve.AddKey(0.f, 0.f);
 	CrouchAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle1, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
 	FKeyHandle KeyHandle2 = CrouchAlphaCurve->FloatCurve.AddKey(0.2f, 1.f);
 	CrouchAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle2, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
-	CrouchTL->AddInterpFloat(CrouchAlphaCurve, onTimelineCallback);
+	CrouchTL->AddInterpFloat(CrouchAlphaCurve, onCrouchTLCallback);
 
 	
+
+	DipTL = CreateDefaultSubobject<UTimelineComponent>(FName("DipTL"));
+	DipTL->SetTimelineLength(1.f);
+	DipTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+	FOnTimelineFloat onDipTLCallback;
+	onDipTLCallback.BindUFunction(this, FName{ TEXT("DipTLCallback") });
+	DipAlphaCurve = CreateDefaultSubobject<UCurveFloat>(FName("DipAlphaCurve"));
+	FKeyHandle KeyHandle = DipAlphaCurve->FloatCurve.AddKey(0.f, 0.f);
+	DipAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	KeyHandle = DipAlphaCurve->FloatCurve.AddKey(0.2f, 0.95f);
+	DipAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	KeyHandle = DipAlphaCurve->FloatCurve.AddKey(0.63f, 0.12f);
+	DipAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	KeyHandle = DipAlphaCurve->FloatCurve.AddKey(1.f, 0.f);
+	DipAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	DipTL->AddInterpFloat(DipAlphaCurve, onDipTLCallback);
 }
 
 void AOctahedronCharacter::BeginPlay()
@@ -222,6 +240,84 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void AOctahedronCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+	if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Falling)
+	{
+		// change coyote time based on speed
+		float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
+		float alpha = FMath::Clamp(normalizedSpeed, 0.f, 1.f);
+		float lerpedValue = FMath::Lerp(0.25f, 1.f, alpha);
+		float time = CoyoteTime * lerpedValue;
+		GetWorldTimerManager().SetTimer(CoyoteTimerHandle, this, &AOctahedronCharacter::CoyoteTimePassed, time, true);
+	}
+}
+
+void AOctahedronCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	LandingDip();
+
+	// On landing, clear coyote timer
+	GetWorld()->GetTimerManager().ClearTimer(CoyoteTimerHandle);
+	CoyoteTimerHandle.Invalidate();
+}
+
+void AOctahedronCharacter::OnJumped_Implementation()
+{
+	Super::OnJumped_Implementation();
+	Dip(5.f, 1.f);
+
+	// On jump, clear coyote timer
+	GetWorld()->GetTimerManager().ClearTimer(CoyoteTimerHandle);
+	CoyoteTimerHandle.Invalidate();
+}
+
+bool AOctahedronCharacter::CanJumpInternal_Implementation() const
+{
+	bool canJump = Super::CanJumpInternal_Implementation();
+	float remainingTime = GetWorld()->GetTimerManager().GetTimerRemaining(CoyoteTimerHandle);
+
+	bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(UnCrouchTimerHandle); // can't jump if there is an obstacle above the player
+	return (remainingTime > 0.f || canJump) && !isTimerActive;
+}
+
+void AOctahedronCharacter::CoyoteTimePassed()
+{
+
+}
+
+void AOctahedronCharacter::Dip(float Speed, float Strength)
+{
+	// set dip param
+	DipTL->SetPlayRate(Speed);
+	DipStrength = Strength;
+	DipTL->PlayFromStart();
+}
+
+void AOctahedronCharacter::DipTlCallback(float val)
+{
+	// update dip alpha
+	DipAlpha = val * DipStrength;
+
+	// update fp_root
+	float lerpedZValue = FMath::Lerp(0.f, -10.f, DipAlpha);
+	FVector newLocation = FVector(FP_Root->GetRelativeLocation().X, FP_Root->GetRelativeLocation().Y, lerpedZValue);
+	FP_Root->SetRelativeLocation(newLocation);
+}
+
+void AOctahedronCharacter::LandingDip()
+{
+	float lastZVelocity = GetCharacterMovement()->GetLastUpdateVelocity().Z;
+	float ZVectorLength = FVector(0.f, 0.f, lastZVelocity).Length();
+	float jumpZvelocity = GetCharacterMovement()->JumpZVelocity;
+	float normalizedVelocity = UKismetMathLibrary::NormalizeToRange(ZVectorLength, 0.f, jumpZvelocity);
+	float clampedVelocity = FMath::Clamp(normalizedVelocity, 0.f, 1.f);
+	Dip(3.f, clampedVelocity);
+}
+
 
 void AOctahedronCharacter::SetHasWeapon(bool bNewHasRifle)
 {

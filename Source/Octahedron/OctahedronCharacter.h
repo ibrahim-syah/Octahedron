@@ -113,6 +113,12 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 protected:
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
+	virtual void Landed(const FHitResult& Hit) override;
+	virtual void OnJumped_Implementation() override;
+	virtual bool CanJumpInternal_Implementation() const override;
+
+
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
@@ -134,6 +140,21 @@ private:
 	void ReleaseCrouch();
 	void OnCheckCanStand();
 	void StandUp();
+
+	FTimerHandle CoyoteTimerHandle;
+	void CoyoteTimePassed();
+	float CoyoteTime{ 0.35f };
+
+	void Dip(float Speed = 1.f, float Strength = 1.f);
+	float DipStrength{ 1.f };
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UTimelineComponent* DipTL;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* DipAlphaCurve;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void DipTlCallback(float val);
+	float DipAlpha;
+	void LandingDip();
 
 };
 
