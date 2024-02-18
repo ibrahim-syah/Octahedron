@@ -15,6 +15,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -342,6 +344,11 @@ void AOctahedronCharacter::OnJumped_Implementation()
 {
 	Super::OnJumped_Implementation();
 	Dip(5.f, 1.f);
+	if (JumpCue != nullptr)
+	{
+		float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
+		UGameplayStatics::PlaySoundAtLocation(this, JumpCue, GetActorLocation());
+	}
 
 	// On jump, clear coyote timer
 	GetWorld()->GetTimerManager().ClearTimer(CoyoteTimerHandle);
@@ -389,6 +396,11 @@ void AOctahedronCharacter::LandingDip()
 	float normalizedVelocity = UKismetMathLibrary::NormalizeToRange(ZVectorLength, 0.f, jumpZvelocity);
 	float clampedVelocity = FMath::Clamp(normalizedVelocity, 0.f, 1.f);
 	Dip(3.f, clampedVelocity);
+	if (LandCue != nullptr)
+	{
+		float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
+		UGameplayStatics::PlaySoundAtLocation(this, LandCue, GetActorLocation(), clampedVelocity);
+	}
 }
 
 void AOctahedronCharacter::WalkLeftRightTLCallback(float val)
@@ -408,6 +420,13 @@ void AOctahedronCharacter::WalkRollTLCallback(float val)
 
 void AOctahedronCharacter::WalkTLFootstepCallback()
 {
+	if (FootstepCue != nullptr)
+	{
+		float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
+		float volumeMultiplier = FMath::Lerp(0.2f, 1.f, normalizedSpeed);
+		float pitchMultiplier = FMath::Lerp(0.8f, 1.f, normalizedSpeed);
+		UGameplayStatics::PlaySoundAtLocation(this, FootstepCue, GetActorLocation(), volumeMultiplier, pitchMultiplier);
+	}
 }
 
 void AOctahedronCharacter::WalkTLUpdateEvent()

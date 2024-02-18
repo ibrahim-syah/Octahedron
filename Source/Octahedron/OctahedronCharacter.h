@@ -80,6 +80,15 @@ class AOctahedronCharacter : public ACharacter
 
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void CrouchTLCallback(float val);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
+	USoundBase* FootstepCue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
+	USoundBase* JumpCue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
+	USoundBase* LandCue;
 	
 public:
 	AOctahedronCharacter();
