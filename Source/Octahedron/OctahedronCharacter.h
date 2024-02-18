@@ -129,11 +129,13 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
-private:
+protected:
 	FTimerHandle UnCrouchTimerHandle;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float CrouchAlpha;
 	float StandHeight{ 96.f };
 	float CrouchHeight{ 55.f };
+
 
 
 	void CustomCrouch(); // it's called CustomCrouch because Crouch is already provided from ACharacter
@@ -141,9 +143,13 @@ private:
 	void OnCheckCanStand();
 	void StandUp();
 
+
+
 	FTimerHandle CoyoteTimerHandle;
 	void CoyoteTimePassed();
 	float CoyoteTime{ 0.35f };
+
+
 
 	void Dip(float Speed = 1.f, float Strength = 1.f);
 	float DipStrength{ 1.f };
@@ -153,8 +159,49 @@ private:
 	UCurveFloat* DipAlphaCurve;
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void DipTlCallback(float val);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float DipAlpha;
 	void LandingDip();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UTimelineComponent* WalkingTL;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* WalkLeftRightAlphaCurve;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void WalkLeftRightTLCallback(float val);
+	float WalkLeftRightAlpha;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* WalkUpDownAlphaCurve;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void WalkUpDownTLCallback(float val);
+	float WalkUpDownAlpha;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* WalkRollAlphaCurve;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void WalkRollTLCallback(float val);
+	float WalkRollAlpha;
+
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void WalkTLFootstepCallback();
+
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void WalkTLUpdateEvent();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector WalkAnimPos;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FRotator WalkAnimRot;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	float WalkAnimAlpha;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector LocationLagPos;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void GetVelocityVars();
+
+	
 };
 
