@@ -115,9 +115,8 @@ AOctahedronCharacter::AOctahedronCharacter()
 	WalkingTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 	WalkingTL->SetLooping(true);
 
-	FOnTimelineFloat onWalkingTLCallback;
-
-	onWalkingTLCallback.BindUFunction(this, FName{ TEXT("WalkLeftRightTLCallback") });
+	FOnTimelineFloat onWalkingLeftRightTLCallback;
+	onWalkingLeftRightTLCallback.BindUFunction(this, FName{ TEXT("WalkLeftRightTLCallback") });
 	WalkLeftRightAlphaCurve = CreateDefaultSubobject<UCurveFloat>(FName("WalkLeftRightAlphaCurve"));
 	KeyHandle = WalkLeftRightAlphaCurve->FloatCurve.AddKey(0.f, 0.f);
 	WalkLeftRightAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
@@ -129,9 +128,10 @@ AOctahedronCharacter::AOctahedronCharacter()
 	WalkLeftRightAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
 	KeyHandle = WalkLeftRightAlphaCurve->FloatCurve.AddKey(1.f, 0.f);
 	WalkLeftRightAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
-	WalkingTL->AddInterpFloat(WalkLeftRightAlphaCurve, onWalkingTLCallback);
+	WalkingTL->AddInterpFloat(WalkLeftRightAlphaCurve, onWalkingLeftRightTLCallback);
 
-	onWalkingTLCallback.BindUFunction(this, FName{ TEXT("WalkUpDownTLCallback") });
+	FOnTimelineFloat onWalkingUpDownTLCallback;
+	onWalkingUpDownTLCallback.BindUFunction(this, FName{ TEXT("WalkUpDownTLCallback") });
 	WalkUpDownAlphaCurve = CreateDefaultSubobject<UCurveFloat>(FName("WalkUpDownAlphaCurve"));
 	KeyHandle = WalkUpDownAlphaCurve->FloatCurve.AddKey(0.f, 0.f);
 	WalkUpDownAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
@@ -143,9 +143,10 @@ AOctahedronCharacter::AOctahedronCharacter()
 	WalkUpDownAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
 	KeyHandle = WalkUpDownAlphaCurve->FloatCurve.AddKey(1.f, 0.f);
 	WalkUpDownAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
-	WalkingTL->AddInterpFloat(WalkUpDownAlphaCurve, onWalkingTLCallback);
+	WalkingTL->AddInterpFloat(WalkUpDownAlphaCurve, onWalkingUpDownTLCallback);
 
-	onWalkingTLCallback.BindUFunction(this, FName{ TEXT("WalkRollTLCallback") });
+	FOnTimelineFloat onWalkingRollTLCallback;
+	onWalkingRollTLCallback.BindUFunction(this, FName{ TEXT("WalkRollTLCallback") });
 	WalkRollAlphaCurve = CreateDefaultSubobject<UCurveFloat>(FName("WalkRollAlphaCurve"));
 	KeyHandle = WalkRollAlphaCurve->FloatCurve.AddKey(0.f, 0.18f);
 	WalkRollAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
@@ -159,7 +160,7 @@ AOctahedronCharacter::AOctahedronCharacter()
 	WalkRollAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
 	KeyHandle = WalkRollAlphaCurve->FloatCurve.AddKey(1.f, 0.18f);
 	WalkRollAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
-	WalkingTL->AddInterpFloat(WalkRollAlphaCurve, onWalkingTLCallback);
+	WalkingTL->AddInterpFloat(WalkRollAlphaCurve, onWalkingRollTLCallback);
 
 	FOnTimelineEvent footstepEvent;
 	footstepEvent.BindUFunction(this, FName{ TEXT("WalkTLFootstepCallback") });
@@ -418,7 +419,7 @@ void AOctahedronCharacter::WalkTLUpdateEvent()
 
 	// update walk anim rotation
 	float lerpedWalkAnimRotPitch = FMath::Lerp(1.f, -1.f, WalkRollAlpha);
-	WalkAnimRot = FRotator(0.f, lerpedWalkAnimRotPitch, 0.f);
+	WalkAnimRot = FRotator(lerpedWalkAnimRotPitch, 0.f, 0.f);
 
 	// get alpha of walking intensity
 	float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
