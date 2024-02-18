@@ -211,6 +211,20 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void GetVelocityVars();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector PitchOffsetPos;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector CamRotOffset;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FRotator CamRotCurrent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FRotator CamRotRate;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector InAirOffset;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FRotator InAirTilt;
+	UFUNCTION(BlueprintCallable, Category = WeaponSway, meta = (AllowPrivateAccess = "true"))
+	void GetLookInputVars(FRotator CamRotPrev);
 	
 };
 

@@ -456,6 +456,9 @@ void AOctahedronCharacter::WalkTLUpdateEvent()
 
 	// update location lag vars
 	GetVelocityVars();
+
+	// update look input vars
+	GetLookInputVars(CamRotCurrent);
 }
 
 void AOctahedronCharacter::GetVelocityVars()
@@ -476,6 +479,58 @@ void AOctahedronCharacter::GetVelocityVars()
 	float interpSpeed = (1.f / deltaTime) / 6.f;
 	FVector interpedVec = FMath::VInterpTo(LocationLagPos, ClampedVectorSize, deltaTime, interpSpeed);
 	LocationLagPos = interpedVec;
+
+	interpSpeed = (1.f / deltaTime) / 12.f;
+	FRotator targetRInterp = FRotator((LocationLagPos.Z * -2.f), 0.f, 0.f);
+	FRotator interpedRot = FMath::RInterpTo(InAirTilt, targetRInterp, deltaTime, interpSpeed);
+	InAirTilt = interpedRot;
+
+	FVector targetVInterp = FVector((LocationLagPos.Z * -0.5f), 0.f, 0.f);
+	FVector interpedInAirOffsetVec = FMath::VInterpTo(InAirOffset, targetVInterp, deltaTime, interpSpeed);
+	InAirOffset = interpedInAirOffsetVec;
+}
+
+void AOctahedronCharacter::GetLookInputVars(FRotator CamRotPrev)
+{
+	// Step 1: determining how much to offset the viewmodel based
+	// on our current camera pitch
+	FRotator deltaRotator = UKismetMathLibrary::NormalizedDeltaRotator(GetControlRotation(), GetActorRotation());
+	float normalizedPitch = UKismetMathLibrary::NormalizeToRange(deltaRotator.Pitch, -90.f, 90.f);
+	float lerpedY = FMath::Lerp(3.f, -3.f, normalizedPitch);
+	float lerpedZ = FMath::Lerp(2.f, -2.f, normalizedPitch);
+	PitchOffsetPos = FVector(0.f, lerpedY, lerpedZ);
+
+	float normalizedFurther = UKismetMathLibrary::NormalizeToRange(normalizedPitch, 0.f, 0.5f);
+	float clampedNormalizedPitch = FMath::Clamp(normalizedFurther, 0.f, 1.f);
+	float lerpedClampedNormalizedPitch = FMath::Lerp(35.f, 0.f, clampedNormalizedPitch);
+	FVector newRelativeLocation = FVector(lerpedClampedNormalizedPitch, FP_Root->GetRelativeLocation().Y, FP_Root->GetRelativeLocation().Z);
+	FP_Root->SetRelativeLocation(newRelativeLocation);
+
+
+	// Step 2: finding the rotation rate of our camera and smoothing
+	// the result to use for our weapon sway
+	CamRotCurrent = FirstPersonCameraComponent->GetComponentRotation();
+	FRotator deltaCamRot = UKismetMathLibrary::NormalizedDeltaRotator(CamRotCurrent, CamRotPrev);
+	float deltaCamRotPitch, deltaCamRotYaw, deltaCamRotRoll;
+	UKismetMathLibrary::BreakRotator(deltaCamRot, deltaCamRotRoll, deltaCamRotPitch, deltaCamRotYaw);
+	float pitchInverse = deltaCamRotPitch * -1.f;
+	float clampedPitchInverse = FMath::Clamp(pitchInverse, -5.f, 5.f);
+	float clampedYaw = FMath::Clamp(deltaCamRotYaw, -5.f, 5.f);
+	FRotator newRotator = FRotator(0.f, clampedYaw, clampedPitchInverse);
+	float deltaSeconds = GetWorld()->DeltaTimeSeconds;
+	float interpSpeed = (1.f / deltaSeconds) / 10.f;
+	CamRotRate = UKismetMathLibrary::RInterpTo(CamRotRate, newRotator, deltaSeconds, interpSpeed);
+
+
+	// Step 3: figuring out the amount to offset our viewmodel by,
+	// in order to counteract the rotation of our weapon sway
+	float normalizedRoll = UKismetMathLibrary::NormalizeToRange(CamRotRate.Roll, -5.f, 5.f);
+	float lerpedRoll = FMath::Lerp(-10.f, 10.f, normalizedRoll);
+
+	float normalizedYaw = UKismetMathLibrary::NormalizeToRange(CamRotRate.Yaw, -5.f, 5.f);
+	float lerpedYaw = FMath::Lerp(-6.f, 6.f, normalizedYaw);
+	CamRotOffset = FVector(lerpedYaw, 0.f, lerpedRoll);
+
 }
 
 
