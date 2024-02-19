@@ -225,6 +225,19 @@ protected:
 	FRotator InAirTilt;
 	UFUNCTION(BlueprintCallable, Category = WeaponSway, meta = (AllowPrivateAccess = "true"))
 	void GetLookInputVars(FRotator CamRotPrev);
-	
+
+
+	UFUNCTION(BlueprintCallable, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	void ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlphaArg);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector PrevHandLoc;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector CamOffset;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	float CamStrength{ 50.f };
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector CamOffsetCurrent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	float CamAnimAlpha{ 0.f };
 };
 

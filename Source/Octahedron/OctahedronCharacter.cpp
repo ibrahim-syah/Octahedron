@@ -459,6 +459,11 @@ void AOctahedronCharacter::WalkTLUpdateEvent()
 
 	// update look input vars
 	GetLookInputVars(CamRotCurrent);
+
+	// camera animation
+	FVector camOffset;
+	float camAnimAlpha;
+	ProcCamAnim(camOffset, camAnimAlpha);
 }
 
 void AOctahedronCharacter::GetVelocityVars()
@@ -531,6 +536,37 @@ void AOctahedronCharacter::GetLookInputVars(FRotator CamRotPrev)
 	float lerpedYaw = FMath::Lerp(-6.f, 6.f, normalizedYaw);
 	CamRotOffset = FVector(lerpedYaw, 0.f, lerpedRoll);
 
+}
+
+void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlphaArg)
+{
+	FTransform spine03Transform = Mesh1P->GetSocketTransform(FName("spine_03"));
+	FTransform hand_rTransform = Mesh1P->GetSocketTransform(FName("hand_r"));
+	FVector inversedTransformLocation = UKismetMathLibrary::InverseTransformLocation(spine03Transform, hand_rTransform.GetLocation());
+	FVector differenceVec = PrevHandLoc - inversedTransformLocation;
+	FVector swappedAxesVec = FVector(differenceVec.Y, differenceVec.Z, differenceVec.X);
+	CamOffset = swappedAxesVec * FVector(-1.f, 1.f, -1.f);
+	FVector multipliedVec = CamOffset * CamStrength;
+	PrevHandLoc = inversedTransformLocation;
+
+
+
+	UAnimInstance* meshAnimInstance = Mesh1P->GetAnimInstance();
+	bool isAnyMontagePlaying = meshAnimInstance->IsAnyMontagePlaying();
+	auto currentActiveMontage = meshAnimInstance->GetCurrentActiveMontage();
+	bool isMontageActive = meshAnimInstance->Montage_IsActive(currentActiveMontage);
+	float lowerSelectFloat = isMontageActive ? 1.f : 0.f;
+	float upperSelectFloat = isAnyMontagePlaying ? lowerSelectFloat : 0.f;
+	float deltaSeconds = GetWorld()->DeltaTimeSeconds;
+	float interpSpeed = (1.f / deltaSeconds) / 24.f;
+	FVector interpedVec = UKismetMathLibrary::VInterpTo(CamOffsetCurrent, multipliedVec, deltaSeconds, interpSpeed);
+	CamOffsetCurrent = FMath::Clamp(interpedVec, 0.f, 10.f);
+
+	interpSpeed = (1.f / deltaSeconds) / 60.f;
+	CamAnimAlpha = UKismetMathLibrary::FInterpTo(CamAnimAlpha, upperSelectFloat, deltaSeconds, interpSpeed);
+
+	CamOffsetArg = CamOffsetCurrent;
+	CamAnimAlphaArg = CamAnimAlpha;
 }
 
 
