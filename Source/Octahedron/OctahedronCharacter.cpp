@@ -560,7 +560,7 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 	float deltaSeconds = GetWorld()->DeltaTimeSeconds;
 	float interpSpeed = (1.f / deltaSeconds) / 24.f;
 	FVector interpedVec = UKismetMathLibrary::VInterpTo(CamOffsetCurrent, multipliedVec, deltaSeconds, interpSpeed);
-	CamOffsetCurrent = FMath::Clamp(interpedVec, 0.f, 10.f);
+	CamOffsetCurrent = interpedVec.GetClampedToSize(0.f, 10.f);
 
 	interpSpeed = (1.f / deltaSeconds) / 60.f;
 	CamAnimAlpha = UKismetMathLibrary::FInterpTo(CamAnimAlpha, upperSelectFloat, deltaSeconds, interpSpeed);
