@@ -196,6 +196,7 @@ void AOctahedronCharacter::BeginPlay()
 	if (auto camera = Cast<UCameraComponent>(Cam_Skel->GetChildComponent(0)))
 	{
 		FirstPersonCameraComponent = camera;
+		FirstPersonCameraComponent->PostProcessSettings.bOverride_VignetteIntensity = true;
 	}
 	else
 	{
