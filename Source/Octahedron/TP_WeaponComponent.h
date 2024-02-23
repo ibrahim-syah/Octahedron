@@ -108,9 +108,6 @@ private:
 	UFUNCTION()
 	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 
-	UFUNCTION()
-	void ReloadAnimationCompleted(UAnimMontage* animMontage, bool bInterrupted);
-
 	FTimerHandle ReloadDelayTimerHandle;
 
 	void SetIsReloadingFalse();

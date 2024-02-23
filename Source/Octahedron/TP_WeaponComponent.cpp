@@ -139,13 +139,9 @@ void UTP_WeaponComponent::Reload()
 		{
 			AnimInstance->Montage_Play(ReloadAnimation, 1.f);
 
-			FOnMontageEnded BlendOutDelegate;
+			FOnMontageBlendingOutStarted BlendOutDelegate;
 			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
 			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
-
-			FOnMontageEnded CompleteDelegate;
-			CompleteDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationCompleted);
-			AnimInstance->Montage_SetEndDelegate(CompleteDelegate, ReloadAnimation);
 		}
 	}
 }
@@ -217,17 +213,17 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
 {
-	SetIsReloadingFalse();
-}
-
-void UTP_WeaponComponent::ReloadAnimationCompleted(UAnimMontage* animMontage, bool bInterrupted)
-{
 	if (bInterrupted)
 	{
-		if (Character != nullptr)
+		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(ReloadDelayTimerHandle);
+		if (Character != nullptr && !isTimerActive) // prevent spam reload cancel
 		{
 			Character->GetWorldTimerManager().SetTimer(ReloadDelayTimerHandle, this, &UTP_WeaponComponent::SetIsReloadingFalse, 0.2f, false);
 		}
+	}
+	else
+	{
+		SetIsReloadingFalse();
 	}
 }
 
