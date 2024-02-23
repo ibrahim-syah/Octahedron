@@ -30,6 +30,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* EquipAnimation;
 
+	/** AnimMontage to play when reloading the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* ReloadAnimation;
+
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
 	FVector MuzzleOffset;
@@ -63,6 +67,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
 
+	/** Reload Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ReloadAction;
+
 	/** Sets default values for this component's properties */
 	UTP_WeaponComponent();
 
@@ -94,4 +102,16 @@ protected:
 private:
 	/** The Character holding this weapon*/
 	AOctahedronCharacter* Character;
+
+	bool IsReloading;
+
+	UFUNCTION()
+	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+
+	UFUNCTION()
+	void ReloadAnimationCompleted(UAnimMontage* animMontage, bool bInterrupted);
+
+	FTimerHandle ReloadDelayTimerHandle;
+
+	void SetIsReloadingFalse();
 };

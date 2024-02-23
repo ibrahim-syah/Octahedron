@@ -14,6 +14,7 @@ class USpringArmComponent;
 class UInputAction;
 class UInputMappingContext;
 class UTimelineComponent;
+class TP_WeaponComponent;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -113,6 +114,18 @@ public:
 	/** Getter for the bool */
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	bool GetHasWeapon();
+
+	/** Bool for AnimBP to switch to another animation set */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
+	UTP_WeaponComponent* CurrentWeapon;
+
+	/** Setter to set the bool */
+	UFUNCTION(Category = Weapon)
+	void SetCurrentWeapon(UTP_WeaponComponent* NewWeapon);
+
+	/** Getter for the bool */
+	UFUNCTION(BlueprintPure, Category = Weapon)
+	UTP_WeaponComponent* GetCurrentWeapon();
 
 protected:
 	/** Called for movement input */

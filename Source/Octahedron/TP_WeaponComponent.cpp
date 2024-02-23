@@ -27,6 +27,11 @@ void UTP_WeaponComponent::Fire()
 		return;
 	}
 
+	if (IsReloading)
+	{
+		return;
+	}
+
 	// Try and fire a projectile
 	if (ProjectileClass != nullptr)
 	{
@@ -121,6 +126,28 @@ void UTP_WeaponComponent::Equip()
 
 void UTP_WeaponComponent::Reload()
 {
+	if (IsReloading)
+	{
+		return;
+	}
+	IsReloading = true;
+
+	if (Character != nullptr && ReloadAnimation != nullptr)
+	{
+		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(ReloadAnimation, 1.f);
+
+			FOnMontageEnded BlendOutDelegate;
+			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
+			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
+
+			FOnMontageEnded CompleteDelegate;
+			CompleteDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationCompleted);
+			AnimInstance->Montage_SetEndDelegate(CompleteDelegate, ReloadAnimation);
+		}
+	}
 }
 
 void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
@@ -128,7 +155,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	Character = TargetCharacter;
 
 	// Check that the character is valid, and has no weapon yet
-	if (Character == nullptr || Character->GetHasWeapon())
+	if (Character == nullptr || Character->GetHasWeapon() || Character->GetCurrentWeapon())
 	{
 		return;
 	}
@@ -150,6 +177,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	
 	// switch bHasWeapon so the animation blueprint can switch to another animation set
 	Character->SetHasWeapon(true);
+	Character->SetCurrentWeapon(this);
 
 	// Set up action bindings
 	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
@@ -164,6 +192,9 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 		{
 			// Fire
 			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::Fire);
+
+			// Reload
+			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::Reload);
 		}
 	}
 }
@@ -182,4 +213,29 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 			Subsystem->RemoveMappingContext(FireMappingContext);
 		}
 	}
+}
+
+void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+{
+	SetIsReloadingFalse();
+}
+
+void UTP_WeaponComponent::ReloadAnimationCompleted(UAnimMontage* animMontage, bool bInterrupted)
+{
+	if (bInterrupted)
+	{
+		if (Character != nullptr)
+		{
+			Character->GetWorldTimerManager().SetTimer(ReloadDelayTimerHandle, this, &UTP_WeaponComponent::SetIsReloadingFalse, 0.2f, false);
+		}
+	}
+}
+
+void UTP_WeaponComponent::SetIsReloadingFalse()
+{
+	IsReloading = false;
+
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(ReloadDelayTimerHandle);
+	ReloadDelayTimerHandle.Invalidate();
 }

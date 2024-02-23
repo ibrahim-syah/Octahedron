@@ -16,6 +16,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "TP_WeaponComponent.h"
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -578,4 +579,14 @@ void AOctahedronCharacter::SetHasWeapon(bool bNewHasRifle)
 bool AOctahedronCharacter::GetHasWeapon()
 {
 	return bHasWeapon;
+}
+
+void AOctahedronCharacter::SetCurrentWeapon(UTP_WeaponComponent *NewWeapon)
+{
+	CurrentWeapon = NewWeapon;
+}
+
+UTP_WeaponComponent* AOctahedronCharacter::GetCurrentWeapon()
+{
+	return CurrentWeapon;
 }
