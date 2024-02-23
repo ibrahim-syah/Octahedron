@@ -127,6 +127,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = Weapon)
 	UTP_WeaponComponent* GetCurrentWeapon();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector ADS_Offset;
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);

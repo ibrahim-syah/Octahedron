@@ -7,6 +7,7 @@
 #include "TP_WeaponComponent.generated.h"
 
 class AOctahedronCharacter;
+class UTimelineComponent;
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
@@ -59,6 +60,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float Spread{ 2.f };
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	UMaterialParameterCollection* MPC_FP;
+	UMaterialParameterCollectionInstance* MPC_FP_Instance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float FOV_Base{ 90.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float FOV_ADS{ 70.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float ADS_Speed{ 0.35f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	FVector ADS_Offset;
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputMappingContext* FireMappingContext;
@@ -66,6 +83,20 @@ public:
 	/** Fire Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
+
+	/** ADS Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ADSAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UTimelineComponent* ADSTL;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* ADSAlphaCurve;
+	float ADSAlpha;
+
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void ADSTLCallback(float val);
 
 	/** Reload Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -82,22 +113,36 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
 
-	/** Make the weapon Fire a Projectile */
+	/** Stow the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Stow();
 
-	/** Make the weapon Fire a Projectile */
+	/** Equip the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Equip();
 
-	/** Make the weapon Fire a Projectile */
+	/** Reload the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Reload();
+
+	/** Aim down sight */
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ADS();
+
+	/** Release Aim down sight */
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ReleaseADS();
+
+	/** force Exit Aim down sight */
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ExitADS();
 
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	virtual void BeginPlay();
 
 private:
 	/** The Character holding this weapon*/

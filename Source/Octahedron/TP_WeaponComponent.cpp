@@ -11,14 +11,39 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
+#include "Components/TimelineComponent.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
 	// Default offset from the character location for projectiles to spawn
 	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
+	BoundsScale = 2.f;
+
+	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
+	ADSTL->SetTimelineLength(1.f);
+	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 }
 
+void UTP_WeaponComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (ADSAlphaCurve != nullptr)
+	{
+		FOnTimelineFloat onADSTLCallback;
+		onADSTLCallback.BindUFunction(this, FName{ TEXT("ADSTLCallback") });
+		ADSTL->AddInterpFloat(ADSAlphaCurve, onADSTLCallback);
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find ads curve for this weapon"));
+	}
+
+	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
+}
 
 void UTP_WeaponComponent::Fire()
 {
@@ -122,13 +147,14 @@ void UTP_WeaponComponent::Stow()
 
 void UTP_WeaponComponent::Equip()
 {
-	if (IsEquipping)
+	if (IsEquipping || Character == nullptr)
 	{
 		return;
 	}
 	IsEquipping = true;
 
-	if (Character != nullptr && EquipAnimation != nullptr)
+
+	if (EquipAnimation != nullptr)
 	{
 		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
 		if (AnimInstance != nullptr)
@@ -140,6 +166,8 @@ void UTP_WeaponComponent::Equip()
 			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
 		}
 	}
+
+	Character->ADS_Offset = ADS_Offset;
 }
 
 void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
@@ -175,6 +203,8 @@ void UTP_WeaponComponent::Reload()
 	}
 	IsReloading = true;
 
+	ExitADS();
+
 	if (Character != nullptr && ReloadAnimation != nullptr)
 	{
 		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
@@ -187,6 +217,50 @@ void UTP_WeaponComponent::Reload()
 			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
 		}
 	}
+}
+
+void UTP_WeaponComponent::ADS()
+{
+	if (IsReloading)
+	{
+		return;
+	}
+
+	float newRate = 1.f / ADS_Speed;
+	ADSTL->SetPlayRate(newRate);
+	ADSTL->Play();
+}
+
+void UTP_WeaponComponent::ReleaseADS()
+{
+	ADSTL->Reverse();
+}
+
+void UTP_WeaponComponent::ExitADS()
+{
+	ADSTL->Reverse();
+}
+
+void UTP_WeaponComponent::ADSTLCallback(float val)
+{
+	if (Character == nullptr && MPC_FP == nullptr)
+	{
+		return;
+	}
+
+	ADSAlpha = val;
+	float lerpedFOV = FMath::Lerp(FOV_Base, FOV_ADS, ADSAlpha);
+	UCameraComponent* camera = Character->GetFirstPersonCameraComponent();
+	camera->SetFieldOfView(lerpedFOV);
+	float lerpedIntensity = FMath::Lerp(0.4f, 0.7f, ADSAlpha);
+	camera->PostProcessSettings.VignetteIntensity = lerpedIntensity;
+	float lerpedFlatFov = FMath::Lerp(90.f, 25.f, ADSAlpha);
+	MPC_FP_Instance->SetScalarParameterValue(FName("FOV"), lerpedFlatFov);
+	FLinearColor OutColor;
+	MPC_FP_Instance->GetVectorParameterValue(FName("Offset"), OutColor);
+	float lerpedB = FMath::Lerp(0.f, 30.f, ADSAlpha);
+	FLinearColor newColor = FLinearColor(OutColor.R, OutColor.G, lerpedB, OutColor.A);
+	MPC_FP_Instance->SetVectorParameterValue(FName("Offset"), newColor);
 }
 
 void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
@@ -226,6 +300,10 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 
 			// Reload
 			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::Reload);
+
+			// ADS
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::ADS);
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleaseADS);
 		}
 	}
 }
