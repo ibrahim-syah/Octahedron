@@ -27,7 +27,7 @@ void UTP_WeaponComponent::Fire()
 		return;
 	}
 
-	if (IsReloading)
+	if (IsReloading || IsEquipping)
 	{
 		return;
 	}
@@ -122,11 +122,54 @@ void UTP_WeaponComponent::Stow()
 
 void UTP_WeaponComponent::Equip()
 {
+	if (IsEquipping)
+	{
+		return;
+	}
+	IsEquipping = true;
+
+	if (Character != nullptr && EquipAnimation != nullptr)
+	{
+		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(EquipAnimation, 1.f);
+
+			FOnMontageBlendingOutStarted BlendOutDelegate;
+			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::EquipAnimationBlendOut);
+			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
+		}
+	}
+}
+
+void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+{
+	if (bInterrupted)
+	{
+		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(EquipDelayTimerHandle);
+		if (Character != nullptr && !isTimerActive)
+		{
+			Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, 0.2f, false);
+		}
+	}
+	else
+	{
+		SetIsEquippingFalse();
+	}
+}
+
+void UTP_WeaponComponent::SetIsEquippingFalse()
+{
+	IsEquipping = false;
+
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(EquipDelayTimerHandle);
+	EquipDelayTimerHandle.Invalidate();
 }
 
 void UTP_WeaponComponent::Reload()
 {
-	if (IsReloading)
+	if (IsReloading || IsEquipping)
 	{
 		return;
 	}
@@ -161,15 +204,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
 
 	// Try and play equip animation if specified
-	if (EquipAnimation != nullptr)
-	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			AnimInstance->Montage_Play(EquipAnimation, 1.f);
-		}
-	}
+	Equip();
 	
 	// switch bHasWeapon so the animation blueprint can switch to another animation set
 	Character->SetHasWeapon(true);

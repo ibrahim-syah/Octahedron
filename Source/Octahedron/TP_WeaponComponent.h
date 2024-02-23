@@ -103,12 +103,15 @@ private:
 	/** The Character holding this weapon*/
 	AOctahedronCharacter* Character;
 
-	bool IsReloading;
+	bool IsEquipping;
+	UFUNCTION()
+	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+	FTimerHandle EquipDelayTimerHandle;
+	void SetIsEquippingFalse();
 
+	bool IsReloading;
 	UFUNCTION()
 	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
-
 	FTimerHandle ReloadDelayTimerHandle;
-
 	void SetIsReloadingFalse();
 };
