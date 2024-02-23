@@ -47,6 +47,7 @@ AOctahedronCharacter::AOctahedronCharacter()
 
 	Mesh_Root = CreateDefaultSubobject<USpringArmComponent>(TEXT("Mesh_Root"));
 	Mesh_Root->SetupAttachment(FP_Root);
+	Mesh_Root->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
 	Mesh_Root->TargetArmLength = 0;
 	Mesh_Root->bDoCollisionTest = false;
 	Mesh_Root->bUsePawnControlRotation = true;
@@ -56,7 +57,7 @@ AOctahedronCharacter::AOctahedronCharacter()
 
 	Offset_Root = CreateDefaultSubobject<USceneComponent>(TEXT("Offset_Root"));
 	Offset_Root->SetupAttachment(Mesh_Root);
-	Offset_Root->SetRelativeLocation(FVector(0.f, 0.f, -10.f));
+	Offset_Root->SetRelativeLocation(FVector(0.f, 0.f, -70.f));
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
@@ -69,6 +70,7 @@ AOctahedronCharacter::AOctahedronCharacter()
 
 	Cam_Root = CreateDefaultSubobject<USpringArmComponent>(TEXT("Cam_Root"));
 	Cam_Root->SetupAttachment(FP_Root);
+	Cam_Root->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
 	Cam_Root->TargetArmLength = 0;
 	Cam_Root->bDoCollisionTest = false;
 	Cam_Root->bUsePawnControlRotation = true;
@@ -78,6 +80,7 @@ AOctahedronCharacter::AOctahedronCharacter()
 
 	Cam_Skel = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Cam_Skel"));
 	Cam_Skel->SetupAttachment(Cam_Root);
+	Cam_Skel->SetRelativeLocation(FVector(0.f, 0.f, -60.f));
 
 
 
@@ -508,7 +511,7 @@ void AOctahedronCharacter::GetLookInputVars(FRotator CamRotPrev)
 
 	float normalizedFurther = UKismetMathLibrary::NormalizeToRange(normalizedPitch, 0.f, 0.5f);
 	float clampedNormalizedPitch = FMath::Clamp(normalizedFurther, 0.f, 1.f);
-	float lerpedClampedNormalizedPitch = FMath::Lerp(35.f, 0.f, clampedNormalizedPitch);
+	float lerpedClampedNormalizedPitch = FMath::Lerp(15.f, 0.f, clampedNormalizedPitch);
 	FVector newRelativeLocation = FVector(lerpedClampedNormalizedPitch, FP_Root->GetRelativeLocation().Y, FP_Root->GetRelativeLocation().Z);
 	FP_Root->SetRelativeLocation(newRelativeLocation);
 
