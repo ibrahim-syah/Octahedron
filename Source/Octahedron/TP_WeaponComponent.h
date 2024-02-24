@@ -11,6 +11,8 @@ class UTimelineComponent;
 class USightMeshComponent;
 class UUserWidget;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
 {
@@ -122,6 +124,9 @@ public:
 	/** Equip the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Equip();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnEquipSignature OnEquipDelegate;
 
 	/** Reload the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")

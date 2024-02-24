@@ -176,6 +176,8 @@ void UTP_WeaponComponent::Equip()
 	}
 
 	Character->ADS_Offset = ADS_Offset;
+
+	OnEquipDelegate.Broadcast(Character, this);
 }
 
 void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
