@@ -130,6 +130,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector ADS_Offset;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	float ADSAlpha;
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);

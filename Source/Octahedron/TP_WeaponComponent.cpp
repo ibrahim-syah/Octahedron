@@ -14,6 +14,7 @@
 #include "Components/TimelineComponent.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
+#include "Blueprint/UserWidget.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -249,6 +250,7 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 	}
 
 	ADSAlpha = val;
+	Character->ADSAlpha = ADSAlpha;
 	float lerpedFOV = FMath::Lerp(FOV_Base, FOV_ADS, ADSAlpha);
 	UCameraComponent* camera = Character->GetFirstPersonCameraComponent();
 	camera->SetFieldOfView(lerpedFOV);
