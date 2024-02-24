@@ -16,5 +16,12 @@ class OCTAHEDRON_API USightMeshComponent : public UStaticMeshComponent
 
 	/** Sets default values for this component's properties */
 	USightMeshComponent();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UMaterialInstance* FP_Material_Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UMaterialInstance* FP_Material_Holo;
 	
 };

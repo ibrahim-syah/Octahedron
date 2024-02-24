@@ -177,6 +177,18 @@ void UTP_WeaponComponent::Equip()
 
 	Character->ADS_Offset = ADS_Offset;
 
+	if (ScopeSightMesh != nullptr)
+	{
+		if (ScopeSightMesh->FP_Material_Holo != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(0, ScopeSightMesh->FP_Material_Holo);
+		}
+		if (ScopeSightMesh->FP_Material_Mesh != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(1, ScopeSightMesh->FP_Material_Mesh);
+		}
+	}
+
 	OnEquipDelegate.Broadcast(Character, this);
 }
 
