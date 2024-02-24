@@ -288,6 +288,11 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
 
+	if (FP_Material != nullptr)
+	{
+		SetMaterial(0, FP_Material);
+	}
+
 	// Try and play equip animation if specified
 	Equip();
 	
