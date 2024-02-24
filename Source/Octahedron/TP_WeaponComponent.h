@@ -8,6 +8,8 @@
 
 class AOctahedronCharacter;
 class UTimelineComponent;
+class USightMeshComponent;
+class UUserWidget;
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
@@ -126,16 +128,23 @@ public:
 	void Reload();
 
 	/** Aim down sight */
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFUNCTION(BlueprintCallable, Category = "ADS")
 	void ADS();
 
 	/** Release Aim down sight */
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFUNCTION(BlueprintCallable, Category = "ADS")
 	void ReleaseADS();
 
 	/** force Exit Aim down sight */
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFUNCTION(BlueprintCallable, Category = "ADS")
 	void ExitADS();
+
+	/** Scope Sight Mesh */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
+	USightMeshComponent* ScopeSightMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
+	UUserWidget* ScopeReticleWidget;
 
 protected:
 	/** Ends gameplay for this component. */

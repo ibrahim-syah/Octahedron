@@ -15,6 +15,7 @@
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Blueprint/UserWidget.h"
+#include "SightMeshComponent.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -41,6 +42,12 @@ void UTP_WeaponComponent::BeginPlay()
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find ads curve for this weapon"));
+	}
+
+	if (ScopeSightMesh != nullptr)
+	{
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+		ScopeSightMesh->AttachToComponent(this, AttachmentRules, FName(TEXT("Sight")));
 	}
 
 	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
