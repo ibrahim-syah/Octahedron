@@ -10,6 +10,8 @@ class AOctahedronCharacter;
 class UTimelineComponent;
 class USightMeshComponent;
 class UUserWidget;
+struct FInputActionValue;
+
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
 
@@ -123,6 +125,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void StopFire();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ForceStopFire();
+
 	/** Stow the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Stow();
@@ -138,17 +146,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Reload();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void CancelReload();
+
 	/** Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void ADS();
+	void PressedADS();
+
+	UFUNCTION(BlueprintCallable, Category = "ADS")
+	void EnterADS();
 
 	/** Release Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void ReleaseADS();
+	void ReleasedADS();
 
 	/** force Exit Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void ExitADS();
+	void ExitADS(bool IsFast);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
+	bool ADS_Held;
 
 	/** Scope Sight Mesh */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
@@ -157,12 +174,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
 	UUserWidget* ScopeReticleWidget;
 
+	UFUNCTION(BlueprintPure)
+	bool GetIsReloading() const { return IsReloading; };
+
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void BeginPlay();
+
+	void PressedFire(const FInputActionValue& Value);
+	void ReleasedFire(const FInputActionValue& Value);
+
+	void PressedReload();
 
 private:
 	/** The Character holding this weapon*/

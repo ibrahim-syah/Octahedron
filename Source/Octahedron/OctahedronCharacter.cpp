@@ -18,7 +18,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "TP_WeaponComponent.h"
 
-
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -176,6 +175,24 @@ AOctahedronCharacter::AOctahedronCharacter()
 	FOnTimelineEvent updateWalkEvent;
 	updateWalkEvent.BindUFunction(this, FName{ TEXT("WalkTLUpdateEvent") });
 	WalkingTL->SetTimelinePostUpdateFunc(updateWalkEvent);
+
+	MoveMode = ECustomMovementMode::Walking;
+
+	SlideTL = CreateDefaultSubobject<UTimelineComponent>(FName("SlideTL"));
+	SlideTL->SetTimelineLength(1.f);
+	SlideTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+	FOnTimelineFloat onSlideTLCallback;
+	onSlideTLCallback.BindUFunction(this, FName{ TEXT("SlideTLCallback") });
+	SlideAlphaCurve = CreateDefaultSubobject<UCurveFloat>(FName("SlideAlphaCurve"));
+	KeyHandle = SlideAlphaCurve->FloatCurve.AddKey(0.f, 1.f);
+	SlideAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	KeyHandle = SlideAlphaCurve->FloatCurve.AddKey(1.f, 0.f);
+	SlideAlphaCurve->FloatCurve.SetKeyInterpMode(KeyHandle, ERichCurveInterpMode::RCIM_Cubic, /*auto*/true);
+	SlideTL->AddInterpFloat(SlideAlphaCurve, onSlideTLCallback);
+	FOnTimelineEvent onSlideTLFinished;
+	onSlideTLFinished.BindUFunction(this, FName{ TEXT("FinishedSlideDelegate") });
+	SlideTL->SetTimelineFinishedFunc(onSlideTLFinished);
 }
 
 void AOctahedronCharacter::BeginPlay()
@@ -226,6 +243,9 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		// Crouch
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &AOctahedronCharacter::CustomCrouch);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::ReleaseCrouch);
+
+		// sprint
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AOctahedronCharacter::PressedSprint);
 	}
 	else
 	{
@@ -233,29 +253,89 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	}
 }
 
+void AOctahedronCharacter::UpdateGroundMovementSpeed()
+{
+	float newWalkSpeed = FMath::Lerp(BaseWalkSpeed, (BaseWalkSpeed * 0.65f), CrouchAlpha);
+	GetCharacterMovement()->MaxWalkSpeed = newWalkSpeed;
+}
+
+void AOctahedronCharacter::UpdatePlayerCapsuleHeight()
+{
+	float newCapsuleHalfHeight = FMath::Lerp(StandHeight, CrouchHeight, CrouchAlpha);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(newCapsuleHalfHeight, true);
+}
+
 void AOctahedronCharacter::CrouchTLCallback(float val)
 {
 	CrouchAlpha = val;
-	// Update ground movement speed
-	float newWalkSpeed = FMath::Lerp(BaseWalkSpeed, (BaseWalkSpeed * .5f), CrouchAlpha);
-	GetCharacterMovement()->MaxWalkSpeed = newWalkSpeed;
 
-	// Update capsule half height
-	float newCapsuleHalfHeight = FMath::Lerp(StandHeight, CrouchHeight, CrouchAlpha);
-	GetCapsuleComponent()->SetCapsuleHalfHeight(newCapsuleHalfHeight);
+	switch (MoveMode)
+	{
+	case ECustomMovementMode::Walking:
+		UpdateGroundMovementSpeed();
+		break;
+	case ECustomMovementMode::Crouching:
+		UpdateGroundMovementSpeed();
+		break;
+	default:
+		break;
+	}
+
+	UpdatePlayerCapsuleHeight();
 }
 
 void AOctahedronCharacter::CustomCrouch()
 {
-	// Ensure the timer is cleared by using the timer handle
-	GetWorld()->GetTimerManager().ClearTimer(UnCrouchTimerHandle);
-	UnCrouchTimerHandle.Invalidate();
-	CrouchTL->Play();
+	CrouchKeyHeld = true;
+	switch (MoveMode)
+	{
+	case ECustomMovementMode::Walking:
+		MoveMode = ECustomMovementMode::Crouching;
+
+		// Ensure the timer is cleared by using the timer handle
+		GetWorld()->GetTimerManager().ClearTimer(UnCrouchTimerHandle);
+		UnCrouchTimerHandle.Invalidate();
+		CrouchTL->Play();
+		break;
+	case ECustomMovementMode::Crouching:
+		break;
+	case ECustomMovementMode::Sprinting:
+		if (GetCharacterMovement()->MovementMode != EMovementMode::MOVE_Falling)
+		{
+			Sliding();
+		}
+		break;
+	case ECustomMovementMode::Sliding:
+		break;
+	default:
+		break;
+	}
 }
 
 void AOctahedronCharacter::ReleaseCrouch()
 {
-	GetWorldTimerManager().SetTimer(UnCrouchTimerHandle, this, &AOctahedronCharacter::OnCheckCanStand, (1.f/30.f), true);
+	CrouchKeyHeld = false;
+
+	CustomUnCrouch();
+}
+
+void AOctahedronCharacter::CustomUnCrouch()
+{
+	switch (MoveMode)
+	{
+	case ECustomMovementMode::Walking:
+		break;
+	case ECustomMovementMode::Crouching:
+
+		GetWorldTimerManager().SetTimer(UnCrouchTimerHandle, this, &AOctahedronCharacter::OnCheckCanStand, (1.f / 30.f), true);
+		break;
+	case ECustomMovementMode::Sprinting:
+		break;
+	case ECustomMovementMode::Sliding:
+		break;
+	default:
+		break;
+	}
 }
 
 void AOctahedronCharacter::OnCheckCanStand()
@@ -291,7 +371,16 @@ void AOctahedronCharacter::OnCheckCanStand()
 
 void AOctahedronCharacter::StandUp()
 {
+	MoveMode = ECustomMovementMode::Walking;
+
+	// sequence 1
 	CrouchTL->Reverse();
+
+	// sequence 2
+	if (SprintToggle)
+	{
+		ForceStartSprint();
+	}
 }
 
 
@@ -305,6 +394,8 @@ void AOctahedronCharacter::Move(const FInputActionValue& Value)
 		// add movement 
 		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
 		AddMovementInput(GetActorRightVector(), MovementVector.X);
+
+		CheckStopSprint(MovementVector.Y);
 	}
 }
 
@@ -340,19 +431,35 @@ void AOctahedronCharacter::Landed(const FHitResult& Hit)
 	Super::Landed(Hit);
 	LandingDip();
 
+	JumpsLeft = JumpsMax;
+
+	// sequence 1
 	// On landing, clear coyote timer
 	GetWorld()->GetTimerManager().ClearTimer(CoyoteTimerHandle);
 	CoyoteTimerHandle.Invalidate();
+
+	// sequence 2
+	if (CrouchKeyHeld && MoveMode == ECustomMovementMode::Sprinting)
+	{
+		ForceStartSlide();
+	}
 }
 
 void AOctahedronCharacter::OnJumped_Implementation()
 {
 	Super::OnJumped_Implementation();
+
+	JumpsLeft = FMath::Clamp(JumpsLeft - 1, 0, JumpsMax);
 	Dip(5.f, 1.f);
-	if (JumpCue != nullptr)
+
+	
+	if (float remainingTime = GetWorld()->GetTimerManager().GetTimerRemaining(CoyoteTimerHandle); remainingTime > 0.f )
 	{
-		float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
-		UGameplayStatics::PlaySoundAtLocation(this, JumpCue, GetActorLocation());
+		if (JumpCue != nullptr)
+		{
+			float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
+			UGameplayStatics::PlaySoundAtLocation(this, JumpCue, GetActorLocation());
+		}
 	}
 
 	// On jump, clear coyote timer
@@ -366,12 +473,14 @@ bool AOctahedronCharacter::CanJumpInternal_Implementation() const
 	float remainingTime = GetWorld()->GetTimerManager().GetTimerRemaining(CoyoteTimerHandle);
 
 	bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(UnCrouchTimerHandle); // can't jump if there is an obstacle above the player
-	return (remainingTime > 0.f || canJump) && !isTimerActive;
+	bool isSlideTLActive = SlideTL->IsActive();
+	bool selected = isSlideTLActive ? SlideTL->GetPlaybackPosition() > 0.25f : true;
+	return (canJump || remainingTime > 0.f || JumpsLeft > 0) && (!isTimerActive && selected);
 }
 
 void AOctahedronCharacter::CoyoteTimePassed()
 {
-
+	JumpsLeft -= 1;
 }
 
 void AOctahedronCharacter::Dip(float Speed, float Strength)
@@ -425,12 +534,17 @@ void AOctahedronCharacter::WalkRollTLCallback(float val)
 
 void AOctahedronCharacter::WalkTLFootstepCallback()
 {
-	if (FootstepCue != nullptr)
+	if (MoveMode != ECustomMovementMode::Sliding && FootstepCue != nullptr)
 	{
 		float normalizedSpeed = UKismetMathLibrary::NormalizeToRange(GetVelocity().Length(), 0.f, BaseWalkSpeed);
 		float volumeMultiplier = FMath::Lerp(0.2f, 1.f, normalizedSpeed);
 		float pitchMultiplier = FMath::Lerp(0.8f, 1.f, normalizedSpeed);
 		UGameplayStatics::PlaySoundAtLocation(this, FootstepCue, GetActorLocation(), volumeMultiplier, pitchMultiplier);
+	}
+
+	if (MoveMode == ECustomMovementMode::Sprinting)
+	{
+		Dip(4.f, 0.35f);
 	}
 }
 
@@ -453,7 +567,7 @@ void AOctahedronCharacter::WalkTLUpdateEvent()
 	}
 	else
 	{
-		WalkAnimAlpha = normalizedSpeed;
+		WalkAnimAlpha = FMath::Clamp(normalizedSpeed, 0.f, 1.f); // had to clamp this because when sprinting, this would jump up beyond 1 and the footstep is too fast
 	}
 
 	float lerpedWalkAnimAlpha = FMath::Lerp(0.f, 1.65f, WalkAnimAlpha);
@@ -574,6 +688,191 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 	CamAnimAlphaArg = CamAnimAlpha;
 }
 
+void AOctahedronCharacter::PressedSprint()
+{
+	if (bHasWeapon && CurrentWeapon->GetIsReloading())
+	{
+		CurrentWeapon->CancelReload();
+	}
+
+	SprintToggle = !SprintToggle;
+
+	if (SprintToggle)
+	{
+		CurrentWeapon->ForceStopFire();
+		StartSprint();
+	}
+	else
+	{
+		StopSprint();
+	}
+}
+
+void AOctahedronCharacter::ForceStartSprint()
+{
+	StartSprint();
+}
+
+void AOctahedronCharacter::ForceStopSlide()
+{
+	SlideTL->Stop();
+	StopSlide();
+}
+
+void AOctahedronCharacter::ForceUnCrouch()
+{
+	CustomUnCrouch();
+}
+
+void AOctahedronCharacter::ForceStartSlide()
+{
+	Sliding();
+}
+
+void AOctahedronCharacter::StartSprint()
+{
+	switch (MoveMode)
+	{
+	case ECustomMovementMode::Walking:
+		MoveMode = ECustomMovementMode::Sprinting;
+		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * 1.6;
+
+		// sequence 1
+		if (ADSAlpha > 0.f && CurrentWeapon != nullptr)
+		{
+			CurrentWeapon->ExitADS(true);
+		}
+
+		// sequence 2
+		SprintCharge = 0.f;
+		GetWorldTimerManager().SetTimer(SprintTimerHandle, this, &AOctahedronCharacter::SprintChargeIncrease, 0.1f, true);
+
+		break;
+	default:
+		break;
+	}
+}
+
+void AOctahedronCharacter::ForceStopSprint()
+{
+	StopSprint();
+}
+
+void AOctahedronCharacter::CheckStopSprint(float InAxis)
+{
+	if (InAxis < 0.5f)
+	{
+		StopSprint();
+	}
+}
+
+void AOctahedronCharacter::StopSprint()
+{
+	SprintToggle = false;
+	GetWorld()->GetTimerManager().ClearTimer(SprintTimerHandle);
+	SprintTimerHandle.Invalidate();
+	SprintCharge = 0.f;
+	
+	switch (MoveMode)
+	{
+	case ECustomMovementMode::Walking:
+		break;
+	case ECustomMovementMode::Crouching:
+		break;
+	case ECustomMovementMode::Sprinting:
+		MoveMode = ECustomMovementMode::Walking;
+		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
+		if (CurrentWeapon != nullptr && CurrentWeapon->ADS_Held)
+		{
+			CurrentWeapon->EnterADS();
+		}
+
+		break;
+	case ECustomMovementMode::Sliding:
+		break;
+	default:
+		break;
+	}
+}
+
+void AOctahedronCharacter::SprintChargeIncrease()
+{
+	SprintCharge += 0.1f;
+
+	if (SprintCharge >= 1.f)
+	{
+		SprintCharge = 1.f;
+		GetWorld()->GetTimerManager().ClearTimer(SprintTimerHandle);
+		SprintTimerHandle.Invalidate();
+	}
+}
+
+void AOctahedronCharacter::StartSlide()
+{
+	GetWorld()->GetTimerManager().ClearTimer(SprintTimerHandle);
+	SprintTimerHandle.Invalidate();
+	SprintToggle = false;
+	Dip(0.8f, 0.6f);
+
+	if (SlideCue != nullptr)
+	{
+		UGameplayStatics::SpawnSoundAttached(SlideCue, RootComponent);
+	}
+
+	FVector lastInput = GetCharacterMovement()->GetLastInputVector();
+	FVector lastUpdateVelocity = GetCharacterMovement()->GetLastUpdateVelocity();
+	float VelocityVectorLength = (lastUpdateVelocity * FVector(1.f, 1.f, 1.f)).Length();
+
+	SlideDirection = lastInput * VelocityVectorLength;
+	MoveMode = ECustomMovementMode::Sliding;
+	GetController()->SetIgnoreMoveInput(true);
+
+	float crouchPlayRate = FMath::Lerp(1.f, 0.5f, SprintCharge);
+	CrouchTL->SetPlayRate(crouchPlayRate);
+
+	float slidePlayRate = FMath::Lerp(2.f, 1.25f, SprintCharge);
+	SlideTL->SetPlayRate(slidePlayRate);
+	SlideTL->PlayFromStart();
+}
+
+void AOctahedronCharacter::Sliding()
+{
+	StartSlide();
+	GetWorld()->GetTimerManager().ClearTimer(UnCrouchTimerHandle);
+	UnCrouchTimerHandle.Invalidate();
+	CrouchTL->Play();
+}
+
+void AOctahedronCharacter::StopSlide()
+{
+	MoveMode = ECustomMovementMode::Crouching;
+	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * 0.65;
+	GetController()->SetIgnoreMoveInput(false);
+	CrouchTL->SetPlayRate(1.f);
+
+	SprintCharge = 0.f;
+	if (!CrouchKeyHeld)
+	{
+		ForceUnCrouch();
+	}
+}
+
+void AOctahedronCharacter::SlideTLCallback(float val)
+{
+	SlideAlpha = val;
+	float A = BaseWalkSpeed * 0.65f;
+	float B = BaseWalkSpeed * FMath::Lerp(0.65f, 5.0f, SprintCharge);
+	float newMaxSpeed = FMath::Lerp(A, B, SlideAlpha);
+	GetCharacterMovement()->MaxWalkSpeed = newMaxSpeed;
+	GetCharacterMovement()->BrakingFrictionFactor = 1.f - SlideAlpha;
+
+	AddMovementInput(SlideDirection, SlideAlpha, true);
+}
+
+void AOctahedronCharacter::FinishedSlideDelegate()
+{
+	StopSlide();
+}
 
 void AOctahedronCharacter::SetHasWeapon(bool bNewHasRifle)
 {
@@ -593,4 +892,14 @@ void AOctahedronCharacter::SetCurrentWeapon(UTP_WeaponComponent *NewWeapon)
 UTP_WeaponComponent* AOctahedronCharacter::GetCurrentWeapon()
 {
 	return CurrentWeapon;
+}
+
+bool AOctahedronCharacter::CanAct()
+{
+	if (MoveMode != ECustomMovementMode::Sprinting)
+	{
+		return true;
+	}
+	ForceStopSprint();
+	return false;
 }

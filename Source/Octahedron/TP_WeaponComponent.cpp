@@ -53,13 +53,38 @@ void UTP_WeaponComponent::BeginPlay()
 	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
 }
 
-void UTP_WeaponComponent::Fire()
+void UTP_WeaponComponent::PressedFire(const FInputActionValue& Value)
 {
-	if (Character == nullptr || Character->GetController() == nullptr)
+	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
 	{
 		return;
 	}
 
+	Fire();
+}
+
+void UTP_WeaponComponent::ReleasedFire(const FInputActionValue& Value)
+{
+	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	{
+		return;
+	}
+
+	StopFire();
+}
+
+void UTP_WeaponComponent::PressedReload()
+{
+	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	{
+		return;
+	}
+
+	Reload();
+}
+
+void UTP_WeaponComponent::Fire()
+{
 	if (IsReloading || IsEquipping)
 	{
 		return;
@@ -149,6 +174,15 @@ void UTP_WeaponComponent::Fire()
 	}
 }
 
+void UTP_WeaponComponent::StopFire()
+{
+}
+
+void UTP_WeaponComponent::ForceStopFire()
+{
+	StopFire();
+}
+
 void UTP_WeaponComponent::Stow()
 {
 }
@@ -225,7 +259,7 @@ void UTP_WeaponComponent::Reload()
 	}
 	IsReloading = true;
 
-	ExitADS();
+	ExitADS(false);
 
 	if (Character != nullptr && ReloadAnimation != nullptr)
 	{
@@ -241,7 +275,28 @@ void UTP_WeaponComponent::Reload()
 	}
 }
 
-void UTP_WeaponComponent::ADS()
+void UTP_WeaponComponent::CancelReload()
+{
+	if (Character != nullptr && ReloadAnimation != nullptr)
+	{
+		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Stop(0.25f, ReloadAnimation);
+
+			Stop();
+		}
+	}
+}
+
+void UTP_WeaponComponent::PressedADS()
+{
+	ADS_Held = true;
+
+	EnterADS();
+}
+
+void UTP_WeaponComponent::EnterADS()
 {
 	if (IsReloading)
 	{
@@ -250,16 +305,23 @@ void UTP_WeaponComponent::ADS()
 
 	float newRate = 1.f / ADS_Speed;
 	ADSTL->SetPlayRate(newRate);
+
+	Character->ForceStopSprint();
 	ADSTL->Play();
 }
 
-void UTP_WeaponComponent::ReleaseADS()
+void UTP_WeaponComponent::ReleasedADS()
 {
+	ADS_Held = false;
 	ADSTL->Reverse();
 }
 
-void UTP_WeaponComponent::ExitADS()
+void UTP_WeaponComponent::ExitADS(bool IsFast)
 {
+	if (IsFast)
+	{
+		ADSTL->SetPlayRate(2.f);
+	}
 	ADSTL->Reverse();
 }
 
@@ -324,14 +386,15 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
 		{
 			// Fire
-			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::Fire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedFire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedFire);
 
 			// Reload
-			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::Reload);
+			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedReload);
 
 			// ADS
-			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::ADS);
-			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleaseADS);
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedADS);
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedADS);
 		}
 	}
 }

@@ -5,7 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "ECustomMovementMode.h"
 #include "OctahedronCharacter.generated.h"
+
 
 class UInputComponent;
 class USkeletalMeshComponent;
@@ -66,6 +68,51 @@ class AOctahedronCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SprintAction;
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void PressedSprint();
+
+	bool SprintToggle;
+
+	void StartSprint();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void CheckStopSprint(float InAxis);
+
+	void StopSprint();
+
+	float SprintCharge;
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void SprintChargeIncrease();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void StartSlide();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void Sliding();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void StopSlide();
+
+	FVector SlideDirection;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UTimelineComponent* SlideTL;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* SlideAlphaCurve;
+
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void SlideTLCallback(float val);
+
+	float SlideAlpha;
+
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void FinishedSlideDelegate();
+
 	/** Crouch Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* CrouchAction;
@@ -90,6 +137,9 @@ class AOctahedronCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
 	USoundBase* LandCue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
+	USoundBase* SlideCue;
 	
 public:
 	AOctahedronCharacter();
@@ -133,6 +183,24 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float ADSAlpha;
 
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool CanAct();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ForceStopSprint();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ForceStartSprint();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ForceStopSlide();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ForceUnCrouch();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ForceStartSlide();
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -164,12 +232,16 @@ protected:
 	float CrouchAlpha;
 	float StandHeight{ 96.f };
 	float CrouchHeight{ 55.f };
+	bool CrouchKeyHeld;
 
 
 
 	void CustomCrouch(); // it's called CustomCrouch because Crouch is already provided from ACharacter
 	void ReleaseCrouch();
+	void CustomUnCrouch();
 	void OnCheckCanStand();
+	void UpdateGroundMovementSpeed();
+	void UpdatePlayerCapsuleHeight();
 	void StandUp();
 
 
@@ -259,5 +331,15 @@ protected:
 	FVector CamOffsetCurrent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float CamAnimAlpha{ 0.f };
+
+	FTimerHandle SprintTimerHandle;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	float SprintAlpha;
+
+private:
+	ECustomMovementMode MoveMode;
+
+	int JumpsLeft{ 2 };
+	int JumpsMax{ 2 };
 };
 
