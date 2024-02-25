@@ -7,20 +7,85 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Camera/CameraComponent.h"
+#include "Components/TimelineComponent.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
+#include "Blueprint/UserWidget.h"
+#include "SightMeshComponent.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
 	// Default offset from the character location for projectiles to spawn
 	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
+	BoundsScale = 2.f;
+
+	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
+	ADSTL->SetTimelineLength(1.f);
+	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 }
 
+void UTP_WeaponComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (ADSAlphaCurve != nullptr)
+	{
+		FOnTimelineFloat onADSTLCallback;
+		onADSTLCallback.BindUFunction(this, FName{ TEXT("ADSTLCallback") });
+		ADSTL->AddInterpFloat(ADSAlphaCurve, onADSTLCallback);
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find ads curve for this weapon"));
+	}
+
+	if (ScopeSightMesh != nullptr)
+	{
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+		ScopeSightMesh->AttachToComponent(this, AttachmentRules, FName(TEXT("Sight")));
+	}
+
+	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
+}
+
+void UTP_WeaponComponent::PressedFire(const FInputActionValue& Value)
+{
+	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	{
+		return;
+	}
+
+	Fire();
+}
+
+void UTP_WeaponComponent::ReleasedFire(const FInputActionValue& Value)
+{
+	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	{
+		return;
+	}
+
+	StopFire();
+}
+
+void UTP_WeaponComponent::PressedReload()
+{
+	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	{
+		return;
+	}
+
+	Reload();
+}
 
 void UTP_WeaponComponent::Fire()
 {
-	if (Character == nullptr || Character->GetController() == nullptr)
+	if (IsReloading || IsEquipping)
 	{
 		return;
 	}
@@ -44,6 +109,52 @@ void UTP_WeaponComponent::Fire()
 			World->SpawnActor<AOctahedronProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
+	else // hitscan weapon
+	{
+		// Trace from center screen to max weapon range
+		UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
+		FVector StartVector = Camera->GetComponentLocation();
+		FVector ForwardVector = Camera->GetForwardVector();
+		FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, Spread);
+		FVector ResultingVector = RandomDirection * Range;
+		FVector EndVector = StartVector + ResultingVector;
+
+		FHitResult CameraTraceResult{};
+		auto Params = FCollisionQueryParams();
+		Params.AddIgnoredActor(Character);
+		bool isHit = GetWorld()->LineTraceSingleByChannel(
+			CameraTraceResult,
+			StartVector,
+			EndVector,
+			ECollisionChannel::ECC_Visibility,
+			Params
+		);
+
+		// Trace from weapon muzzle to center trace hit location
+		
+		FVector EndTrace{};
+		if (isHit)
+		{
+			FVector ScaledDirection = RandomDirection * 10.f;
+			EndTrace = CameraTraceResult.Location + ScaledDirection;
+		}
+		else
+		{
+			EndTrace = CameraTraceResult.TraceEnd;
+		}
+
+		const FName TraceTag("MyTraceTag");
+		GetWorld()->DebugDrawTraceTag = TraceTag;
+		Params.TraceTag = TraceTag;
+		FHitResult MuzzleTraceResult{};
+		GetWorld()->LineTraceSingleByChannel(
+			MuzzleTraceResult,
+			GetSocketLocation("Muzzle"),
+			EndTrace,
+			ECollisionChannel::ECC_Visibility,
+			Params
+		);
+	}
 	
 	// Try and play the sound if specified
 	if (FireSound != nullptr)
@@ -63,12 +174,186 @@ void UTP_WeaponComponent::Fire()
 	}
 }
 
+void UTP_WeaponComponent::StopFire()
+{
+}
+
+void UTP_WeaponComponent::ForceStopFire()
+{
+	StopFire();
+}
+
+void UTP_WeaponComponent::Stow()
+{
+}
+
+void UTP_WeaponComponent::Equip()
+{
+	if (IsEquipping || Character == nullptr)
+	{
+		return;
+	}
+	IsEquipping = true;
+
+
+	if (EquipAnimation != nullptr)
+	{
+		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(EquipAnimation, 1.f);
+
+			FOnMontageBlendingOutStarted BlendOutDelegate;
+			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::EquipAnimationBlendOut);
+			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
+		}
+	}
+
+	Character->ADS_Offset = ADS_Offset;
+
+	if (ScopeSightMesh != nullptr)
+	{
+		if (ScopeSightMesh->FP_Material_Holo != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(0, ScopeSightMesh->FP_Material_Holo);
+		}
+		if (ScopeSightMesh->FP_Material_Mesh != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(1, ScopeSightMesh->FP_Material_Mesh);
+		}
+	}
+
+	OnEquipDelegate.Broadcast(Character, this);
+}
+
+void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+{
+	if (bInterrupted)
+	{
+		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(EquipDelayTimerHandle);
+		if (Character != nullptr && !isTimerActive)
+		{
+			Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, 0.2f, false);
+		}
+	}
+	else
+	{
+		SetIsEquippingFalse();
+	}
+}
+
+void UTP_WeaponComponent::SetIsEquippingFalse()
+{
+	IsEquipping = false;
+
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(EquipDelayTimerHandle);
+	EquipDelayTimerHandle.Invalidate();
+}
+
+void UTP_WeaponComponent::Reload()
+{
+	if (IsReloading || IsEquipping)
+	{
+		return;
+	}
+	IsReloading = true;
+
+	ExitADS(false);
+
+	if (Character != nullptr && ReloadAnimation != nullptr)
+	{
+		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(ReloadAnimation, 1.f);
+
+			FOnMontageBlendingOutStarted BlendOutDelegate;
+			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
+			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
+		}
+	}
+}
+
+void UTP_WeaponComponent::CancelReload()
+{
+	if (Character != nullptr && ReloadAnimation != nullptr)
+	{
+		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Stop(0.25f, ReloadAnimation);
+
+			Stop();
+		}
+	}
+}
+
+void UTP_WeaponComponent::PressedADS()
+{
+	ADS_Held = true;
+
+	EnterADS();
+}
+
+void UTP_WeaponComponent::EnterADS()
+{
+	if (IsReloading)
+	{
+		return;
+	}
+
+	float newRate = 1.f / ADS_Speed;
+	ADSTL->SetPlayRate(newRate);
+
+	Character->ForceStopSprint();
+	ADSTL->Play();
+}
+
+void UTP_WeaponComponent::ReleasedADS()
+{
+	ADS_Held = false;
+	ADSTL->Reverse();
+}
+
+void UTP_WeaponComponent::ExitADS(bool IsFast)
+{
+	if (IsFast)
+	{
+		ADSTL->SetPlayRate(2.f);
+	}
+	ADSTL->Reverse();
+}
+
+void UTP_WeaponComponent::ADSTLCallback(float val)
+{
+	if (Character == nullptr && MPC_FP == nullptr)
+	{
+		return;
+	}
+
+	ADSAlpha = val;
+	Character->ADSAlpha = ADSAlpha;
+	float lerpedFOV = FMath::Lerp(FOV_Base, FOV_ADS, ADSAlpha);
+	UCameraComponent* camera = Character->GetFirstPersonCameraComponent();
+	camera->SetFieldOfView(lerpedFOV);
+	float lerpedIntensity = FMath::Lerp(0.4f, 0.7f, ADSAlpha);
+	camera->PostProcessSettings.VignetteIntensity = lerpedIntensity;
+	float lerpedFlatFov = FMath::Lerp(90.f, 25.f, ADSAlpha);
+	MPC_FP_Instance->SetScalarParameterValue(FName("FOV"), lerpedFlatFov);
+	FLinearColor OutColor;
+	MPC_FP_Instance->GetVectorParameterValue(FName("Offset"), OutColor);
+	float lerpedB = FMath::Lerp(0.f, 30.f, ADSAlpha);
+	FLinearColor newColor = FLinearColor(OutColor.R, OutColor.G, lerpedB, OutColor.A);
+	MPC_FP_Instance->SetVectorParameterValue(FName("Offset"), newColor);
+}
+
 void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 {
 	Character = TargetCharacter;
 
-	// Check that the character is valid, and has no rifle yet
-	if (Character == nullptr || Character->GetHasRifle())
+	// Check that the character is valid, and has no weapon yet
+	if (Character == nullptr || Character->GetHasWeapon() || Character->GetCurrentWeapon())
 	{
 		return;
 	}
@@ -76,9 +361,18 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	// Attach the weapon to the First Person Character
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
+
+	if (FP_Material != nullptr)
+	{
+		SetMaterial(0, FP_Material);
+	}
+
+	// Try and play equip animation if specified
+	Equip();
 	
-	// switch bHasRifle so the animation blueprint can switch to another animation set
-	Character->SetHasRifle(true);
+	// switch bHasWeapon so the animation blueprint can switch to another animation set
+	Character->SetHasWeapon(true);
+	Character->SetCurrentWeapon(this);
 
 	// Set up action bindings
 	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
@@ -92,7 +386,15 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
 		{
 			// Fire
-			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::Fire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedFire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedFire);
+
+			// Reload
+			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedReload);
+
+			// ADS
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedADS);
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedADS);
 		}
 	}
 }
@@ -111,4 +413,29 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 			Subsystem->RemoveMappingContext(FireMappingContext);
 		}
 	}
+}
+
+void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+{
+	if (bInterrupted)
+	{
+		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(ReloadDelayTimerHandle);
+		if (Character != nullptr && !isTimerActive) // prevent spam reload cancel
+		{
+			Character->GetWorldTimerManager().SetTimer(ReloadDelayTimerHandle, this, &UTP_WeaponComponent::SetIsReloadingFalse, 0.2f, false);
+		}
+	}
+	else
+	{
+		SetIsReloadingFalse();
+	}
+}
+
+void UTP_WeaponComponent::SetIsReloadingFalse()
+{
+	IsReloading = false;
+
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(ReloadDelayTimerHandle);
+	ReloadDelayTimerHandle.Invalidate();
 }
