@@ -183,6 +183,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float ADSAlpha;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	ECustomMovementMode MoveMode;
+
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	bool CanAct();
 
@@ -337,7 +340,6 @@ protected:
 	float SprintAlpha;
 
 private:
-	ECustomMovementMode MoveMode;
 
 	int JumpsLeft{ 2 };
 	int JumpsMax{ 2 };
