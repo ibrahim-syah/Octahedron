@@ -191,8 +191,8 @@ protected:
 
 	virtual void BeginPlay();
 
-	void PressedFire(const FInputActionValue& Value);
-	void ReleasedFire(const FInputActionValue& Value);
+	void PressedFire();
+	void ReleasedFire();
 
 	void PressedReload();
 

@@ -53,14 +53,12 @@ void UTP_WeaponComponent::BeginPlay()
 	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
 }
 
-void UTP_WeaponComponent::PressedFire(const FInputActionValue& Value)
+void UTP_WeaponComponent::PressedFire()
 {
 	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
 	{
 		return;
 	}
-
-	CanFire = true;
 
 	switch (FireMode)
 	{
@@ -72,9 +70,9 @@ void UTP_WeaponComponent::PressedFire(const FInputActionValue& Value)
 	case EFireMode::Burst:
 		break;
 	case EFireMode::Auto:
-		Fire();
 		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
 		{
+			Fire();
 			const float delay = 60.f / FireRate;
 			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::Fire, delay, true);
 		}
@@ -84,14 +82,12 @@ void UTP_WeaponComponent::PressedFire(const FInputActionValue& Value)
 	}
 }
 
-void UTP_WeaponComponent::ReleasedFire(const FInputActionValue& Value)
+void UTP_WeaponComponent::ReleasedFire()
 {
 	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
 	{
 		return;
 	}
-
-	CanFire = false;
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 	FireRateDelayTimerHandle.Invalidate();
@@ -412,7 +408,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
 		{
 			// Fire
-			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedFire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &UTP_WeaponComponent::PressedFire);
 			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedFire);
 
 			// Reload
@@ -422,6 +418,8 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedADS);
 			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedADS);
 		}
+
+		CanFire = true;
 	}
 }
 
