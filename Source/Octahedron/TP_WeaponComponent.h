@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "EFireMode.h"
 #include "TP_WeaponComponent.generated.h"
 
 class AOctahedronCharacter;
@@ -71,6 +72,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float Spread{ 2.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float FireRate{ 560.f }; // in rounds per minute. e.g. 60 RPM means there is a delay of 1 second for every shot
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	EFireMode FireMode{ EFireMode::Single };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	UMaterialParameterCollection* MPC_FP;
@@ -204,4 +211,6 @@ private:
 	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle ReloadDelayTimerHandle;
 	void SetIsReloadingFalse();
+
+	FTimerHandle FireRateDelayTimerHandle;
 };

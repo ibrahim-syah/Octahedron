@@ -60,7 +60,28 @@ void UTP_WeaponComponent::PressedFire(const FInputActionValue& Value)
 		return;
 	}
 
-	Fire();
+	CanFire = true;
+
+	switch (FireMode)
+	{
+	case EFireMode::None:
+		break;
+	case EFireMode::Single:
+		Fire();
+		break;
+	case EFireMode::Burst:
+		break;
+	case EFireMode::Auto:
+		Fire();
+		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
+		{
+			const float delay = 60.f / FireRate;
+			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::Fire, delay, true);
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 void UTP_WeaponComponent::ReleasedFire(const FInputActionValue& Value)
@@ -69,6 +90,11 @@ void UTP_WeaponComponent::ReleasedFire(const FInputActionValue& Value)
 	{
 		return;
 	}
+
+	CanFire = false;
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+	FireRateDelayTimerHandle.Invalidate();
 
 	StopFire();
 }
