@@ -55,34 +55,27 @@ void UTP_WeaponComponent::BeginPlay()
 
 void UTP_WeaponComponent::PressedFire()
 {
-	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	IsPlayerHoldingShootButton = true;
+	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct() || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
 
 	const float delay = 60.f / FireRate;
 
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+	FireRateDelayTimerHandle.Invalidate();
 	switch (FireMode)
 	{
 	case EFireMode::Single:
-		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
-		{
-			Fire();
-			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, delay, false);
-		}
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::Fire, delay, false, 0.f);
 		break;
 	case EFireMode::Burst:
-		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
-		{
-			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, delay, true, 0.f);
-		}
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, delay, true, 0.f);
 		break;
 	case EFireMode::Auto:
-		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
-		{
-			Fire();
-			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::Fire, delay, true);
-		}
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::FullAutoFire, delay, true, 0.f);
 		break;
 	default:
 		break;
@@ -91,13 +84,11 @@ void UTP_WeaponComponent::PressedFire()
 
 void UTP_WeaponComponent::ReleasedFire()
 {
+	IsPlayerHoldingShootButton = false;
 	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
 	{
 		return;
 	}
-	// Ensure the timer is cleared by using the timer handle
-	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
-	FireRateDelayTimerHandle.Invalidate();
 
 	StopFire();
 }
@@ -151,6 +142,18 @@ void UTP_WeaponComponent::BurstFire()
 		FireRateDelayTimerHandle.Invalidate();
 
 		BurstFireCurrent = 0;
+		StopFire();
+	}
+}
+
+void UTP_WeaponComponent::FullAutoFire()
+{
+	Fire();
+	if (IsPlayerHoldingShootButton)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+		FireRateDelayTimerHandle.Invalidate();
+
 		StopFire();
 	}
 }

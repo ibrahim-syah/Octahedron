@@ -228,6 +228,10 @@ private:
 	void SetIsReloadingFalse();
 
 	FTimerHandle FireRateDelayTimerHandle;
+	bool IsPlayerHoldingShootButton;
 	UFUNCTION()
 	void BurstFire();
+
+	UFUNCTION()
+	void FullAutoFire();
 };
