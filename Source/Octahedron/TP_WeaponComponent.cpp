@@ -60,20 +60,27 @@ void UTP_WeaponComponent::PressedFire()
 		return;
 	}
 
+	const float delay = 60.f / FireRate;
+
 	switch (FireMode)
 	{
-	case EFireMode::None:
-		break;
 	case EFireMode::Single:
-		Fire();
+		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
+		{
+			Fire();
+			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, delay, false);
+		}
 		break;
 	case EFireMode::Burst:
+		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
+		{
+			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, delay, true, 0.f);
+		}
 		break;
 	case EFireMode::Auto:
 		if (!GetWorld()->GetTimerManager().IsTimerActive(FireRateDelayTimerHandle))
 		{
 			Fire();
-			const float delay = 60.f / FireRate;
 			Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::Fire, delay, true);
 		}
 		break;
@@ -105,9 +112,51 @@ void UTP_WeaponComponent::PressedReload()
 	Reload();
 }
 
+void UTP_WeaponComponent::PressedSwitchFireMode()
+{
+	if (!CanSwitchFireMode || Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	{
+		return;
+	}
+
+	SwitchFireMode();
+}
+
+void UTP_WeaponComponent::SwitchFireMode()
+{
+	switch (FireMode)
+	{
+	case EFireMode::Single:
+		FireMode = EFireMode::Burst;
+		break;
+	case EFireMode::Burst:
+		FireMode = EFireMode::Auto;
+		break;
+	case EFireMode::Auto:
+		FireMode = EFireMode::Single;
+		break;
+	default:
+		break;
+	}
+}
+
+void UTP_WeaponComponent::BurstFire()
+{
+	Fire();
+	BurstFireCurrent++;
+	if (BurstFireCurrent >= BurstFireRounds)
+	{
+		// Ensure the timer is cleared by using the timer handle
+		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+		FireRateDelayTimerHandle.Invalidate();
+
+		StopFire();
+	}
+}
+
 void UTP_WeaponComponent::Fire()
 {
-	if (IsReloading || IsEquipping)
+	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -413,6 +462,9 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 
 			// Reload
 			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedReload);
+
+			// Switch Fire Mode
+			EnhancedInputComponent->BindAction(SwitchFireModeAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedSwitchFireMode);
 
 			// ADS
 			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedADS);

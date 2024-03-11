@@ -74,6 +74,13 @@ public:
 	float Spread{ 2.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	bool CanSwitchFireMode{ false };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	int BurstFireRounds{ 3 };
+	int BurstFireCurrent{ 0 };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float FireRate{ 560.f }; // in rounds per minute. e.g. 60 RPM means there is a delay of 1 second for every shot
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -117,6 +124,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void ADSTLCallback(float val);
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchFireModeAction;
+
 	/** Reload Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ReloadAction;
@@ -148,6 +158,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnEquipSignature OnEquipDelegate;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SwitchFireMode();
 
 	/** Reload the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -196,6 +209,8 @@ protected:
 
 	void PressedReload();
 
+	void PressedSwitchFireMode();
+
 private:
 	/** The Character holding this weapon*/
 	AOctahedronCharacter* Character;
@@ -213,4 +228,6 @@ private:
 	void SetIsReloadingFalse();
 
 	FTimerHandle FireRateDelayTimerHandle;
+	UFUNCTION()
+	void BurstFire();
 };
