@@ -150,6 +150,7 @@ void UTP_WeaponComponent::BurstFire()
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
 
+		BurstFireCurrent = 0;
 		StopFire();
 	}
 }
