@@ -149,7 +149,7 @@ void UTP_WeaponComponent::BurstFire()
 void UTP_WeaponComponent::FullAutoFire()
 {
 	Fire();
-	if (IsPlayerHoldingShootButton)
+	if (!IsPlayerHoldingShootButton)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
