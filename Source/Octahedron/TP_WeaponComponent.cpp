@@ -11,7 +11,6 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
-#include "Components/TimelineComponent.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Blueprint/UserWidget.h"
@@ -72,6 +71,11 @@ void UTP_WeaponComponent::BeginPlay()
 	FOnTimelineEvent updateRecoilTLEvent;
 	updateRecoilTLEvent.BindUFunction(this, FName{ TEXT("RecoilTLUpdateEvent") });
 	RecoilTL->SetTimelinePostUpdateFunc(updateRecoilTLEvent);
+	FOnTimelineEvent onRecoilTLFinished;
+	onRecoilTLFinished.BindUFunction(this, FName{ TEXT("FinishedRecoilDelegate") });
+	RecoilTL->SetTimelineFinishedFunc(onRecoilTLFinished);
+	RecoilTL->SetPropertySetObject(this);
+	RecoilTL->SetDirectionPropertyName(FName("RecoilTLDirection"));
 
 	if (ScopeSightMesh != nullptr)
 	{
@@ -224,7 +228,7 @@ void UTP_WeaponComponent::Fire()
 		FVector EndVector = StartVector + ResultingVector;
 
 		FHitResult CameraTraceResult{};
-		auto Params = FCollisionQueryParams();
+		FCollisionQueryParams Params = FCollisionQueryParams();
 		Params.AddIgnoredActor(Character);
 		bool isHit = GetWorld()->LineTraceSingleByChannel(
 			CameraTraceResult,
@@ -262,6 +266,12 @@ void UTP_WeaponComponent::Fire()
 
 	float newRate = 1.f / Recoil_Speed;
 	RecoilTL->SetPlayRate(newRate);
+	if (!IsOriginRecoilRotatorStored)
+	{
+		OriginRecoilRotator = Character->Controller->GetControlRotation();
+		IsOriginRecoilRotatorStored = true;
+		UE_LOG(LogTemp, Display, TEXT("Stored Origin Recoil: %f"), OriginRecoilRotator.Pitch);
+	}
 	RecoilTL->Play();
 	
 	// Try and play the sound if specified
@@ -521,16 +531,54 @@ void UTP_WeaponComponent::RecoilTLUpdateEvent()
 		return;
 	}
 
-	if (!RecoilTL->IsReversing())
+	//UE_LOG(LogTemp, Display, TEXT("delta pitch: %f"), UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, Character->Controller->GetControlRotation()).Pitch);
+
+	if (RecoilTLDirection == ETimelineDirection::Backward)
+	{
+		if (!IsPostRecoilRotatorStored)
+		{
+			PostRecoilRotator = Character->Controller->GetControlRotation();
+			IsPostRecoilRotatorStored = true;
+			UE_LOG(LogTemp, Display, TEXT("Stored Post Recoil: %f"), PostRecoilRotator.Pitch);
+		}
+
+		FRotator deltaRotator = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
+		float absolutePitch = abs(deltaRotator.Pitch);
+		UE_LOG(LogTemp, Display, TEXT("delta pitch: %f"), deltaRotator.Pitch);
+		float operand;
+		if (absolutePitch > RecoilMaxThreshold)
+		{
+			operand = UKismetMathLibrary::MapRangeClamped(absolutePitch, RecoilMaxThreshold, 30.f, 1.f, 0.f);
+		}
+		else
+		{
+			operand = UKismetMathLibrary::MapRangeClamped(absolutePitch, 0.f, RecoilMaxThreshold, 0.f, 1.f);
+		}
+
+		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1.f * RecoilPitchReverseOffsetScale * operand);
+		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1.f * RecoilYawReverseOffsetScale * operand);
+	}
+	else
 	{
 		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
 		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
 	}
-	else
+}
+
+void UTP_WeaponComponent::FinishedRecoilDelegate()
+{
+	UE_LOG(LogTemp, Display, TEXT("FINISHED RECOIL"));
+	if (RecoilTLDirection == ETimelineDirection::Backward)
 	{
-		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1.f * RecoilPitchReverseOffsetScale);
-		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1.f * RecoilYawReverseOffsetScale);
+		UE_LOG(LogTemp, Display, TEXT("RESETTING RECOIL"));
+		ResetRecoil();
 	}
+}
+
+void UTP_WeaponComponent::ResetRecoil()
+{
+	IsOriginRecoilRotatorStored = false;
+	IsPostRecoilRotatorStored = false;
 }
 
 void UTP_WeaponComponent::RecoilPitchTLCallback(float val)

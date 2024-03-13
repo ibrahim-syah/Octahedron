@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EFireMode.h"
+#include "Components/TimelineComponent.h" // idk how to forward declare the enum for timeline direction bruh
 #include "TP_WeaponComponent.generated.h"
 
 class AOctahedronCharacter;
@@ -200,11 +201,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UTimelineComponent* RecoilTL;
 
+	UPROPERTY()
+	TEnumAsByte<ETimelineDirection::Type> RecoilTLDirection;
+
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void RecoilTLUpdateEvent();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float Recoil_Speed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float RecoilMaxThreshold{ 8.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float RecoilReversePlayRate{ 13.f };
@@ -214,6 +221,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float RecoilYawReverseOffsetScale{ 3.f };
+
+	FRotator OriginRecoilRotator;
+	bool IsOriginRecoilRotatorStored{ false };
+
+	FRotator PostRecoilRotator;
+	bool IsPostRecoilRotatorStored{ false };
+
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void FinishedRecoilDelegate();
+
+	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
+	void ResetRecoil();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* RecoilPitchCurve;
