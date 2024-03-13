@@ -284,7 +284,7 @@ void UTP_WeaponComponent::Fire()
 
 void UTP_WeaponComponent::StopFire()
 {
-	//RecoilTL->SetPlayRate(-1 * RecoilReversePlayRate);
+	RecoilTL->SetPlayRate(RecoilReversePlayRate);
 	RecoilTL->Reverse();
 }
 
@@ -531,17 +531,6 @@ void UTP_WeaponComponent::RecoilTLUpdateEvent()
 		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1.f);
 		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1.f);
 	}
-
-	/*if (RecoilTL->IsReversing())
-	{
-		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1 * RecoilPitchReversePlayRate);
-		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1 * RecoilYawReversePlayRate);
-	}
-	else
-	{
-		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
-		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
-	}*/
 }
 
 void UTP_WeaponComponent::RecoilPitchTLCallback(float val)

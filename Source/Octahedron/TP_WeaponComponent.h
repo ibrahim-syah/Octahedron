@@ -204,7 +204,7 @@ public:
 	void RecoilTLUpdateEvent();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
-	float Recoil_Speed{ 1.f };
+	float Recoil_Speed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float RecoilReversePlayRate{ 13.f };
