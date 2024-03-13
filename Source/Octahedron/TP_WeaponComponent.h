@@ -200,8 +200,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UTimelineComponent* RecoilTL;
 
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void RecoilTLUpdateEvent();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float Recoil_Speed{ 1.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float RecoilReversePlayRate{ 13.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float RecoilPitchReversePlayRate{ 13.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float RecoilYawReversePlayRate{ 3.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* RecoilPitchCurve;

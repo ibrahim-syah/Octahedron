@@ -69,6 +69,10 @@ void UTP_WeaponComponent::BeginPlay()
 		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find recoilyaw curve for this weapon"));
 	}
 
+	FOnTimelineEvent updateRecoilTLEvent;
+	updateRecoilTLEvent.BindUFunction(this, FName{ TEXT("RecoilTLUpdateEvent") });
+	RecoilTL->SetTimelinePostUpdateFunc(updateRecoilTLEvent);
+
 	if (ScopeSightMesh != nullptr)
 	{
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
@@ -280,6 +284,8 @@ void UTP_WeaponComponent::Fire()
 
 void UTP_WeaponComponent::StopFire()
 {
+	//RecoilTL->SetPlayRate(-1 * RecoilReversePlayRate);
+	RecoilTL->Reverse();
 }
 
 void UTP_WeaponComponent::ForceStopFire()
@@ -508,24 +514,36 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	}
 }
 
-void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
+void UTP_WeaponComponent::RecoilTLUpdateEvent()
 {
 	if (Character == nullptr)
 	{
 		return;
 	}
 
-	Character->GetLocalViewingPlayerController()->AddPitchInput(val);
+	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
+	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
+
+	/*if (RecoilTL->IsReversing())
+	{
+		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1 * RecoilPitchReversePlayRate);
+		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1 * RecoilYawReversePlayRate);
+	}
+	else
+	{
+		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
+		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
+	}*/
+}
+
+void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
+{
+	RecoilPitch = val;
 }
 
 void UTP_WeaponComponent::RecoilYawTLCallback(float val)
 {
-	if (Character == nullptr)
-	{
-		return;
-	}
-
-	Character->GetLocalViewingPlayerController()->AddYawInput(val);
+	RecoilYaw = val;
 }
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
