@@ -528,8 +528,8 @@ void UTP_WeaponComponent::RecoilTLUpdateEvent()
 	}
 	else
 	{
-		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1.f);
-		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1.f);
+		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1.f * RecoilPitchReverseOffsetScale);
+		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1.f * RecoilYawReverseOffsetScale);
 	}
 }
 

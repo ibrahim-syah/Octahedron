@@ -210,10 +210,10 @@ public:
 	float RecoilReversePlayRate{ 13.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
-	float RecoilPitchReversePlayRate{ 13.f };
+	float RecoilPitchReverseOffsetScale{ 13.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
-	float RecoilYawReversePlayRate{ 3.f };
+	float RecoilYawReverseOffsetScale{ 3.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* RecoilPitchCurve;
