@@ -197,6 +197,24 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool GetIsReloading() const { return IsReloading; };
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UTimelineComponent* RecoilTL;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float Recoil_Speed{ 1.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* RecoilPitchCurve;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void RecoilPitchTLCallback(float val);
+	float RecoilPitch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* RecoilYawCurve;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void RecoilYawTLCallback(float val);
+	float RecoilYaw;
+
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()

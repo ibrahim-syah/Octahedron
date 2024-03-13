@@ -27,6 +27,9 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
 	ADSTL->SetTimelineLength(1.f);
 	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+	RecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("RecoilTL"));
+	RecoilTL->SetTimelineLength(3.5f);
 }
 
 void UTP_WeaponComponent::BeginPlay()
@@ -42,6 +45,28 @@ void UTP_WeaponComponent::BeginPlay()
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find ads curve for this weapon"));
+	}
+
+	if (RecoilPitchCurve != nullptr)
+	{
+		FOnTimelineFloat onRecoilPitchTLCallback;
+		onRecoilPitchTLCallback.BindUFunction(this, FName{ TEXT("RecoilPitchTLCallback") });
+		RecoilTL->AddInterpFloat(RecoilPitchCurve, onRecoilPitchTLCallback);
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find recoilpitch curve for this weapon"));
+	}
+
+	if (RecoilYawCurve != nullptr)
+	{
+		FOnTimelineFloat onRecoilYawTLCallback;
+		onRecoilYawTLCallback.BindUFunction(this, FName{ TEXT("RecoilYawTLCallback") });
+		RecoilTL->AddInterpFloat(RecoilYawCurve, onRecoilYawTLCallback);
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find recoilyaw curve for this weapon"));
 	}
 
 	if (ScopeSightMesh != nullptr)
@@ -230,6 +255,10 @@ void UTP_WeaponComponent::Fire()
 			Params
 		);
 	}
+
+	float newRate = 1.f / Recoil_Speed;
+	RecoilTL->SetPlayRate(newRate);
+	RecoilTL->Play();
 	
 	// Try and play the sound if specified
 	if (FireSound != nullptr)
@@ -477,6 +506,26 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 
 		CanFire = true;
 	}
+}
+
+void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
+{
+	if (Character == nullptr)
+	{
+		return;
+	}
+
+	Character->GetLocalViewingPlayerController()->AddPitchInput(val);
+}
+
+void UTP_WeaponComponent::RecoilYawTLCallback(float val)
+{
+	if (Character == nullptr)
+	{
+		return;
+	}
+
+	Character->GetLocalViewingPlayerController()->AddYawInput(val);
 }
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
