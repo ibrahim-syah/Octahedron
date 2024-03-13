@@ -521,8 +521,16 @@ void UTP_WeaponComponent::RecoilTLUpdateEvent()
 		return;
 	}
 
-	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
-	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
+	if (!RecoilTL->IsReversing())
+	{
+		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
+		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
+	}
+	else
+	{
+		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1.f);
+		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1.f);
+	}
 
 	/*if (RecoilTL->IsReversing())
 	{
