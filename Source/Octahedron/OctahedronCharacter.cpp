@@ -223,6 +223,14 @@ void AOctahedronCharacter::BeginPlay()
 	WalkingTL->Play();
 }
 
+void AOctahedronCharacter::Tick(float DeltaTime)
+{
+	if (CurrentWeapon != nullptr)
+	{
+		CurrentWeapon->RecoilTick(DeltaTime);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////// Input
 
 void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

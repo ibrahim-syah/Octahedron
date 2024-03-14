@@ -16,10 +16,12 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "SightMeshComponent.h"
+#include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
+
 	// Default offset from the character location for projectiles to spawn
 	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
 	BoundsScale = 2.f;
@@ -28,11 +30,11 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 	ADSTL->SetTimelineLength(1.f);
 	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 
-	RecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("RecoilTL"));
+	/*RecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("RecoilTL"));
 	RecoilTL->SetTimelineLength(3.5f);
 
 	CompensateRecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("CompensateRecoilTL"));
-	CompensateRecoilTL->SetTimelineLength(1.f);
+	CompensateRecoilTL->SetTimelineLength(1.f);*/
 }
 
 void UTP_WeaponComponent::BeginPlay()
@@ -50,7 +52,7 @@ void UTP_WeaponComponent::BeginPlay()
 		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find ads curve for this weapon"));
 	}
 
-	if (RecoilPitchCurve != nullptr)
+	/*if (RecoilPitchCurve != nullptr)
 	{
 		FOnTimelineFloat onRecoilPitchTLCallback;
 		onRecoilPitchTLCallback.BindUFunction(this, FName{ TEXT("RecoilPitchTLCallback") });
@@ -91,7 +93,7 @@ void UTP_WeaponComponent::BeginPlay()
 	}
 	FOnTimelineEvent onUpdateCompensateRecoilTLEvent;
 	onUpdateCompensateRecoilTLEvent.BindUFunction(this, FName{ TEXT("CompensateRecoilTLUpdateEvent") });
-	CompensateRecoilTL->SetTimelinePostUpdateFunc(onUpdateCompensateRecoilTLEvent);
+	CompensateRecoilTL->SetTimelinePostUpdateFunc(onUpdateCompensateRecoilTLEvent);*/
 
 	if (ScopeSightMesh != nullptr)
 	{
@@ -105,7 +107,7 @@ void UTP_WeaponComponent::BeginPlay()
 void UTP_WeaponComponent::PressedFire()
 {
 	IsPlayerHoldingShootButton = true;
-	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct() || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (Character == nullptr || PCRef == nullptr || !Character->CanAct() || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -115,6 +117,7 @@ void UTP_WeaponComponent::PressedFire()
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 	FireRateDelayTimerHandle.Invalidate();
+	RecoilStart();
 	switch (FireMode)
 	{
 	case EFireMode::Single:
@@ -134,7 +137,7 @@ void UTP_WeaponComponent::PressedFire()
 void UTP_WeaponComponent::ReleasedFire()
 {
 	IsPlayerHoldingShootButton = false;
-	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
 	{
 		return;
 	}
@@ -144,7 +147,7 @@ void UTP_WeaponComponent::ReleasedFire()
 
 void UTP_WeaponComponent::PressedReload()
 {
-	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
 	{
 		return;
 	}
@@ -154,7 +157,7 @@ void UTP_WeaponComponent::PressedReload()
 
 void UTP_WeaponComponent::PressedSwitchFireMode()
 {
-	if (!CanSwitchFireMode || Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	if (!CanSwitchFireMode || Character == nullptr || PCRef == nullptr || !Character->CanAct())
 	{
 		return;
 	}
@@ -220,8 +223,7 @@ void UTP_WeaponComponent::Fire()
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
 		{
-			APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
-			const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+			const FRotator SpawnRotation = PCRef->PlayerCameraManager->GetCameraRotation();
 			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 			const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
 	
@@ -280,7 +282,7 @@ void UTP_WeaponComponent::Fire()
 		);
 	}
 
-	float newRate = 1.f / Recoil_Speed;
+	/*float newRate = 1.f / Recoil_Speed;
 	RecoilTL->SetPlayRate(newRate);
 	if (!IsOriginRecoilRotatorStored)
 	{
@@ -288,7 +290,7 @@ void UTP_WeaponComponent::Fire()
 		IsOriginRecoilRotatorStored = true;
 		UE_LOG(LogTemp, Display, TEXT("Stored Origin Recoil: %f"), OriginRecoilRotator.Pitch);
 	}
-	RecoilTL->Play();
+	RecoilTL->Play();*/
 	
 	// Try and play the sound if specified
 	if (FireSound != nullptr)
@@ -310,24 +312,28 @@ void UTP_WeaponComponent::Fire()
 
 void UTP_WeaponComponent::StopFire()
 {
-	//RecoilTL->SetPlayRate(RecoilReversePlayRate);
-	//RecoilTL->Reverse();
-	RecoilTL->Stop();
-	RecoilTL->SetPlaybackPosition(0.f, false, false);
+	////RecoilTL->SetPlayRate(RecoilReversePlayRate);
+	////RecoilTL->Reverse();
+	//RecoilTL->Stop();
+	//RecoilTL->SetPlaybackPosition(0.f, false, false);
 
-	// idk how to access the IA_Look scalar modifier, so I'll just harcode the pitch input scale to 1 for now
-	//auto modifiers = Character->LookAction->Modifiers;
-	//UE_LOG(LogTemp, Display, TEXT("LookAction modifiers arr len: %f"), modifiers.Num());
-	//UInputModifierScalar* scale = Cast<UInputModifierScalar>(modifier);
-	//UE_LOG(LogTemp, Display, TEXT("First lookaction Modifier: %f"), scale->Scalar);
+	//// idk how to access the IA_Look scalar modifier, so I'll just harcode the pitch input scale to 1 for now
+	////auto modifiers = Character->LookAction->Modifiers;
+	////UE_LOG(LogTemp, Display, TEXT("LookAction modifiers arr len: %f"), modifiers.Num());
+	////UInputModifierScalar* scale = Cast<UInputModifierScalar>(modifier);
+	////UE_LOG(LogTemp, Display, TEXT("First lookaction Modifier: %f"), scale->Scalar);
 
-	/*FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
-	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
-	UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);*/
-	float newRate = 1.f / CompensateRecoilSpeed;
-	CompensateRecoilTL->SetPlayRate(newRate);
-	CompensateRecoilTL->PlayFromStart();
-	ResetRecoil();
+	///*FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
+	//DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
+	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);*/
+	//float newRate = 1.f / CompensateRecoilSpeed;
+	//CompensateRecoilTL->SetPlayRate(newRate);
+	//CompensateRecoilTL->PlayFromStart();
+	//ResetRecoil();
+
+
+
+	RecoilStop();
 }
 
 void UTP_WeaponComponent::ForceStopFire()
@@ -526,16 +532,17 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	Character->SetHasWeapon(true);
 	Character->SetCurrentWeapon(this);
 
+	PCRef = Cast<APlayerController>(Character->GetController());
 	// Set up action bindings
-	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
+	if (PCRef != nullptr)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
 		{
 			// Set the priority of the mapping to 1, so that it overrides the Jump action with the Fire action when using touch input
 			Subsystem->AddMappingContext(FireMappingContext, 1);
 		}
 
-		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
 		{
 			// Fire
 			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &UTP_WeaponComponent::PressedFire);
@@ -556,57 +563,159 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	}
 }
 
-void UTP_WeaponComponent::RecoilTLUpdateEvent()
+//void UTP_WeaponComponent::RecoilTLUpdateEvent()
+//{
+//	if (Character == nullptr)
+//	{
+//		return;
+//	}
+//
+//	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
+//	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
+//}
+//
+//void UTP_WeaponComponent::CompensateRecoilAlphaTLCallback(float val)
+//{
+//	CompensateRecoilAlpha = val;
+//}
+//
+//void UTP_WeaponComponent::CompensateRecoilTLUpdateEvent()
+//{
+//	FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
+//	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
+//	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);
+//	float absolutePitch = fabs(DeltaRecoil.Pitch);
+//	float dividedDeltaPitch = absolutePitch / 1.f;
+//	float lerpedEase = UKismetMathLibrary::Lerp(0.f, dividedDeltaPitch, CompensateRecoilAlpha);
+//	Character->GetLocalViewingPlayerController()->AddPitchInput(lerpedEase);
+//	UE_LOG(LogTemp, Display, TEXT("lerped compensate recoil: %f"), lerpedEase);
+//}
+//
+//void UTP_WeaponComponent::FinishedRecoilDelegate()
+//{
+//	UE_LOG(LogTemp, Display, TEXT("FINISHED RECOIL"));
+//	/*if (RecoilTLDirection == ETimelineDirection::Backward)
+//	{
+//		UE_LOG(LogTemp, Display, TEXT("RESETTING RECOIL"));
+//		ResetRecoil();
+//	}*/
+//}
+//
+//void UTP_WeaponComponent::ResetRecoil()
+//{
+//	IsOriginRecoilRotatorStored = false;
+//}
+//
+//void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
+//{
+//	RecoilPitch = val;
+//}
+//
+//void UTP_WeaponComponent::RecoilYawTLCallback(float val)
+//{
+//	RecoilYaw = val;
+//}
+
+//Call this function when the firing begins, the recoil starts here
+void UTP_WeaponComponent::RecoilStart()
 {
-	if (Character == nullptr)
+	if (RecoilCurve)
 	{
-		return;
+
+		//Setting all rotators to default values
+
+		PlayerDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
+		RecoilDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
+		Del = FRotator(0.0f, 0.0f, 0.0f);
+		RecoilStartRot = PCRef->GetControlRotation();
+
+		IsShouldRecoil = true;
+
+		//Timer for the recoil: I have set it to 10s but dependeding how long it takes to empty the gun mag, you can increase the time.
+		GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &UTP_WeaponComponent::RecoilTimerFunction, 10.0f, false);
+
+		bRecoil = true;
+		bRecoilRecovery = false;
 	}
-
-	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
-	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
 }
 
-void UTP_WeaponComponent::CompensateRecoilAlphaTLCallback(float val)
+//Automatically called in RecoilStart(), no need to call this explicitly
+void UTP_WeaponComponent::RecoilTimerFunction()
 {
-	CompensateRecoilAlpha = val;
+	bRecoil = false;
+	GetWorld()->GetTimerManager().PauseTimer(FireTimer);
 }
 
-void UTP_WeaponComponent::CompensateRecoilTLUpdateEvent()
+//Called when firing stops
+void UTP_WeaponComponent::RecoilStop()
 {
-	FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
-	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
-	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);
-	float absolutePitch = fabs(DeltaRecoil.Pitch);
-	float dividedDeltaPitch = absolutePitch / 1.f;
-	float lerpedEase = UKismetMathLibrary::Lerp(0.f, dividedDeltaPitch, CompensateRecoilAlpha);
-	Character->GetLocalViewingPlayerController()->AddPitchInput(lerpedEase);
-	UE_LOG(LogTemp, Display, TEXT("lerped compensate recoil: %f"), lerpedEase);
+	IsShouldRecoil = false;
 }
 
-void UTP_WeaponComponent::FinishedRecoilDelegate()
+//This function is automatically called, no need to call this. It is inside the Tick function
+void UTP_WeaponComponent::RecoveryStart()
 {
-	UE_LOG(LogTemp, Display, TEXT("FINISHED RECOIL"));
-	/*if (RecoilTLDirection == ETimelineDirection::Backward)
+	if (PCRef->GetControlRotation().Pitch > RecoilStartRot.Pitch)
 	{
-		UE_LOG(LogTemp, Display, TEXT("RESETTING RECOIL"));
-		ResetRecoil();
-	}*/
+		bRecoilRecovery = true;
+		GetWorld()->GetTimerManager().SetTimer(RecoveryTimer, this, &UTP_WeaponComponent::RecoveryTimerFunction, RecoveryTime, false);
+	}
 }
 
-void UTP_WeaponComponent::ResetRecoil()
+//This function too is automatically called from the recovery start function.
+void UTP_WeaponComponent::RecoveryTimerFunction()
 {
-	IsOriginRecoilRotatorStored = false;
+	bRecoilRecovery = false;
 }
 
-void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
+//Needs to be called on event tick to update the control rotation.
+void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 {
-	RecoilPitch = val;
-}
+	float recoiltime;
+	FVector RecoilVec;
+	if (bRecoil)
+	{
 
-void UTP_WeaponComponent::RecoilYawTLCallback(float val)
-{
-	RecoilYaw = val;
+		//Calculation of control rotation to update 
+
+		recoiltime = GetWorld()->GetTimerManager().GetTimerElapsed(FireTimer);
+		RecoilVec = RecoilCurve->GetVectorValue(recoiltime);
+		Del.Roll = 0;
+		Del.Pitch = (RecoilVec.Y);
+		Del.Yaw = (RecoilVec.Z);
+		PlayerDeltaRot = PCRef->GetControlRotation() - RecoilStartRot - RecoilDeltaRot;
+		PCRef->SetControlRotation(RecoilStartRot + PlayerDeltaRot + Del);
+		RecoilDeltaRot = Del;
+
+		//Conditionally start resetting the recoil
+
+		if (!IsShouldRecoil)
+		{
+			const float delay = 60.f / FireRate;
+			if (recoiltime > delay)
+			{
+				GetWorld()->GetTimerManager().ClearTimer(FireTimer);
+				RecoilStop();
+				bRecoil = false;
+				RecoveryStart();
+
+			}
+		}
+	}
+	else if (bRecoilRecovery)
+	{
+		//Recoil resetting
+		FRotator tmprot = PCRef->GetControlRotation();
+		if (tmprot.Pitch >= RecoilStartRot.Pitch)
+		{
+			PCRef->SetControlRotation(UKismetMathLibrary::RInterpTo(PCRef->GetControlRotation(), PCRef->GetControlRotation() - RecoilDeltaRot, DeltaTime, 10.0f));
+			RecoilDeltaRot = RecoilDeltaRot + (PCRef->GetControlRotation() - tmprot);
+		}
+		else
+		{
+			RecoveryTimer.Invalidate();
+		}
+	}
 }
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -616,9 +725,9 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		return;
 	}
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
+	if (PCRef != nullptr)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
 		{
 			Subsystem->RemoveMappingContext(FireMappingContext);
 		}

@@ -11,6 +11,7 @@ class AOctahedronCharacter;
 class UTimelineComponent;
 class USightMeshComponent;
 class UUserWidget;
+class UCurveVector;
 struct FInputActionValue;
 
 
@@ -197,61 +198,103 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool GetIsReloading() const { return IsReloading; };
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UTimelineComponent* RecoilTL;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UTimelineComponent* RecoilTL;
 
-	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	void RecoilTLUpdateEvent();
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void RecoilTLUpdateEvent();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UTimelineComponent* CompensateRecoilTL;
-	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	void CompensateRecoilAlphaTLCallback(float val);
-	float CompensateRecoilAlpha;
-	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	void CompensateRecoilTLUpdateEvent();
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* CompensateRecoilAlphaCurve;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UTimelineComponent* CompensateRecoilTL;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void CompensateRecoilAlphaTLCallback(float val);
+	//float CompensateRecoilAlpha;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void CompensateRecoilTLUpdateEvent();
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UCurveFloat* CompensateRecoilAlphaCurve;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float CompensateRecoilSpeed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
+
+	//FRotator DeltaRecoil;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float Recoil_Speed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilMaxThreshold{ 8.f };
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilReversePlayRate{ 13.f };
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilPitchReverseOffsetScale{ 13.f };
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilYawReverseOffsetScale{ 3.f };
+
+	//FRotator OriginRecoilRotator;
+	//bool IsOriginRecoilRotatorStored{ false };
+
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void FinishedRecoilDelegate();
+
+	//UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
+	//void ResetRecoil();
+
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UCurveFloat* RecoilPitchCurve;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void RecoilPitchTLCallback(float val);
+	//float RecoilPitch;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UCurveFloat* RecoilYawCurve;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void RecoilYawTLCallback(float val);
+	//float RecoilYaw;
+
+
+
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float CompensateRecoilSpeed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
-
-	FRotator DeltaRecoil;
-
+	UCurveVector* RecoilCurve;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float Recoil_Speed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
-
+	bool FiringClient = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float RecoilMaxThreshold{ 8.f };
-
+	bool bRecoil;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float RecoilReversePlayRate{ 13.f };
-
+	bool bRecoilRecovery;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float RecoilPitchReverseOffsetScale{ 13.f };
-
+	FTimerHandle FireTimer;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float RecoilYawReverseOffsetScale{ 3.f };
-
-	FRotator OriginRecoilRotator;
-	bool IsOriginRecoilRotatorStored{ false };
-
-	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	void FinishedRecoilDelegate();
-
-	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
-	void ResetRecoil();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* RecoilPitchCurve;
-	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	void RecoilPitchTLCallback(float val);
-	float RecoilPitch;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* RecoilYawCurve;
-	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	void RecoilYawTLCallback(float val);
-	float RecoilYaw;
+	FTimerHandle RecoveryTimer;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilTimerFunction();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilStartRot;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilDeltaRot;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator PlayerDeltaRot;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilStart();
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilStop();
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoveryStart();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator Del;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoveryTimerFunction();
+	UPROPERTY(BlueprintReadWrite)
+	float RecoveryTime = 1.0f;
+	UPROPERTY(BlueprintReadWrite)
+	float RecoverySpeed = 10.0f;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilTick(float DeltaTime);
+	bool IsShouldRecoil = false;
 
 protected:
 	/** Ends gameplay for this component. */
@@ -270,6 +313,7 @@ protected:
 private:
 	/** The Character holding this weapon*/
 	AOctahedronCharacter* Character;
+	APlayerController* PCRef;
 
 	bool IsEquipping;
 	UFUNCTION()
