@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EFireMode.h"
-#include "Components/TimelineComponent.h" // idk how to forward declare the enum for timeline direction bruh
 #include "TP_WeaponComponent.generated.h"
 
 class AOctahedronCharacter;
@@ -201,32 +200,40 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UTimelineComponent* RecoilTL;
 
-	UPROPERTY()
-	TEnumAsByte<ETimelineDirection::Type> RecoilTLDirection;
-
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void RecoilTLUpdateEvent();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UTimelineComponent* CompensateRecoilTL;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void CompensateRecoilAlphaTLCallback(float val);
+	float CompensateRecoilAlpha;
+	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	void CompensateRecoilTLUpdateEvent();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* CompensateRecoilAlphaCurve;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float CompensateRecoilSpeed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
+
+	FRotator DeltaRecoil;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float Recoil_Speed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilMaxThreshold{ 8.f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilReversePlayRate{ 13.f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilPitchReverseOffsetScale{ 13.f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilYawReverseOffsetScale{ 3.f };
 
 	FRotator OriginRecoilRotator;
 	bool IsOriginRecoilRotatorStored{ false };
-
-	FRotator PostRecoilRotator;
-	bool IsPostRecoilRotatorStored{ false };
 
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void FinishedRecoilDelegate();

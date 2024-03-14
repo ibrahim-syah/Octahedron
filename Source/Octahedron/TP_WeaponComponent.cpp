@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
+#include "Components/TimelineComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Materials/MaterialParameterCollection.h"
@@ -29,6 +30,9 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 
 	RecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("RecoilTL"));
 	RecoilTL->SetTimelineLength(3.5f);
+
+	CompensateRecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("CompensateRecoilTL"));
+	CompensateRecoilTL->SetTimelineLength(1.f);
 }
 
 void UTP_WeaponComponent::BeginPlay()
@@ -68,14 +72,26 @@ void UTP_WeaponComponent::BeginPlay()
 		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find recoilyaw curve for this weapon"));
 	}
 
-	FOnTimelineEvent updateRecoilTLEvent;
-	updateRecoilTLEvent.BindUFunction(this, FName{ TEXT("RecoilTLUpdateEvent") });
-	RecoilTL->SetTimelinePostUpdateFunc(updateRecoilTLEvent);
+	FOnTimelineEvent onUpdateRecoilTLEvent;
+	onUpdateRecoilTLEvent.BindUFunction(this, FName{ TEXT("RecoilTLUpdateEvent") });
+	RecoilTL->SetTimelinePostUpdateFunc(onUpdateRecoilTLEvent);
 	FOnTimelineEvent onRecoilTLFinished;
 	onRecoilTLFinished.BindUFunction(this, FName{ TEXT("FinishedRecoilDelegate") });
 	RecoilTL->SetTimelineFinishedFunc(onRecoilTLFinished);
-	RecoilTL->SetPropertySetObject(this);
-	RecoilTL->SetDirectionPropertyName(FName("RecoilTLDirection"));
+
+	if (CompensateRecoilAlphaCurve != nullptr)
+	{
+		FOnTimelineFloat onCompensateRecoilAlphaTLCallback;
+		onCompensateRecoilAlphaTLCallback.BindUFunction(this, FName{ TEXT("CompensateRecoilAlphaTLCallback") });
+		CompensateRecoilTL->AddInterpFloat(CompensateRecoilAlphaCurve, onCompensateRecoilAlphaTLCallback);
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find compensate recoil curve for this weapon"));
+	}
+	FOnTimelineEvent onUpdateCompensateRecoilTLEvent;
+	onUpdateCompensateRecoilTLEvent.BindUFunction(this, FName{ TEXT("CompensateRecoilTLUpdateEvent") });
+	CompensateRecoilTL->SetTimelinePostUpdateFunc(onUpdateCompensateRecoilTLEvent);
 
 	if (ScopeSightMesh != nullptr)
 	{
@@ -187,13 +203,13 @@ void UTP_WeaponComponent::FullAutoFire()
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
 
-		StopFire();
+		//StopFire();
 	}
 }
 
 void UTP_WeaponComponent::Fire()
 {
-	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0 || !IsPlayerHoldingShootButton)
 	{
 		return;
 	}
@@ -294,8 +310,24 @@ void UTP_WeaponComponent::Fire()
 
 void UTP_WeaponComponent::StopFire()
 {
-	RecoilTL->SetPlayRate(RecoilReversePlayRate);
-	RecoilTL->Reverse();
+	//RecoilTL->SetPlayRate(RecoilReversePlayRate);
+	//RecoilTL->Reverse();
+	RecoilTL->Stop();
+	RecoilTL->SetPlaybackPosition(0.f, false, false);
+
+	// idk how to access the IA_Look scalar modifier, so I'll just harcode the pitch input scale to 1 for now
+	//auto modifiers = Character->LookAction->Modifiers;
+	//UE_LOG(LogTemp, Display, TEXT("LookAction modifiers arr len: %f"), modifiers.Num());
+	//UInputModifierScalar* scale = Cast<UInputModifierScalar>(modifier);
+	//UE_LOG(LogTemp, Display, TEXT("First lookaction Modifier: %f"), scale->Scalar);
+
+	/*FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
+	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
+	UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);*/
+	float newRate = 1.f / CompensateRecoilSpeed;
+	CompensateRecoilTL->SetPlayRate(newRate);
+	CompensateRecoilTL->PlayFromStart();
+	ResetRecoil();
 }
 
 void UTP_WeaponComponent::ForceStopFire()
@@ -531,54 +563,40 @@ void UTP_WeaponComponent::RecoilTLUpdateEvent()
 		return;
 	}
 
-	//UE_LOG(LogTemp, Display, TEXT("delta pitch: %f"), UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, Character->Controller->GetControlRotation()).Pitch);
+	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
+	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
+}
 
-	if (RecoilTLDirection == ETimelineDirection::Backward)
-	{
-		if (!IsPostRecoilRotatorStored)
-		{
-			PostRecoilRotator = Character->Controller->GetControlRotation();
-			IsPostRecoilRotatorStored = true;
-			UE_LOG(LogTemp, Display, TEXT("Stored Post Recoil: %f"), PostRecoilRotator.Pitch);
-		}
+void UTP_WeaponComponent::CompensateRecoilAlphaTLCallback(float val)
+{
+	CompensateRecoilAlpha = val;
+}
 
-		FRotator deltaRotator = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
-		float absolutePitch = abs(deltaRotator.Pitch);
-		UE_LOG(LogTemp, Display, TEXT("delta pitch: %f"), deltaRotator.Pitch);
-		float operand;
-		if (absolutePitch > RecoilMaxThreshold)
-		{
-			operand = UKismetMathLibrary::MapRangeClamped(absolutePitch, RecoilMaxThreshold, 30.f, 1.f, 0.f);
-		}
-		else
-		{
-			operand = UKismetMathLibrary::MapRangeClamped(absolutePitch, 0.f, RecoilMaxThreshold, 0.f, 1.f);
-		}
-
-		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch * -1.f * RecoilPitchReverseOffsetScale * operand);
-		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw * -1.f * RecoilYawReverseOffsetScale * operand);
-	}
-	else
-	{
-		Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
-		Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
-	}
+void UTP_WeaponComponent::CompensateRecoilTLUpdateEvent()
+{
+	FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
+	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
+	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);
+	float absolutePitch = fabs(DeltaRecoil.Pitch);
+	float dividedDeltaPitch = absolutePitch / 1.f;
+	float lerpedEase = UKismetMathLibrary::Lerp(0.f, dividedDeltaPitch, CompensateRecoilAlpha);
+	Character->GetLocalViewingPlayerController()->AddPitchInput(lerpedEase);
+	UE_LOG(LogTemp, Display, TEXT("lerped compensate recoil: %f"), lerpedEase);
 }
 
 void UTP_WeaponComponent::FinishedRecoilDelegate()
 {
 	UE_LOG(LogTemp, Display, TEXT("FINISHED RECOIL"));
-	if (RecoilTLDirection == ETimelineDirection::Backward)
+	/*if (RecoilTLDirection == ETimelineDirection::Backward)
 	{
 		UE_LOG(LogTemp, Display, TEXT("RESETTING RECOIL"));
 		ResetRecoil();
-	}
+	}*/
 }
 
 void UTP_WeaponComponent::ResetRecoil()
 {
 	IsOriginRecoilRotatorStored = false;
-	IsPostRecoilRotatorStored = false;
 }
 
 void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
