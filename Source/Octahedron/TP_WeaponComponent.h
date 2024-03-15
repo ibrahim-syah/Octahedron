@@ -293,7 +293,7 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float RecoverySpeed = 10.0f;
 	UPROPERTY(BlueprintReadWrite)
-	float MaxRecoilPitch = 45.0f;
+	float MaxRecoilPitch = 10.0f;
 	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilTick(float DeltaTime);
 	bool IsShouldRecoil = false;

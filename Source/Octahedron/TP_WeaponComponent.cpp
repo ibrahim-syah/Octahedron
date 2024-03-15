@@ -709,6 +709,7 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 				RecoveryStart();
 			}
 		}
+		//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
 	}
 	else if (bRecoilRecovery)
 	{
@@ -718,8 +719,8 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 		if (deltaPitch > 0)
 		{
 			FRotator TargetRot = PCRef->GetControlRotation() - RecoilDeltaRot;
-			float InterpSpeed = UKismetMathLibrary::MapRangeClamped(deltaPitch, 0.f, MaxRecoilPitch, 1.f, 10.f);
-			UE_LOG(LogTemp, Display, TEXT("InterpSpeed: %f"), InterpSpeed);
+			float InterpSpeed = UKismetMathLibrary::MapRangeClamped(deltaPitch, 0.f, MaxRecoilPitch, 3.f, 10.f);
+			//UE_LOG(LogTemp, Display, TEXT("interpspeed: %f"), InterpSpeed);
 			PCRef->SetControlRotation(UKismetMathLibrary::RInterpTo(PCRef->GetControlRotation(), TargetRot, DeltaTime, InterpSpeed));
 			RecoilDeltaRot = RecoilDeltaRot + (PCRef->GetControlRotation() - tmprot);
 		}
@@ -728,6 +729,7 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 			bRecoilRecovery = false;
 			RecoveryTimer.Invalidate();
 		}
+		//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
 	}
 }
 
