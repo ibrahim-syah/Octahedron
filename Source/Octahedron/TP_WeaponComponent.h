@@ -329,6 +329,10 @@ private:
 
 	FTimerHandle FireRateDelayTimerHandle;
 	bool IsPlayerHoldingShootButton;
+
+	UFUNCTION()
+	void SingleFire();
+
 	UFUNCTION()
 	void BurstFire();
 
