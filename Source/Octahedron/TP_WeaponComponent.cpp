@@ -637,7 +637,7 @@ void UTP_WeaponComponent::RecoilStart()
 		PlayerDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		RecoilDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		Del = FRotator(0.0f, 0.0f, 0.0f);
-		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(PCRef->GetControlRotation(), FRotator{0.f, 0.f, 0.f});
+		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(PCRef->GetControlRotation(), FRotator{0.f, 0.f, 0.f}); // in certain angles, the recovery can just cancel itself if we don't delta this with 0
 
 		IsShouldRecoil = true;
 
@@ -698,17 +698,14 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 		RecoilDeltaRot = Del;
 
 		//Conditionally start resetting the recoil
-
 		if (!IsShouldRecoil)
 		{
 			const float delay = 60.f / FireRate;
 			if (recoiltime > delay)
 			{
 				GetWorld()->GetTimerManager().ClearTimer(FireTimer);
-				RecoilStop();
 				bRecoil = false;
 				RecoveryStart();
-
 			}
 		}
 	}
@@ -723,6 +720,7 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 		}
 		else
 		{
+			bRecoilRecovery = false;
 			RecoveryTimer.Invalidate();
 		}
 	}
