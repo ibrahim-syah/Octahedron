@@ -684,9 +684,6 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 	float recoiltime;
 	FVector RecoilVec;
 
-	//Recoil resetting
-	FRotator tmprot = PCRef->GetControlRotation();
-	float deltaPitch = tmprot.Pitch - RecoilStartRot.Pitch;
 	if (bRecoil)
 	{
 
@@ -712,11 +709,12 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 				RecoveryStart();
 			}
 		}
-		UE_LOG(LogTemp, Display, TEXT("deltaPitch of origin and last rotator: %f"), deltaPitch);
 	}
 	else if (bRecoilRecovery)
 	{
-		UE_LOG(LogTemp, Display, TEXT("deltaPitch of origin and last rotator: %f"), deltaPitch);
+		//Recoil resetting
+		FRotator tmprot = PCRef->GetControlRotation();
+		float deltaPitch = UKismetMathLibrary::NormalizedDeltaRotator(tmprot, RecoilStartRot).Pitch;
 		if (deltaPitch > 0)
 		{
 			FRotator TargetRot = PCRef->GetControlRotation() - RecoilDeltaRot;
