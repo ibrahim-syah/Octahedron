@@ -681,6 +681,7 @@ void UTP_WeaponComponent::RecoveryTimerFunction()
 //Needs to be called on event tick to update the control rotation.
 void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 {
+	// servicable for now, but full auto still have a problem where if you move too far from the origin, the recovery is too strong (above the origin) or there won't be any recovery (below origin)
 	float recoiltime;
 	FVector RecoilVec;
 
