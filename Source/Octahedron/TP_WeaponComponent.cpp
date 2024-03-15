@@ -222,7 +222,7 @@ void UTP_WeaponComponent::FullAutoFire()
 
 void UTP_WeaponComponent::Fire()
 {
-	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0 || !IsPlayerHoldingShootButton)
+	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
