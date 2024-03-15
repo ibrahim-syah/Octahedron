@@ -637,7 +637,7 @@ void UTP_WeaponComponent::RecoilStart()
 		PlayerDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		RecoilDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		Del = FRotator(0.0f, 0.0f, 0.0f);
-		RecoilStartRot = PCRef->GetControlRotation();
+		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(PCRef->GetControlRotation(), FRotator{0.f, 0.f, 0.f});
 
 		IsShouldRecoil = true;
 
