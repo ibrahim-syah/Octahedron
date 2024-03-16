@@ -185,6 +185,9 @@ public:
 	float ADSAlpha;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	float ADSSensitivityScale{ 0.3f };
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	ECustomMovementMode MoveMode;
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")

@@ -410,7 +410,13 @@ void AOctahedronCharacter::Move(const FInputActionValue& Value)
 void AOctahedronCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	float LookScaleModifier = 1.f;
+
+	if (CurrentWeapon)
+	{
+		LookScaleModifier *= FMath::Lerp(1.f, ADSSensitivityScale, CurrentWeapon->ADSAlpha);
+	}
+	FVector2D LookAxisVector = Value.Get<FVector2D>() * LookScaleModifier;
 
 	if (Controller != nullptr)
 	{
