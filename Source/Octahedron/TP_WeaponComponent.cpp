@@ -251,7 +251,8 @@ void UTP_WeaponComponent::Fire()
 		UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
 		FVector StartVector = Camera->GetComponentLocation();
 		FVector ForwardVector = Camera->GetForwardVector();
-		FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, Spread);
+		float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
+		FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread);
 		FVector ResultingVector = RandomDirection * Range;
 		FVector EndVector = StartVector + ResultingVector;
 

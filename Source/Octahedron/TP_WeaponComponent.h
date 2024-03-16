@@ -72,7 +72,10 @@ public:
 	float Range{ 10000.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float Spread{ 2.f };
+	float MinSpread{ 0.08f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float MaxSpread{ 2.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	bool CanSwitchFireMode{ false };
