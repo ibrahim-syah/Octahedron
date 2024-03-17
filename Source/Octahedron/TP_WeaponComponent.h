@@ -12,6 +12,7 @@ class UTimelineComponent;
 class USightMeshComponent;
 class UUserWidget;
 class UCurveVector;
+class UNiagaraSystem;
 struct FInputActionValue;
 
 
@@ -306,6 +307,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilTick(float DeltaTime);
 	bool IsShouldRecoil = false;
+
+
+
+
+
+
+	// Effects
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* MuzzleFlash_FX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* Tracer_FX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UStaticMesh* ShellEjectMesh;
 
 protected:
 	/** Ends gameplay for this component. */
