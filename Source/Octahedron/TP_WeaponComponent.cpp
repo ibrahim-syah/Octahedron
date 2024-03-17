@@ -284,9 +284,9 @@ void UTP_WeaponComponent::Fire()
 				EndTrace = CameraTraceResult.TraceEnd;
 			}
 
-			const FName TraceTag("MyTraceTag");
-			GetWorld()->DebugDrawTraceTag = TraceTag;
-			Params.TraceTag = TraceTag;
+			//const FName TraceTag("MyTraceTag");
+			//GetWorld()->DebugDrawTraceTag = TraceTag;
+			//Params.TraceTag = TraceTag;
 			FHitResult MuzzleTraceResult{};
 			GetWorld()->LineTraceSingleByChannel(
 				MuzzleTraceResult,

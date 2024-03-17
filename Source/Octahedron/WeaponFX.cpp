@@ -93,34 +93,19 @@ void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 	if (IsValid(MuzzleFlash_FX))
 	{
 
-		if (IsValid(NC_MuzzleFlash))
-		{
-			if (!NC_MuzzleFlash->IsActive())
-			{
-				NC_MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(
-					MuzzleFlash_FX,
-					GetRootComponent(),
-					NAME_None,
-					MuzzleLocation,
-					FRotator(0.f, 90.f, 0.f),
-					EAttachLocation::Type::KeepRelativeOffset,
-					true);
-
-				MuzzleFlashTrigger = false;
-			}
-		}
-		else
+		if (!IsValid(NC_MuzzleFlash) || !NC_MuzzleFlash->IsActive())
 		{
 			NC_MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(
-				MuzzleFlash_FX,
+				ShellEject_FX,
 				GetRootComponent(),
 				NAME_None,
 				MuzzleLocation,
 				FRotator(0.f, 90.f, 0.f),
 				EAttachLocation::Type::KeepRelativeOffset,
 				true);
+			NC_MuzzleFlash->SetNiagaraVariableObject(FString("ShellEjectStaticMesh"), ShellEjectMesh);
 
-			MuzzleFlashTrigger = false;
+			ShellEjectTrigger = false;
 		}
 		
 		MuzzleFlashTrigger = !MuzzleFlashTrigger;
