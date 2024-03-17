@@ -345,7 +345,7 @@ protected:
 
 private:
 
-	int JumpsLeft{ 2 };
-	int JumpsMax{ 2 };
+	int32 JumpsLeft{ 2 };
+	int32 JumpsMax{ 2 };
 };
 

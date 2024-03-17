@@ -252,8 +252,8 @@ void UTP_WeaponComponent::Fire()
 		FVector StartVector = Camera->GetComponentLocation();
 		FVector ForwardVector = Camera->GetForwardVector();
 		float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
-
-		for (int i = 0; i < Pellets; i++) // bruh idk if this is a good idea, but whatever man
+		TArray<FHitResult> MuzzleTraceResults;
+		for (int32 i = 0; i < Pellets; i++) // bruh idk if this is a good idea, but whatever man
 		{
 			FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread + (i / PelletSpread));
 			FVector ResultingVector = RandomDirection * Range;
@@ -294,6 +294,7 @@ void UTP_WeaponComponent::Fire()
 				ECollisionChannel::ECC_Visibility,
 				Params
 			);
+			MuzzleTraceResults.Add(MuzzleTraceResult);
 		}
 	}
 
