@@ -88,6 +88,12 @@ public:
 	float FireRate{ 560.f }; // in rounds per minute. e.g. 60 RPM means there is a delay of 1 second for every shot
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	int Pellets{ 1 }; // more than 1 means it's a pellet gun (shotgun)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float PelletSpread{ 10.f }; // spread of each individual pellet is originalspread + (n/PelletSpread)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	EFireMode FireMode{ EFireMode::Single };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)

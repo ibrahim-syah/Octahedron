@@ -252,45 +252,49 @@ void UTP_WeaponComponent::Fire()
 		FVector StartVector = Camera->GetComponentLocation();
 		FVector ForwardVector = Camera->GetForwardVector();
 		float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
-		FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread);
-		FVector ResultingVector = RandomDirection * Range;
-		FVector EndVector = StartVector + ResultingVector;
 
-		FHitResult CameraTraceResult{};
-		FCollisionQueryParams Params = FCollisionQueryParams();
-		Params.AddIgnoredActor(Character);
-		bool isHit = GetWorld()->LineTraceSingleByChannel(
-			CameraTraceResult,
-			StartVector,
-			EndVector,
-			ECollisionChannel::ECC_Visibility,
-			Params
-		);
-
-		// Trace from weapon muzzle to center trace hit location
-		
-		FVector EndTrace{};
-		if (isHit)
+		for (int i = 0; i < Pellets; i++) // bruh idk if this is a good idea, but whatever man
 		{
-			FVector ScaledDirection = RandomDirection * 10.f;
-			EndTrace = CameraTraceResult.Location + ScaledDirection;
-		}
-		else
-		{
-			EndTrace = CameraTraceResult.TraceEnd;
-		}
+			FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread + (i / PelletSpread));
+			FVector ResultingVector = RandomDirection * Range;
+			FVector EndVector = StartVector + ResultingVector;
 
-		const FName TraceTag("MyTraceTag");
-		GetWorld()->DebugDrawTraceTag = TraceTag;
-		Params.TraceTag = TraceTag;
-		FHitResult MuzzleTraceResult{};
-		GetWorld()->LineTraceSingleByChannel(
-			MuzzleTraceResult,
-			GetSocketLocation("Muzzle"),
-			EndTrace,
-			ECollisionChannel::ECC_Visibility,
-			Params
-		);
+			FHitResult CameraTraceResult{};
+			FCollisionQueryParams Params = FCollisionQueryParams();
+			Params.AddIgnoredActor(Character);
+			bool isHit = GetWorld()->LineTraceSingleByChannel(
+				CameraTraceResult,
+				StartVector,
+				EndVector,
+				ECollisionChannel::ECC_Visibility,
+				Params
+			);
+
+			// Trace from weapon muzzle to center trace hit location
+
+			FVector EndTrace{};
+			if (isHit)
+			{
+				FVector ScaledDirection = RandomDirection * 10.f;
+				EndTrace = CameraTraceResult.Location + ScaledDirection;
+			}
+			else
+			{
+				EndTrace = CameraTraceResult.TraceEnd;
+			}
+
+			const FName TraceTag("MyTraceTag");
+			GetWorld()->DebugDrawTraceTag = TraceTag;
+			Params.TraceTag = TraceTag;
+			FHitResult MuzzleTraceResult{};
+			GetWorld()->LineTraceSingleByChannel(
+				MuzzleTraceResult,
+				GetSocketLocation("Muzzle"),
+				EndTrace,
+				ECollisionChannel::ECC_Visibility,
+				Params
+			);
+		}
 	}
 
 	/*float newRate = 1.f / Recoil_Speed;
