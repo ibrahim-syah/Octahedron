@@ -13,6 +13,7 @@ class USightMeshComponent;
 class UUserWidget;
 class UCurveVector;
 class UNiagaraSystem;
+class AWeaponFX;
 struct FInputActionValue;
 
 
@@ -53,6 +54,12 @@ public:
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
 	FVector MuzzleOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	FName MuzzleSocketName{"Muzzle"};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	FName ShellEjectSocketName{ "ShellEject" };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FString WeaponName{"Weapon Base"};
@@ -321,7 +328,13 @@ public:
 	UNiagaraSystem* Tracer_FX;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* ShellEject_FX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UStaticMesh* ShellEjectMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	AWeaponFX* WeaponFX;
 
 protected:
 	/** Ends gameplay for this component. */

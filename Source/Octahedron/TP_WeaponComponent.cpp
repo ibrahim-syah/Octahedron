@@ -16,6 +16,7 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "SightMeshComponent.h"
+#include "WeaponFX.h"
 #include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
@@ -289,13 +290,59 @@ void UTP_WeaponComponent::Fire()
 			FHitResult MuzzleTraceResult{};
 			GetWorld()->LineTraceSingleByChannel(
 				MuzzleTraceResult,
-				GetSocketLocation("Muzzle"),
+				GetSocketLocation(MuzzleSocketName),
 				EndTrace,
 				ECollisionChannel::ECC_Visibility,
 				Params
 			);
 			MuzzleTraceResults.Add(MuzzleTraceResult);
 		}
+
+		FVector muzzlePosition = GetSocketLocation(MuzzleSocketName);
+		TArray<FVector> tracerPositions;
+		TArray<FVector> impactPositions;
+		TArray<FVector> impactNormals;
+		TArray<EPhysicalSurface> impactSurfaceTypes;
+
+		for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
+		{
+			FHitResult hitResult = MuzzleTraceResults[i];
+
+			if (hitResult.bBlockingHit)
+			{
+				tracerPositions.Add(hitResult.Location);
+				impactPositions.Add(hitResult.Location);
+				impactNormals.Add(hitResult.Normal);
+				//impactSurfaceTypes.Add(hitResult.PhysMaterial->SurfaceType);
+				impactSurfaceTypes.Add(EPhysicalSurface::SurfaceType1);
+			}
+			else
+			{
+				tracerPositions.Add(hitResult.TraceEnd);
+			}
+		}
+
+		if (!IsValid(WeaponFX))
+		{
+			FTransform spawnTransform{ FRotator(), FVector() };
+			auto DeferredWeaponFXActor = Cast<AWeaponFX>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponFX::StaticClass(), spawnTransform));
+			if (DeferredWeaponFXActor != nullptr)
+			{
+				DeferredWeaponFXActor->WeaponMesh = this;
+				DeferredWeaponFXActor->MuzzleFlash_FX = MuzzleFlash_FX;
+				DeferredWeaponFXActor->Tracer_FX = Tracer_FX;
+				DeferredWeaponFXActor->ShellEject_FX = ShellEject_FX;
+				DeferredWeaponFXActor->ShellEjectMesh = ShellEjectMesh;
+				DeferredWeaponFXActor->MuzzleSocket = &MuzzleSocketName;
+				DeferredWeaponFXActor->ShellEjectSocket = &ShellEjectSocketName;
+
+				UGameplayStatics::FinishSpawningActor(DeferredWeaponFXActor, spawnTransform);
+			}
+
+			WeaponFX = DeferredWeaponFXActor;
+			WeaponFX->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+		WeaponFX->WeaponFire(tracerPositions);
 	}
 
 	/*float newRate = 1.f / Recoil_Speed;
