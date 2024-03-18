@@ -87,12 +87,11 @@ void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 {
 	ImpactPositions = InImpactPositions;
 
-	FVector MuzzleLocation = WeaponMesh->GetSocketTransform(*MuzzleSocket, ERelativeTransformSpace::RTS_Component).GetLocation();
-
+	FVector MuzzleLocation = WeaponMesh->GetSocketTransform(*MuzzleSocket, ERelativeTransformSpace::RTS_Actor).GetLocation();
 	// Shell Eject FX
 	if (IsValid(ShellEject_FX))
 	{
-		FVector ShellEjectLocation = WeaponMesh->GetSocketTransform(*ShellEjectSocket, ERelativeTransformSpace::RTS_Component).GetLocation();
+		FVector ShellEjectLocation = WeaponMesh->GetSocketTransform(*ShellEjectSocket, ERelativeTransformSpace::RTS_Actor).GetLocation();
 		if (!IsValid(NC_ShellEject) || !NC_ShellEject->IsActive())
 		{
 			NC_ShellEject = UNiagaraFunctionLibrary::SpawnSystemAttached(
@@ -133,7 +132,8 @@ void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 
 		MuzzleFlashTrigger = !MuzzleFlashTrigger;
 
-		FVector NormalizedPositionDifference = (ImpactPositions[0] - MuzzleLocation).GetSafeNormal(0.0001f);
+		FVector MuzzleLocationWorld = WeaponMesh->GetSocketTransform(*MuzzleSocket, ERelativeTransformSpace::RTS_World).GetLocation();
+		FVector NormalizedPositionDifference = (ImpactPositions[0] - MuzzleLocationWorld).GetSafeNormal(0.0001f);
 		NC_MuzzleFlash->SetNiagaraVariableVec3(FString("Direction"), NormalizedPositionDifference);
 
 		NC_MuzzleFlash->SetNiagaraVariableBool(FString("Trigger"), MuzzleFlashTrigger);
