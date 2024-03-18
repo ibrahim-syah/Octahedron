@@ -89,33 +89,6 @@ void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 
 	FVector MuzzleLocation = WeaponMesh->GetSocketTransform(*MuzzleSocket, ERelativeTransformSpace::RTS_Component).GetLocation();
 
-	// Muzzle Flash FX
-	if (IsValid(MuzzleFlash_FX))
-	{
-
-		if (!IsValid(NC_MuzzleFlash) || !NC_MuzzleFlash->IsActive())
-		{
-			NC_MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(
-				ShellEject_FX,
-				GetRootComponent(),
-				NAME_None,
-				MuzzleLocation,
-				FRotator(0.f, 90.f, 0.f),
-				EAttachLocation::Type::KeepRelativeOffset,
-				true);
-			NC_MuzzleFlash->SetNiagaraVariableObject(FString("ShellEjectStaticMesh"), ShellEjectMesh);
-
-			ShellEjectTrigger = false;
-		}
-		
-		MuzzleFlashTrigger = !MuzzleFlashTrigger;
-
-		FVector NormalizedPositionDifference = (ImpactPositions[0] - MuzzleLocation).GetSafeNormal(0.0001f);
-		NC_MuzzleFlash->SetNiagaraVariableVec3(FString("Direction"), NormalizedPositionDifference);
-
-		NC_MuzzleFlash->SetNiagaraVariableBool(FString("Trigger"), MuzzleFlashTrigger);
-	}
-
 	// Shell Eject FX
 	if (IsValid(ShellEject_FX))
 	{
@@ -138,6 +111,32 @@ void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 		ShellEjectTrigger = !ShellEjectTrigger;
 
 		NC_ShellEject->SetNiagaraVariableBool(FString("Trigger"), ShellEjectTrigger);
+	}
+
+	// Muzzle Flash FX
+	if (IsValid(MuzzleFlash_FX))
+	{
+
+		if (!IsValid(NC_MuzzleFlash) || !NC_MuzzleFlash->IsActive())
+		{
+			NC_MuzzleFlash = UNiagaraFunctionLibrary::SpawnSystemAttached(
+				MuzzleFlash_FX,
+				GetRootComponent(),
+				NAME_None,
+				MuzzleLocation,
+				FRotator(0.f, 90.f, 0.f),
+				EAttachLocation::Type::KeepRelativeOffset,
+				true);
+
+			MuzzleFlashTrigger = false;
+		}
+
+		MuzzleFlashTrigger = !MuzzleFlashTrigger;
+
+		FVector NormalizedPositionDifference = (ImpactPositions[0] - MuzzleLocation).GetSafeNormal(0.0001f);
+		NC_MuzzleFlash->SetNiagaraVariableVec3(FString("Direction"), NormalizedPositionDifference);
+
+		NC_MuzzleFlash->SetNiagaraVariableBool(FString("Trigger"), MuzzleFlashTrigger);
 	}
 
 	// Tracer FX
