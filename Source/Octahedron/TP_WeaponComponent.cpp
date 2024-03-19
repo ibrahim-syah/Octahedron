@@ -318,9 +318,9 @@ void UTP_WeaponComponent::Fire()
 				//auto surfaceType = UPhysicalMaterial::DetermineSurfaceType(hitResult.PhysMaterial.Get());
 				//impactSurfaceTypes.Add(surfaceType);
 				//impactSurfaceTypes.Add(static_cast<EPhysicalSurface>(hitResult.PhysMaterial->SurfaceType));
-				impactSurfaceTypes.Add(EPhysicalSurface::SurfaceType2);
 				UE_LOG(LogTemp, Display, TEXT("PhysMatetrial type name: %s"), *hitResult.PhysMaterial->GetName());
 				UE_LOG(LogTemp, Display, TEXT("surface type int: %d"), hitResult.PhysMaterial->SurfaceType.GetIntValue());
+				impactSurfaceTypes.Add(hitResult.PhysMaterial->SurfaceType.GetIntValue());
 				//impactSurfaceTypes.Add((int32)hitResult.PhysMaterial->SurfaceType);
 			}
 			else

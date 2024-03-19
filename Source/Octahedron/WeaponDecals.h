@@ -31,8 +31,6 @@ protected:
 	UNiagaraComponent* NC_ImpactDecals;
 	bool ImpactDecalsTrigger;
 
-	TArray<int32> ImpactSurfacesInt;
-
 	FTimerHandle CheckDestroyEffectTimerHandle;
 	void CheckDestroyEffect();
 

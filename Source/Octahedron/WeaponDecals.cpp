@@ -27,7 +27,7 @@ void AWeaponDecals::RemoveInvalidSurfaces()
 	for (int i = localImpactSurfaces.Num() - 1; i >= 0; i--)
 	{
 		int32 surface = localImpactSurfaces[i];
-		if (surface == EPhysicalSurface::SurfaceType_Default || surface == EPhysicalSurface::SurfaceType1) // type 1 is body
+		if (surface == 0 || surface == 1) // type 1 is body
 		{
 			ImpactSurfaces.Pop();
 			ImpactPositions.Pop();
@@ -45,7 +45,7 @@ void AWeaponDecals::WeaponFire(TArray<FVector> InImpactPositions, TArray<FVector
 
 	RemoveInvalidSurfaces();
 
-	// Shell Eject FX
+	// Impact Decal FX
 	if (IsValid(ImpactDecals_FX))
 	{
 		if (!IsValid(NC_ImpactDecals) || !NC_ImpactDecals->IsActive())
@@ -65,7 +65,7 @@ void AWeaponDecals::WeaponFire(TArray<FVector> InImpactPositions, TArray<FVector
 			int32 byte = (int32)impactSurface;
 			ImpactSurfacesInt.Add(byte);
 		}*/
-		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayInt32(NC_ImpactDecals, FName("ImpactSurfaces"), ImpactSurfacesInt);
+		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayInt32(NC_ImpactDecals, FName("ImpactSurfaces"), ImpactSurfaces);
 		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayPosition(NC_ImpactDecals, FName("ImpactPositions"), ImpactPositions);
 		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(NC_ImpactDecals, FName("ImpactNormals"), ImpactNormals);
 		NC_ImpactDecals->SetNiagaraVariableInt(FString("NumberOfHits"), ImpactPositions.Num());
