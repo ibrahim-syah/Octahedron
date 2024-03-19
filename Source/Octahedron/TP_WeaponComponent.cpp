@@ -17,6 +17,7 @@
 #include "Blueprint/UserWidget.h"
 #include "SightMeshComponent.h"
 #include "WeaponFX.h"
+#include "WeaponDecals.h"
 #include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
@@ -287,6 +288,7 @@ void UTP_WeaponComponent::Fire()
 			//const FName TraceTag("MyTraceTag");
 			//GetWorld()->DebugDrawTraceTag = TraceTag;
 			//Params.TraceTag = TraceTag;
+			Params.bReturnPhysicalMaterial = true;
 			FHitResult MuzzleTraceResult{};
 			GetWorld()->LineTraceSingleByChannel(
 				MuzzleTraceResult,
@@ -302,7 +304,7 @@ void UTP_WeaponComponent::Fire()
 		TArray<FVector> tracerPositions;
 		TArray<FVector> impactPositions;
 		TArray<FVector> impactNormals;
-		TArray<EPhysicalSurface> impactSurfaceTypes;
+		TArray<int32> impactSurfaceTypes;
 
 		for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
 		{
@@ -313,8 +315,12 @@ void UTP_WeaponComponent::Fire()
 				tracerPositions.Add(hitResult.Location);
 				impactPositions.Add(hitResult.Location);
 				impactNormals.Add(hitResult.Normal);
-				//impactSurfaceTypes.Add(hitResult.PhysMaterial->SurfaceType);
-				impactSurfaceTypes.Add(EPhysicalSurface::SurfaceType1);
+				//auto surfaceType = UPhysicalMaterial::DetermineSurfaceType(hitResult.PhysMaterial.Get());
+				//impactSurfaceTypes.Add(surfaceType);
+				//impactSurfaceTypes.Add(static_cast<EPhysicalSurface>(hitResult.PhysMaterial->SurfaceType));
+				impactSurfaceTypes.Add(EPhysicalSurface::SurfaceType2);
+				UE_LOG(LogTemp, Display, TEXT("surface type: %s"), *hitResult.PhysMaterial->GetName());
+				//impactSurfaceTypes.Add((int32)hitResult.PhysMaterial->SurfaceType);
 			}
 			else
 			{
@@ -343,6 +349,28 @@ void UTP_WeaponComponent::Fire()
 			WeaponFX->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 		}
 		WeaponFX->WeaponFire(tracerPositions);
+
+
+		if (!IsValid(WeaponDecals))
+		{
+			FTransform spawnTransform{ FRotator(), FVector() };
+			auto DeferredWeaponDecalsActor = Cast<AWeaponDecals>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponDecals::StaticClass(), spawnTransform));
+			if (DeferredWeaponDecalsActor != nullptr)
+			{
+				DeferredWeaponDecalsActor->ImpactDecals_FX = ImpactDecals_FX;
+
+				UGameplayStatics::FinishSpawningActor(DeferredWeaponDecalsActor, spawnTransform);
+			}
+
+			WeaponDecals = DeferredWeaponDecalsActor;
+			WeaponDecals->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+		WeaponDecals->WeaponFire(
+			impactPositions,
+			impactNormals,
+			impactSurfaceTypes,
+			muzzlePosition
+		);
 	}
 
 	/*float newRate = 1.f / Recoil_Speed;

@@ -14,6 +14,7 @@ class UUserWidget;
 class UCurveVector;
 class UNiagaraSystem;
 class AWeaponFX;
+class AWeaponDecals;
 struct FInputActionValue;
 
 
@@ -333,8 +334,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UStaticMesh* ShellEjectMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	AWeaponFX* WeaponFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* ImpactDecals_FX;
+
+	AWeaponDecals* WeaponDecals;
 
 protected:
 	/** Ends gameplay for this component. */
