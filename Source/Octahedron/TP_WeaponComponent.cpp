@@ -9,17 +9,23 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
+#include "Components/TimelineComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
-#include "Components/TimelineComponent.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "SightMeshComponent.h"
+#include "WeaponFX.h"
+#include "WeaponDecals.h"
+#include "WeaponImpacts.h"
+#include "WeaponSounds.h"
+#include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
+
 	// Default offset from the character location for projectiles to spawn
 	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
 	BoundsScale = 2.f;
@@ -51,31 +57,52 @@ void UTP_WeaponComponent::BeginPlay()
 	}
 
 	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
+
+	FireDelay = 60.f / FireRate;
 }
 
-void UTP_WeaponComponent::PressedFire(const FInputActionValue& Value)
+void UTP_WeaponComponent::PressedFire()
 {
-	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	IsPlayerHoldingShootButton = true;
+	if (Character == nullptr || PCRef == nullptr || !Character->CanAct() || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
 
-	Fire();
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+	FireRateDelayTimerHandle.Invalidate();
+	RecoilStart();
+	switch (FireMode)
+	{
+	case EFireMode::Single:
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, true, 0.f);
+		break;
+	case EFireMode::Burst:
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, FireDelay, true, 0.f);
+		break;
+	case EFireMode::Auto:
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::FullAutoFire, FireDelay, true, 0.f);
+		break;
+	default:
+		break;
+	}
 }
 
-void UTP_WeaponComponent::ReleasedFire(const FInputActionValue& Value)
+void UTP_WeaponComponent::ReleasedFire()
 {
-	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	IsPlayerHoldingShootButton = false;
+	/*if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
 	{
 		return;
-	}
+	}*/
 
-	StopFire();
+	//StopFire();
 }
 
 void UTP_WeaponComponent::PressedReload()
 {
-	if (Character == nullptr || Character->GetController() == nullptr || !Character->CanAct())
+	if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
 	{
 		return;
 	}
@@ -83,9 +110,74 @@ void UTP_WeaponComponent::PressedReload()
 	Reload();
 }
 
+void UTP_WeaponComponent::PressedSwitchFireMode()
+{
+	if (!CanSwitchFireMode || Character == nullptr || PCRef == nullptr || !Character->CanAct())
+	{
+		return;
+	}
+
+	SwitchFireMode();
+}
+
+void UTP_WeaponComponent::SwitchFireMode()
+{
+	switch (FireMode)
+	{
+	case EFireMode::Single:
+		FireMode = EFireMode::Burst;
+		break;
+	case EFireMode::Burst:
+		FireMode = EFireMode::Auto;
+		break;
+	case EFireMode::Auto:
+		FireMode = EFireMode::Single;
+		break;
+	default:
+		break;
+	}
+}
+
+void UTP_WeaponComponent::SingleFire()
+{
+	Fire();
+
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+	FireRateDelayTimerHandle.Invalidate();
+	StopFire();
+}
+
+void UTP_WeaponComponent::BurstFire()
+{
+	Fire();
+	BurstFireCurrent++;
+	if (BurstFireCurrent >= BurstFireRounds)
+	{
+		// Ensure the timer is cleared by using the timer handle
+		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+		FireRateDelayTimerHandle.Invalidate();
+
+		BurstFireCurrent = 0;
+		StopFire();
+	}
+}
+
+void UTP_WeaponComponent::FullAutoFire()
+{
+	Fire();
+	if (!IsPlayerHoldingShootButton)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+		FireRateDelayTimerHandle.Invalidate();
+
+		StopFire();
+	}
+}
+
 void UTP_WeaponComponent::Fire()
 {
-	if (IsReloading || IsEquipping)
+	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -96,8 +188,7 @@ void UTP_WeaponComponent::Fire()
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
 		{
-			APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
-			const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+			const FRotator SpawnRotation = PCRef->PlayerCameraManager->GetCameraRotation();
 			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 			const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
 	
@@ -115,52 +206,173 @@ void UTP_WeaponComponent::Fire()
 		UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
 		FVector StartVector = Camera->GetComponentLocation();
 		FVector ForwardVector = Camera->GetForwardVector();
-		FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, Spread);
-		FVector ResultingVector = RandomDirection * Range;
-		FVector EndVector = StartVector + ResultingVector;
+		float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
+		TArray<FHitResult> MuzzleTraceResults;
+		for (int32 i = 0; i < Pellets; i++) // bruh idk if this is a good idea, but whatever man
+		{
+			FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread + (i / PelletSpread));
+			FVector ResultingVector = RandomDirection * Range;
+			FVector EndVector = StartVector + ResultingVector;
 
-		FHitResult CameraTraceResult{};
-		auto Params = FCollisionQueryParams();
-		Params.AddIgnoredActor(Character);
-		bool isHit = GetWorld()->LineTraceSingleByChannel(
-			CameraTraceResult,
-			StartVector,
-			EndVector,
-			ECollisionChannel::ECC_Visibility,
-			Params
+			FHitResult CameraTraceResult{};
+			FCollisionQueryParams Params = FCollisionQueryParams();
+			Params.AddIgnoredActor(Character);
+			bool isHit = GetWorld()->LineTraceSingleByChannel(
+				CameraTraceResult,
+				StartVector,
+				EndVector,
+				ECollisionChannel::ECC_Visibility,
+				Params
+			);
+
+			// Trace from weapon muzzle to center trace hit location
+
+			FVector EndTrace{};
+			if (isHit)
+			{
+				FVector ScaledDirection = RandomDirection * 10.f;
+				EndTrace = CameraTraceResult.Location + ScaledDirection;
+			}
+			else
+			{
+				EndTrace = CameraTraceResult.TraceEnd;
+			}
+
+			//const FName TraceTag("MyTraceTag");
+			//GetWorld()->DebugDrawTraceTag = TraceTag;
+			//Params.TraceTag = TraceTag;
+			Params.bReturnPhysicalMaterial = true;
+			FHitResult MuzzleTraceResult{};
+			GetWorld()->LineTraceSingleByChannel(
+				MuzzleTraceResult,
+				GetSocketLocation(MuzzleSocketName),
+				EndTrace,
+				ECollisionChannel::ECC_Visibility,
+				Params
+			);
+			MuzzleTraceResults.Add(MuzzleTraceResult);
+		}
+
+		FVector muzzlePosition = GetSocketLocation(MuzzleSocketName);
+		TArray<FVector> tracerPositions;
+		TArray<FVector> impactPositions;
+		TArray<FVector> impactNormals;
+		TArray<int32> impactSurfaceTypes;
+
+		for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
+		{
+			FHitResult hitResult = MuzzleTraceResults[i];
+
+			if (hitResult.bBlockingHit)
+			{
+				tracerPositions.Add(hitResult.Location);
+				impactPositions.Add(hitResult.Location);
+				impactNormals.Add(hitResult.Normal);
+				impactSurfaceTypes.Add(hitResult.PhysMaterial->SurfaceType.GetIntValue());
+			}
+			else
+			{
+				tracerPositions.Add(hitResult.TraceEnd);
+			}
+		}
+
+		if (!IsValid(WeaponFX))
+		{
+			FTransform spawnTransform{ FRotator(), FVector() };
+			auto DeferredWeaponFXActor = Cast<AWeaponFX>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponFX::StaticClass(), spawnTransform));
+			if (DeferredWeaponFXActor != nullptr)
+			{
+				DeferredWeaponFXActor->WeaponMesh = this;
+				DeferredWeaponFXActor->MuzzleFlash_FX = MuzzleFlash_FX;
+				DeferredWeaponFXActor->Tracer_FX = Tracer_FX;
+				DeferredWeaponFXActor->ShellEject_FX = ShellEject_FX;
+				DeferredWeaponFXActor->ShellEjectMesh = ShellEjectMesh;
+				DeferredWeaponFXActor->MuzzleSocket = &MuzzleSocketName;
+				DeferredWeaponFXActor->ShellEjectSocket = &ShellEjectSocketName;
+
+				UGameplayStatics::FinishSpawningActor(DeferredWeaponFXActor, spawnTransform);
+			}
+
+			WeaponFX = DeferredWeaponFXActor;
+			WeaponFX->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+		WeaponFX->WeaponFire(tracerPositions);
+
+
+		if (!IsValid(WeaponDecals))
+		{
+			FTransform spawnTransform{ FRotator(), FVector() };
+			auto DeferredWeaponDecalsActor = Cast<AWeaponDecals>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponDecals::StaticClass(), spawnTransform));
+			if (DeferredWeaponDecalsActor != nullptr)
+			{
+				DeferredWeaponDecalsActor->ImpactDecals_FX = ImpactDecals_FX;
+
+				UGameplayStatics::FinishSpawningActor(DeferredWeaponDecalsActor, spawnTransform);
+			}
+
+			WeaponDecals = DeferredWeaponDecalsActor;
+			WeaponDecals->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+		WeaponDecals->WeaponFire(
+			impactPositions,
+			impactNormals,
+			impactSurfaceTypes,
+			muzzlePosition
 		);
 
-		// Trace from weapon muzzle to center trace hit location
-		
-		FVector EndTrace{};
-		if (isHit)
+		if (impactPositions.Num() > 0 && !IsValid(WeaponImpacts))
 		{
-			FVector ScaledDirection = RandomDirection * 10.f;
-			EndTrace = CameraTraceResult.Location + ScaledDirection;
-		}
-		else
-		{
-			EndTrace = CameraTraceResult.TraceEnd;
-		}
+			FTransform spawnTransform{ FRotator(), FVector() };
+			auto DeferredWeaponImpactsActor = Cast<AWeaponImpacts>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponImpacts::StaticClass(), spawnTransform));
+			if (DeferredWeaponImpactsActor != nullptr)
+			{
+				DeferredWeaponImpactsActor->ConcreteImpact_FX = ConcreteImpact_FX;
+				DeferredWeaponImpactsActor->GlassImpact_FX = GlassImpact_FX;
+				DeferredWeaponImpactsActor->CharacterSparksImpact_FX = CharacterSparksImpact_FX;
+				DeferredWeaponImpactsActor->DamageNumber_FX = DamageNumber_FX;
+				DeferredWeaponImpactsActor->WeaponRef = this;
 
-		const FName TraceTag("MyTraceTag");
-		GetWorld()->DebugDrawTraceTag = TraceTag;
-		Params.TraceTag = TraceTag;
-		FHitResult MuzzleTraceResult{};
-		GetWorld()->LineTraceSingleByChannel(
-			MuzzleTraceResult,
-			GetSocketLocation("Muzzle"),
-			EndTrace,
-			ECollisionChannel::ECC_Visibility,
-			Params
+				UGameplayStatics::FinishSpawningActor(DeferredWeaponImpactsActor, spawnTransform);
+			}
+
+			WeaponImpacts = DeferredWeaponImpactsActor;
+			WeaponImpacts->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+		WeaponImpacts->WeaponFire(
+			impactPositions,
+			impactNormals,
+			impactSurfaceTypes,
+			muzzlePosition
 		);
 	}
-	
-	// Try and play the sound if specified
-	if (FireSound != nullptr)
+
+	/*float newRate = 1.f / Recoil_Speed;
+	RecoilTL->SetPlayRate(newRate);
+	if (!IsOriginRecoilRotatorStored)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, Character->GetActorLocation());
+		OriginRecoilRotator = Character->Controller->GetControlRotation();
+		IsOriginRecoilRotatorStored = true;
+		UE_LOG(LogTemp, Display, TEXT("Stored Origin Recoil: %f"), OriginRecoilRotator.Pitch);
 	}
+	RecoilTL->Play();*/
+	
+	if (!IsValid(WeaponSounds))
+	{
+		FTransform spawnTransform{ FRotator(), FVector() };
+		auto DeferredWeaponSoundsActor = Cast<AWeaponSounds>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponSounds::StaticClass(), spawnTransform));
+		if (DeferredWeaponSoundsActor != nullptr)
+		{
+			DeferredWeaponSoundsActor->WeaponRef = this;
+			DeferredWeaponSoundsActor->FireSound = FireSound;
+			DeferredWeaponSoundsActor->FireSoundInterval = FireDelay * FireSoundDelayScale;
+
+			UGameplayStatics::FinishSpawningActor(DeferredWeaponSoundsActor, spawnTransform);
+		}
+
+		WeaponSounds = DeferredWeaponSoundsActor;
+		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	}
+	WeaponSounds->WeaponFire();
 	
 	// Try and play a firing animation if specified
 	if (FireAnimation != nullptr)
@@ -176,6 +388,28 @@ void UTP_WeaponComponent::Fire()
 
 void UTP_WeaponComponent::StopFire()
 {
+	////RecoilTL->SetPlayRate(RecoilReversePlayRate);
+	////RecoilTL->Reverse();
+	//RecoilTL->Stop();
+	//RecoilTL->SetPlaybackPosition(0.f, false, false);
+
+	//// idk how to access the IA_Look scalar modifier, so I'll just harcode the pitch input scale to 1 for now
+	////auto modifiers = Character->LookAction->Modifiers;
+	////UE_LOG(LogTemp, Display, TEXT("LookAction modifiers arr len: %f"), modifiers.Num());
+	////UInputModifierScalar* scale = Cast<UInputModifierScalar>(modifier);
+	////UE_LOG(LogTemp, Display, TEXT("First lookaction Modifier: %f"), scale->Scalar);
+
+	///*FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
+	//DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
+	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);*/
+	//float newRate = 1.f / CompensateRecoilSpeed;
+	//CompensateRecoilTL->SetPlayRate(newRate);
+	//CompensateRecoilTL->PlayFromStart();
+	//ResetRecoil();
+
+
+
+	RecoilStop();
 }
 
 void UTP_WeaponComponent::ForceStopFire()
@@ -374,28 +608,194 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	Character->SetHasWeapon(true);
 	Character->SetCurrentWeapon(this);
 
+	PCRef = Cast<APlayerController>(Character->GetController());
 	// Set up action bindings
-	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
+	if (PCRef != nullptr)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
 		{
 			// Set the priority of the mapping to 1, so that it overrides the Jump action with the Fire action when using touch input
 			Subsystem->AddMappingContext(FireMappingContext, 1);
 		}
 
-		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
 		{
 			// Fire
-			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedFire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &UTP_WeaponComponent::PressedFire);
 			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedFire);
 
 			// Reload
 			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedReload);
 
+			// Switch Fire Mode
+			EnhancedInputComponent->BindAction(SwitchFireModeAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedSwitchFireMode);
+
 			// ADS
 			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedADS);
 			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedADS);
 		}
+
+		CanFire = true;
+	}
+}
+
+//void UTP_WeaponComponent::RecoilTLUpdateEvent()
+//{
+//	if (Character == nullptr)
+//	{
+//		return;
+//	}
+//
+//	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
+//	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
+//}
+//
+//void UTP_WeaponComponent::CompensateRecoilAlphaTLCallback(float val)
+//{
+//	CompensateRecoilAlpha = val;
+//}
+//
+//void UTP_WeaponComponent::CompensateRecoilTLUpdateEvent()
+//{
+//	FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
+//	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
+//	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);
+//	float absolutePitch = fabs(DeltaRecoil.Pitch);
+//	float dividedDeltaPitch = absolutePitch / 1.f;
+//	float lerpedEase = UKismetMathLibrary::Lerp(0.f, dividedDeltaPitch, CompensateRecoilAlpha);
+//	Character->GetLocalViewingPlayerController()->AddPitchInput(lerpedEase);
+//	UE_LOG(LogTemp, Display, TEXT("lerped compensate recoil: %f"), lerpedEase);
+//}
+//
+//void UTP_WeaponComponent::FinishedRecoilDelegate()
+//{
+//	UE_LOG(LogTemp, Display, TEXT("FINISHED RECOIL"));
+//	/*if (RecoilTLDirection == ETimelineDirection::Backward)
+//	{
+//		UE_LOG(LogTemp, Display, TEXT("RESETTING RECOIL"));
+//		ResetRecoil();
+//	}*/
+//}
+//
+//void UTP_WeaponComponent::ResetRecoil()
+//{
+//	IsOriginRecoilRotatorStored = false;
+//}
+//
+//void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
+//{
+//	RecoilPitch = val;
+//}
+//
+//void UTP_WeaponComponent::RecoilYawTLCallback(float val)
+//{
+//	RecoilYaw = val;
+//}
+
+//Call this function when the firing begins, the recoil starts here
+void UTP_WeaponComponent::RecoilStart()
+{
+	if (RecoilCurve)
+	{
+
+		//Setting all rotators to default values
+
+		PlayerDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
+		RecoilDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
+		Del = FRotator(0.0f, 0.0f, 0.0f);
+		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(PCRef->GetControlRotation(), FRotator{0.f, 0.f, 0.f}); // in certain angles, the recovery can just cancel itself if we don't delta this with 0
+
+		IsShouldRecoil = true;
+
+		//Timer for the recoil: I have set it to 10s but dependeding how long it takes to empty the gun mag, you can increase the time.
+		GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &UTP_WeaponComponent::RecoilTimerFunction, 10.0f, false);
+
+		bRecoil = true;
+		bRecoilRecovery = false;
+	}
+}
+
+//Automatically called in RecoilStart(), no need to call this explicitly
+void UTP_WeaponComponent::RecoilTimerFunction()
+{
+	bRecoil = false;
+	GetWorld()->GetTimerManager().PauseTimer(FireTimer);
+}
+
+//Called when firing stops
+void UTP_WeaponComponent::RecoilStop()
+{
+	IsShouldRecoil = false;
+}
+
+//This function is automatically called, no need to call this. It is inside the Tick function
+void UTP_WeaponComponent::RecoveryStart()
+{
+	if (PCRef->GetControlRotation().Pitch > RecoilStartRot.Pitch)
+	{
+		bRecoilRecovery = true;
+		GetWorld()->GetTimerManager().SetTimer(RecoveryTimer, this, &UTP_WeaponComponent::RecoveryTimerFunction, RecoveryTime, false);
+	}
+}
+
+//This function too is automatically called from the recovery start function.
+void UTP_WeaponComponent::RecoveryTimerFunction()
+{
+	bRecoilRecovery = false;
+}
+
+//Needs to be called on event tick to update the control rotation.
+void UTP_WeaponComponent::RecoilTick(float DeltaTime)
+{
+	// servicable for now, but full auto still have a problem where if you move too far from the origin, the recovery is too strong (above the origin) or there won't be any recovery (below origin)
+	float recoiltime;
+	FVector RecoilVec;
+
+	if (bRecoil)
+	{
+
+		//Calculation of control rotation to update 
+
+		recoiltime = GetWorld()->GetTimerManager().GetTimerElapsed(FireTimer);
+		RecoilVec = RecoilCurve->GetVectorValue(recoiltime);
+		Del.Roll = 0;
+		Del.Pitch = (RecoilVec.Y);
+		Del.Yaw = (RecoilVec.Z);
+		PlayerDeltaRot = PCRef->GetControlRotation() - RecoilStartRot - RecoilDeltaRot;
+		PCRef->SetControlRotation(RecoilStartRot + PlayerDeltaRot + Del);
+		RecoilDeltaRot = Del;
+
+		//Conditionally start resetting the recoil
+		if (!IsShouldRecoil)
+		{
+			if (recoiltime > FireDelay)
+			{
+				GetWorld()->GetTimerManager().ClearTimer(FireTimer);
+				bRecoil = false;
+				RecoveryStart();
+			}
+		}
+		//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
+	}
+	else if (bRecoilRecovery)
+	{
+		//Recoil resetting
+		FRotator tmprot = PCRef->GetControlRotation();
+		float deltaPitch = UKismetMathLibrary::NormalizedDeltaRotator(tmprot, RecoilStartRot).Pitch;
+		if (deltaPitch > 0)
+		{
+			FRotator TargetRot = PCRef->GetControlRotation() - RecoilDeltaRot;
+			float InterpSpeed = UKismetMathLibrary::MapRangeClamped(deltaPitch, 0.f, MaxRecoilPitch, 3.f, 10.f);
+			//UE_LOG(LogTemp, Display, TEXT("interpspeed: %f"), InterpSpeed);
+			PCRef->SetControlRotation(UKismetMathLibrary::RInterpTo(PCRef->GetControlRotation(), TargetRot, DeltaTime, InterpSpeed));
+			RecoilDeltaRot = RecoilDeltaRot + (PCRef->GetControlRotation() - tmprot);
+		}
+		else
+		{
+			bRecoilRecovery = false;
+			RecoveryTimer.Invalidate();
+		}
+		//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
 	}
 }
 
@@ -406,9 +806,9 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		return;
 	}
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
+	if (PCRef != nullptr)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
 		{
 			Subsystem->RemoveMappingContext(FireMappingContext);
 		}

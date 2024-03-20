@@ -4,13 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "EFireMode.h"
 #include "TP_WeaponComponent.generated.h"
 
 class AOctahedronCharacter;
 class UTimelineComponent;
 class USightMeshComponent;
 class UUserWidget;
+class UCurveVector;
+class UNiagaraSystem;
+class AWeaponFX;
+class AWeaponDecals;
+class AWeaponImpacts;
+class AWeaponSounds;
 struct FInputActionValue;
+class UMetaSoundSource;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
@@ -27,10 +35,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UMaterialInstance* FP_Material;
-
-	/** Sound to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	USoundBase* FireSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimSequence* IdlePose;
@@ -52,6 +56,12 @@ public:
 	FVector MuzzleOffset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	FName MuzzleSocketName{"Muzzle"};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	FName ShellEjectSocketName{ "ShellEject" };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FString WeaponName{"Weapon Base"};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -64,13 +74,33 @@ public:
 	float Damage{ 5.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float FireDelay{ 0.5f };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float Range{ 10000.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float Spread{ 2.f };
+	float MinSpread{ 0.08f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float MaxSpread{ 2.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	bool CanSwitchFireMode{ false };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	int32 BurstFireRounds{ 3 };
+	int32 BurstFireCurrent{ 0 };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float FireRate{ 560.f }; // in rounds per minute. e.g. 60 RPM means there is a delay of 1 second for every shot
+	float FireDelay{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	int32 Pellets{ 1 }; // more than 1 means it's a pellet gun (shotgun)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float PelletSpread{ 10.f }; // spread of each individual pellet is originalspread + (n/PelletSpread)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	EFireMode FireMode{ EFireMode::Single };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	UMaterialParameterCollection* MPC_FP;
@@ -110,6 +140,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void ADSTLCallback(float val);
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchFireModeAction;
+
 	/** Reload Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ReloadAction;
@@ -141,6 +174,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnEquipSignature OnEquipDelegate;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SwitchFireMode();
 
 	/** Reload the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -177,6 +213,151 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool GetIsReloading() const { return IsReloading; };
 
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UTimelineComponent* RecoilTL;
+
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void RecoilTLUpdateEvent();
+
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UTimelineComponent* CompensateRecoilTL;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void CompensateRecoilAlphaTLCallback(float val);
+	//float CompensateRecoilAlpha;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void CompensateRecoilTLUpdateEvent();
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UCurveFloat* CompensateRecoilAlphaCurve;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float CompensateRecoilSpeed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
+
+	//FRotator DeltaRecoil;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float Recoil_Speed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilMaxThreshold{ 8.f };
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilReversePlayRate{ 13.f };
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilPitchReverseOffsetScale{ 13.f };
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//float RecoilYawReverseOffsetScale{ 3.f };
+
+	//FRotator OriginRecoilRotator;
+	//bool IsOriginRecoilRotatorStored{ false };
+
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void FinishedRecoilDelegate();
+
+	//UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
+	//void ResetRecoil();
+
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UCurveFloat* RecoilPitchCurve;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void RecoilPitchTLCallback(float val);
+	//float RecoilPitch;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//UCurveFloat* RecoilYawCurve;
+	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
+	//void RecoilYawTLCallback(float val);
+	//float RecoilYaw;
+
+
+
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	UCurveVector* RecoilCurve;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	bool FiringClient = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	bool bRecoil;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	bool bRecoilRecovery;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FTimerHandle FireTimer;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FTimerHandle RecoveryTimer;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilTimerFunction();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilStartRot;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilDeltaRot;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator PlayerDeltaRot;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilStart();
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilStop();
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoveryStart();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator Del;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoveryTimerFunction();
+	UPROPERTY(BlueprintReadWrite)
+	float RecoveryTime = 1.0f;
+	UPROPERTY(BlueprintReadWrite)
+	float RecoverySpeed = 10.0f;
+	UPROPERTY(BlueprintReadWrite)
+	float MaxRecoilPitch = 10.0f;
+	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	void RecoilTick(float DeltaTime);
+	bool IsShouldRecoil = false;
+
+
+
+
+
+
+	// Effects
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* MuzzleFlash_FX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* Tracer_FX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* ShellEject_FX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UStaticMesh* ShellEjectMesh;
+
+	AWeaponFX* WeaponFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* ImpactDecals_FX;
+
+	AWeaponDecals* WeaponDecals;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* ConcreteImpact_FX;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* GlassImpact_FX;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* CharacterSparksImpact_FX;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* DamageNumber_FX;
+
+	AWeaponImpacts* WeaponImpacts;
+
+	AOctahedronCharacter* GetOwningCharacter() { return Character; }
+
+	// SFX
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
+	UMetaSoundSource* FireSound;
+	AWeaponSounds* WeaponSounds;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
+	float FireSoundDelayScale{ 0.5f };
+
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()
@@ -184,14 +365,17 @@ protected:
 
 	virtual void BeginPlay();
 
-	void PressedFire(const FInputActionValue& Value);
-	void ReleasedFire(const FInputActionValue& Value);
+	void PressedFire();
+	void ReleasedFire();
 
 	void PressedReload();
+
+	void PressedSwitchFireMode();
 
 private:
 	/** The Character holding this weapon*/
 	AOctahedronCharacter* Character;
+	APlayerController* PCRef;
 
 	bool IsEquipping;
 	UFUNCTION()
@@ -204,4 +388,16 @@ private:
 	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle ReloadDelayTimerHandle;
 	void SetIsReloadingFalse();
+
+	FTimerHandle FireRateDelayTimerHandle;
+	bool IsPlayerHoldingShootButton;
+
+	UFUNCTION()
+	void SingleFire();
+
+	UFUNCTION()
+	void BurstFire();
+
+	UFUNCTION()
+	void FullAutoFire();
 };

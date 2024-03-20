@@ -146,6 +146,7 @@ public:
 
 protected:
 	virtual void BeginPlay();
+	virtual void Tick(float DeltaTime) override;
 
 public:
 		
@@ -182,6 +183,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float ADSAlpha;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	float ADSSensitivityScale{ 0.3f };
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	ECustomMovementMode MoveMode;
@@ -328,7 +332,7 @@ protected:
 	FVector PrevHandLoc;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector CamOffset;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExposedProperties)
 	float CamStrength{ 25.f };
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector CamOffsetCurrent;
@@ -341,7 +345,7 @@ protected:
 
 private:
 
-	int JumpsLeft{ 2 };
-	int JumpsMax{ 2 };
+	int32 JumpsLeft{ 2 };
+	int32 JumpsMax{ 2 };
 };
 
