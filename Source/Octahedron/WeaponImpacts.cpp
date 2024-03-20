@@ -161,7 +161,7 @@ void AWeaponImpacts::WeaponFire(
 				NC_DamageNumber->SetWorldLocation(BodyImpacts[0]);
 			}
 			UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector4(NC_DamageNumber, FName("DamageInfo"), damageInfoArray);
-			NC_DamageNumber->SetNiagaraVariableBool(FString("None"), false);
+			NC_DamageNumber->SetNiagaraVariableBool(FString("Crit"), false);
 		}
 	}
 
