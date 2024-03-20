@@ -362,7 +362,9 @@ void UTP_WeaponComponent::Fire()
 		auto DeferredWeaponSoundsActor = Cast<AWeaponSounds>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponSounds::StaticClass(), spawnTransform));
 		if (DeferredWeaponSoundsActor != nullptr)
 		{
+			DeferredWeaponSoundsActor->WeaponRef = this;
 			DeferredWeaponSoundsActor->FireSound = FireSound;
+			DeferredWeaponSoundsActor->FireSoundInterval = FireDelay * FireSoundDelayScale;
 
 			UGameplayStatics::FinishSpawningActor(DeferredWeaponSoundsActor, spawnTransform);
 		}
@@ -370,10 +372,7 @@ void UTP_WeaponComponent::Fire()
 		WeaponSounds = DeferredWeaponSoundsActor;
 		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	}
-	WeaponSounds->WeaponFire(
-		this,
-		FireDelay
-	);
+	WeaponSounds->WeaponFire();
 	
 	// Try and play a firing animation if specified
 	if (FireAnimation != nullptr)

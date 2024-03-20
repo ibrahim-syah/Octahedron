@@ -355,6 +355,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
 	UMetaSoundSource* FireSound;
 	AWeaponSounds* WeaponSounds;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
+	float FireSoundDelayScale{ 0.5f };
 
 protected:
 	/** Ends gameplay for this component. */

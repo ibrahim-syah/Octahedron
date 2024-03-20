@@ -15,12 +15,8 @@ AWeaponSounds::AWeaponSounds()
 
 }
 
-void AWeaponSounds::WeaponFire(UTP_WeaponComponent* inWeaponRef, float inFireTime)
+void AWeaponSounds::WeaponFire()
 {
-	WeaponRef = inWeaponRef;
-	FireTime = inFireTime;
-	FireSound = WeaponRef->FireSound;
-
 	if (FireSound != nullptr)
 	{
 		if (!IsValid(FireAudioComp) || !FireAudioComp->IsActive())
@@ -30,7 +26,7 @@ void AWeaponSounds::WeaponFire(UTP_WeaponComponent* inWeaponRef, float inFireTim
 				WeaponRef
 			);
 
-			FireAudioComp->SetFloatParameter(FName("ShotInterval"), FireTime);
+			FireAudioComp->SetFloatParameter(FName("ShotInterval"), FireSoundInterval);
 		}
 		FireAudioComp->SetTriggerParameter(FName("Fire"));
 	}

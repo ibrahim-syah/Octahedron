@@ -26,17 +26,14 @@ protected:
 	FTimerHandle CheckDestroyEffectTimerHandle;
 	void CheckDestroyEffect();
 
-	UTP_WeaponComponent* WeaponRef;
-	float FireTime;
 	UAudioComponent* FireAudioComp;
 
 public:	
 	// Called every frame
 	//virtual void Tick(float DeltaTime) override;
 
-	void WeaponFire(
-		UTP_WeaponComponent* inWeaponRef,
-		float inFireTime
-	);
+	void WeaponFire();
+	UTP_WeaponComponent* WeaponRef;
 	UMetaSoundSource* FireSound;
+	float FireSoundInterval;
 };
