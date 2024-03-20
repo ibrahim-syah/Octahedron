@@ -332,7 +332,7 @@ protected:
 	FVector PrevHandLoc;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector CamOffset;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ExposedProperties)
 	float CamStrength{ 25.f };
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector CamOffsetCurrent;
