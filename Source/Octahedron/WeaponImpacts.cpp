@@ -137,17 +137,12 @@ void AWeaponImpacts::WeaponFire(
 					BodyImpacts[i],
 					UKismetMathLibrary::MakeRotFromX(BodyNormals[i])
 				);
-
-				/*UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayPosition(NC_CharacterSparks, FName("ImpactPositions"), BodyImpacts);
-				UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(NC_CharacterSparks, FName("ImpactNormals"), GlassNormals);
-				NC_CharacterSparks->SetNiagaraVariableInt(FString("NumberOfHits"), BodyImpacts.Num());
-				NC_CharacterSparks->SetNiagaraVariablePosition(FString("MuzzlePosition"), MuzzlePosition);*/
 				NC_CharacterSparks->ActivateSystem();
 			}
 		}
 		if (IsValid(DamageNumber_FX) && WeaponRef != nullptr && WeaponRef->GetOwningCharacter()->IsLocallyControlled())
 		{
-			if (!IsValid(NC_Glass) || !NC_Glass->IsActive())
+			if (!IsValid(NC_DamageNumber) || !NC_DamageNumber->IsActive())
 			{
 				NC_DamageNumber = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 					this,

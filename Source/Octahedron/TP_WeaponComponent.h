@@ -348,6 +348,8 @@ public:
 	UNiagaraSystem* GlassImpact_FX;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* CharacterSparksImpact_FX;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* DamageNumber_FX;
 
 	AWeaponImpacts* WeaponImpacts;
 

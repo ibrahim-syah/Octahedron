@@ -377,6 +377,7 @@ void UTP_WeaponComponent::Fire()
 				DeferredWeaponImpactsActor->ConcreteImpact_FX = ConcreteImpact_FX;
 				DeferredWeaponImpactsActor->GlassImpact_FX = GlassImpact_FX;
 				DeferredWeaponImpactsActor->CharacterSparksImpact_FX = CharacterSparksImpact_FX;
+				DeferredWeaponImpactsActor->DamageNumber_FX = DamageNumber_FX;
 				DeferredWeaponImpactsActor->WeaponRef = this;
 
 				UGameplayStatics::FinishSpawningActor(DeferredWeaponImpactsActor, spawnTransform);
