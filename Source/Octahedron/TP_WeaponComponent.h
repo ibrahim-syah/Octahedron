@@ -15,6 +15,7 @@ class UCurveVector;
 class UNiagaraSystem;
 class AWeaponFX;
 class AWeaponDecals;
+class AWeaponImpacts;
 struct FInputActionValue;
 
 
@@ -340,6 +341,17 @@ public:
 	UNiagaraSystem* ImpactDecals_FX;
 
 	AWeaponDecals* WeaponDecals;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* ConcreteImpact_FX;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* GlassImpact_FX;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* CharacterSparksImpact_FX;
+
+	AWeaponImpacts* WeaponImpacts;
+
+	AOctahedronCharacter* GetOwningCharacter() { return Character; }
 
 protected:
 	/** Ends gameplay for this component. */

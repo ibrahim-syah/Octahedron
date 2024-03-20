@@ -18,6 +18,7 @@
 #include "SightMeshComponent.h"
 #include "WeaponFX.h"
 #include "WeaponDecals.h"
+#include "WeaponImpacts.h"
 #include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
@@ -361,6 +362,30 @@ void UTP_WeaponComponent::Fire()
 			WeaponDecals->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 		}
 		WeaponDecals->WeaponFire(
+			impactPositions,
+			impactNormals,
+			impactSurfaceTypes,
+			muzzlePosition
+		);
+
+		if (impactPositions.Num() > 0 && !IsValid(WeaponImpacts))
+		{
+			FTransform spawnTransform{ FRotator(), FVector() };
+			auto DeferredWeaponImpactsActor = Cast<AWeaponImpacts>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponImpacts::StaticClass(), spawnTransform));
+			if (DeferredWeaponImpactsActor != nullptr)
+			{
+				DeferredWeaponImpactsActor->ConcreteImpact_FX = ConcreteImpact_FX;
+				DeferredWeaponImpactsActor->GlassImpact_FX = GlassImpact_FX;
+				DeferredWeaponImpactsActor->CharacterSparksImpact_FX = CharacterSparksImpact_FX;
+				DeferredWeaponImpactsActor->WeaponRef = this;
+
+				UGameplayStatics::FinishSpawningActor(DeferredWeaponImpactsActor, spawnTransform);
+			}
+
+			WeaponImpacts = DeferredWeaponImpactsActor;
+			WeaponImpacts->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+		WeaponImpacts->WeaponFire(
 			impactPositions,
 			impactNormals,
 			impactSurfaceTypes,
