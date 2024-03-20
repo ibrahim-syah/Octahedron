@@ -19,6 +19,7 @@
 #include "WeaponFX.h"
 #include "WeaponDecals.h"
 #include "WeaponImpacts.h"
+#include "WeaponSounds.h"
 #include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
@@ -32,12 +33,6 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
 	ADSTL->SetTimelineLength(1.f);
 	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-	/*RecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("RecoilTL"));
-	RecoilTL->SetTimelineLength(3.5f);
-
-	CompensateRecoilTL = CreateDefaultSubobject<UTimelineComponent>(FName("CompensateRecoilTL"));
-	CompensateRecoilTL->SetTimelineLength(1.f);*/
 }
 
 void UTP_WeaponComponent::BeginPlay()
@@ -55,49 +50,6 @@ void UTP_WeaponComponent::BeginPlay()
 		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find ads curve for this weapon"));
 	}
 
-	/*if (RecoilPitchCurve != nullptr)
-	{
-		FOnTimelineFloat onRecoilPitchTLCallback;
-		onRecoilPitchTLCallback.BindUFunction(this, FName{ TEXT("RecoilPitchTLCallback") });
-		RecoilTL->AddInterpFloat(RecoilPitchCurve, onRecoilPitchTLCallback);
-	}
-	else
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find recoilpitch curve for this weapon"));
-	}
-
-	if (RecoilYawCurve != nullptr)
-	{
-		FOnTimelineFloat onRecoilYawTLCallback;
-		onRecoilYawTLCallback.BindUFunction(this, FName{ TEXT("RecoilYawTLCallback") });
-		RecoilTL->AddInterpFloat(RecoilYawCurve, onRecoilYawTLCallback);
-	}
-	else
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find recoilyaw curve for this weapon"));
-	}
-
-	FOnTimelineEvent onUpdateRecoilTLEvent;
-	onUpdateRecoilTLEvent.BindUFunction(this, FName{ TEXT("RecoilTLUpdateEvent") });
-	RecoilTL->SetTimelinePostUpdateFunc(onUpdateRecoilTLEvent);
-	FOnTimelineEvent onRecoilTLFinished;
-	onRecoilTLFinished.BindUFunction(this, FName{ TEXT("FinishedRecoilDelegate") });
-	RecoilTL->SetTimelineFinishedFunc(onRecoilTLFinished);
-
-	if (CompensateRecoilAlphaCurve != nullptr)
-	{
-		FOnTimelineFloat onCompensateRecoilAlphaTLCallback;
-		onCompensateRecoilAlphaTLCallback.BindUFunction(this, FName{ TEXT("CompensateRecoilAlphaTLCallback") });
-		CompensateRecoilTL->AddInterpFloat(CompensateRecoilAlphaCurve, onCompensateRecoilAlphaTLCallback);
-	}
-	else
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find compensate recoil curve for this weapon"));
-	}
-	FOnTimelineEvent onUpdateCompensateRecoilTLEvent;
-	onUpdateCompensateRecoilTLEvent.BindUFunction(this, FName{ TEXT("CompensateRecoilTLUpdateEvent") });
-	CompensateRecoilTL->SetTimelinePostUpdateFunc(onUpdateCompensateRecoilTLEvent);*/
-
 	if (ScopeSightMesh != nullptr)
 	{
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
@@ -105,6 +57,8 @@ void UTP_WeaponComponent::BeginPlay()
 	}
 
 	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
+
+	FireDelay = 60.f / FireRate;
 }
 
 void UTP_WeaponComponent::PressedFire()
@@ -115,8 +69,6 @@ void UTP_WeaponComponent::PressedFire()
 		return;
 	}
 
-	const float delay = 60.f / FireRate;
-
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 	FireRateDelayTimerHandle.Invalidate();
@@ -124,13 +76,13 @@ void UTP_WeaponComponent::PressedFire()
 	switch (FireMode)
 	{
 	case EFireMode::Single:
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, delay, true, 0.f);
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, true, 0.f);
 		break;
 	case EFireMode::Burst:
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, delay, true, 0.f);
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, FireDelay, true, 0.f);
 		break;
 	case EFireMode::Auto:
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::FullAutoFire, delay, true, 0.f);
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::FullAutoFire, FireDelay, true, 0.f);
 		break;
 	default:
 		break;
@@ -404,11 +356,24 @@ void UTP_WeaponComponent::Fire()
 	}
 	RecoilTL->Play();*/
 	
-	// Try and play the sound if specified
-	if (FireSound != nullptr)
+	if (!IsValid(WeaponSounds))
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, Character->GetActorLocation());
+		FTransform spawnTransform{ FRotator(), FVector() };
+		auto DeferredWeaponSoundsActor = Cast<AWeaponSounds>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponSounds::StaticClass(), spawnTransform));
+		if (DeferredWeaponSoundsActor != nullptr)
+		{
+			DeferredWeaponSoundsActor->FireSound = FireSound;
+
+			UGameplayStatics::FinishSpawningActor(DeferredWeaponSoundsActor, spawnTransform);
+		}
+
+		WeaponSounds = DeferredWeaponSoundsActor;
+		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	}
+	WeaponSounds->WeaponFire(
+		this,
+		FireDelay
+	);
 	
 	// Try and play a firing animation if specified
 	if (FireAnimation != nullptr)
@@ -804,8 +769,7 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 		//Conditionally start resetting the recoil
 		if (!IsShouldRecoil)
 		{
-			const float delay = 60.f / FireRate;
-			if (recoiltime > delay)
+			if (recoiltime > FireDelay)
 			{
 				GetWorld()->GetTimerManager().ClearTimer(FireTimer);
 				bRecoil = false;

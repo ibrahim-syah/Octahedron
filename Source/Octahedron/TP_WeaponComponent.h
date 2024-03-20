@@ -16,7 +16,9 @@ class UNiagaraSystem;
 class AWeaponFX;
 class AWeaponDecals;
 class AWeaponImpacts;
+class AWeaponSounds;
 struct FInputActionValue;
+class UMetaSoundSource;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
@@ -33,10 +35,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UMaterialInstance* FP_Material;
-
-	/** Sound to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	USoundBase* FireSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimSequence* IdlePose;
@@ -76,9 +74,6 @@ public:
 	float Damage{ 5.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float FireDelay{ 0.5f };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float Range{ 10000.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -96,6 +91,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float FireRate{ 560.f }; // in rounds per minute. e.g. 60 RPM means there is a delay of 1 second for every shot
+	float FireDelay{};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	int32 Pellets{ 1 }; // more than 1 means it's a pellet gun (shotgun)
@@ -354,6 +350,11 @@ public:
 	AWeaponImpacts* WeaponImpacts;
 
 	AOctahedronCharacter* GetOwningCharacter() { return Character; }
+
+	// SFX
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
+	UMetaSoundSource* FireSound;
+	AWeaponSounds* WeaponSounds;
 
 protected:
 	/** Ends gameplay for this component. */
