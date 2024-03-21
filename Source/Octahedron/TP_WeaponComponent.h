@@ -19,6 +19,8 @@ class AWeaponImpacts;
 class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
+class UDefaultCameraShakeBase;
+class UCameraShakeBase;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
@@ -270,7 +272,8 @@ public:
 	//float RecoilYaw;
 
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+	TSubclassOf<UCameraShakeBase> FireCamShake;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)

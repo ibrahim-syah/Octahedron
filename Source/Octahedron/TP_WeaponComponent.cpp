@@ -20,6 +20,7 @@
 #include "WeaponDecals.h"
 #include "WeaponImpacts.h"
 #include "WeaponSounds.h"
+#include "DefaultCameraShakeBase.h"
 #include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
@@ -373,7 +374,12 @@ void UTP_WeaponComponent::Fire()
 		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	}
 	WeaponSounds->WeaponFire();
-	
+
+	if (IsValid(FireCamShake))
+	{
+		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake);
+	}
+
 	// Try and play a firing animation if specified
 	if (FireAnimation != nullptr)
 	{
