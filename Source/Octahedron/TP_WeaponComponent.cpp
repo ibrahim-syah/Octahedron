@@ -427,22 +427,6 @@ void UTP_WeaponComponent::Equip()
 			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
 		}
 	}
-
-	Character->ADS_Offset = ADS_Offset;
-
-	if (ScopeSightMesh != nullptr)
-	{
-		if (ScopeSightMesh->FP_Material_Holo != nullptr)
-		{
-			ScopeSightMesh->SetMaterial(0, ScopeSightMesh->FP_Material_Holo);
-		}
-		if (ScopeSightMesh->FP_Material_Mesh != nullptr)
-		{
-			ScopeSightMesh->SetMaterial(1, ScopeSightMesh->FP_Material_Mesh);
-		}
-	}
-
-	OnEquipDelegate.Broadcast(Character, this);
 }
 
 void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
@@ -585,9 +569,24 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	{
 		SetMaterial(0, FP_Material);
 	}
+	Character->ADS_Offset = ADS_Offset;
+
+	if (ScopeSightMesh != nullptr)
+	{
+		if (ScopeSightMesh->FP_Material_Holo != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(0, ScopeSightMesh->FP_Material_Holo);
+		}
+		if (ScopeSightMesh->FP_Material_Mesh != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(1, ScopeSightMesh->FP_Material_Mesh);
+		}
+	}
 
 	// Try and play equip animation if specified
-	Equip();
+	//Equip(); // commented out because making a keyframed equip animation for all weapons is expensive. So i just use blend space from idle to base pose instead
+
+	OnEquipDelegate.Broadcast(Character, this);
 	
 	// switch bHasWeapon so the animation blueprint can switch to another animation set
 	Character->SetHasWeapon(true);

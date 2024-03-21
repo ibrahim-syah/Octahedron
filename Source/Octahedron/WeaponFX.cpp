@@ -24,6 +24,8 @@ void AWeaponFX::BeginPlay()
 
 void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 {
+	const float delay = 3.f;
+	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponFX::CheckDestroyEffect, delay, true, delay);
 	ImpactPositions = InImpactPositions;
 
 	FVector MuzzleLocation = WeaponMesh->GetSocketTransform(*MuzzleSocket, ERelativeTransformSpace::RTS_Actor).GetLocation();
@@ -99,9 +101,6 @@ void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(NC_Tracer, FName("ImpactPositions"), ImpactPositions); // why unreal, whyyy
 		NC_Tracer->SetNiagaraVariableBool(FString("Trigger"), TracerTrigger);
 	}
-
-	const float delay = 3.f;
-	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponFX::CheckDestroyEffect, delay, true, delay);
 }
 
 void AWeaponFX::CheckDestroyEffect()
