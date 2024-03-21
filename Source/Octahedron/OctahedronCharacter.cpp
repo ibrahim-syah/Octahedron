@@ -713,7 +713,10 @@ void AOctahedronCharacter::PressedSprint()
 
 	if (SprintToggle)
 	{
-		CurrentWeapon->ForceStopFire();
+		if (bHasWeapon)
+		{
+			CurrentWeapon->ForceStopFire();
+		}
 		StartSprint();
 	}
 	else
@@ -749,7 +752,7 @@ void AOctahedronCharacter::StartSprint()
 	{
 	case ECustomMovementMode::Walking:
 		MoveMode = ECustomMovementMode::Sprinting;
-		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * 1.6;
+		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * SprintSpeedMultiplier;
 
 		// sequence 1
 		if (ADSAlpha > 0.f && CurrentWeapon != nullptr)

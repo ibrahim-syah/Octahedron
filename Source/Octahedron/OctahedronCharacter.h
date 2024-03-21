@@ -84,6 +84,8 @@ class AOctahedronCharacter : public ACharacter
 	void StopSprint();
 
 	float SprintCharge;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Gameplay, meta = (AllowPrivateAccess = "true"))
+	float SprintSpeedMultiplier{ 1.3f };
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void SprintChargeIncrease();
