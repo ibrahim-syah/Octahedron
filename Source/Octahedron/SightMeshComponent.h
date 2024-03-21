@@ -19,9 +19,9 @@ class OCTAHEDRON_API USightMeshComponent : public UStaticMeshComponent
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UMaterialInstance* FP_Material_Mesh;
+	UMaterialInstance* FP_Material_Mesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UMaterialInstance* FP_Material_Holo;
+	UMaterialInstance* FP_Material_Holo = nullptr;
 	
 };

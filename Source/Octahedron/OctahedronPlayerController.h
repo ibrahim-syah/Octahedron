@@ -20,7 +20,7 @@ protected:
 
 	/** Input Mapping Context to be used for player input */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* InputMappingContext;
+	UInputMappingContext* InputMappingContext = nullptr;
 
 	// Begin Actor interface
 protected:

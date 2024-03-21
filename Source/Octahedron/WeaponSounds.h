@@ -21,19 +21,19 @@ public:
 
 protected:
 	// Called when the game starts or when spawned
-	//virtual void BeginPlay() override;
+	virtual void BeginPlay() override;
 
 	FTimerHandle CheckDestroyEffectTimerHandle;
 	void CheckDestroyEffect();
 
-	UAudioComponent* FireAudioComp;
+	UAudioComponent* FireAudioComp = nullptr;
 
 public:	
 	// Called every frame
 	//virtual void Tick(float DeltaTime) override;
 
 	void WeaponFire();
-	UTP_WeaponComponent* WeaponRef;
-	UMetaSoundSource* FireSound;
+	UTP_WeaponComponent* WeaponRef = nullptr;
+	UMetaSoundSource* FireSound = nullptr;
 	float FireSoundInterval;
 };

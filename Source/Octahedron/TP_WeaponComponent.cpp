@@ -394,27 +394,6 @@ void UTP_WeaponComponent::Fire()
 
 void UTP_WeaponComponent::StopFire()
 {
-	////RecoilTL->SetPlayRate(RecoilReversePlayRate);
-	////RecoilTL->Reverse();
-	//RecoilTL->Stop();
-	//RecoilTL->SetPlaybackPosition(0.f, false, false);
-
-	//// idk how to access the IA_Look scalar modifier, so I'll just harcode the pitch input scale to 1 for now
-	////auto modifiers = Character->LookAction->Modifiers;
-	////UE_LOG(LogTemp, Display, TEXT("LookAction modifiers arr len: %f"), modifiers.Num());
-	////UInputModifierScalar* scale = Cast<UInputModifierScalar>(modifier);
-	////UE_LOG(LogTemp, Display, TEXT("First lookaction Modifier: %f"), scale->Scalar);
-
-	///*FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
-	//DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
-	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);*/
-	//float newRate = 1.f / CompensateRecoilSpeed;
-	//CompensateRecoilTL->SetPlayRate(newRate);
-	//CompensateRecoilTL->PlayFromStart();
-	//ResetRecoil();
-
-
-
 	RecoilStop();
 }
 

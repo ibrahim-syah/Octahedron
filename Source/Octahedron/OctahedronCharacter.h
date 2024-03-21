@@ -28,48 +28,48 @@ class AOctahedronCharacter : public ACharacter
 
 	/** FP Root */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	USceneComponent* FP_Root;
+	USceneComponent* FP_Root = nullptr;
 
 	/** Mesh_Root spring arm */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* Mesh_Root;
+	USpringArmComponent* Mesh_Root = nullptr;
 
 	/** Offset Root */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	USceneComponent* Offset_Root;
+	USceneComponent* Offset_Root = nullptr;
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	USkeletalMeshComponent* Mesh1P;
+	USkeletalMeshComponent* Mesh1P = nullptr;
 
 	/** Cam_Root spring arm */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* Cam_Root;
+	USpringArmComponent* Cam_Root = nullptr;
 
 	/** Cam Skeleton */
 	UPROPERTY(VisibleDefaultsOnly)
-	USkeletalMeshComponent* Cam_Skel;
+	USkeletalMeshComponent* Cam_Skel = nullptr;
 
 	
 
 	/** First person camera -> instantiate in bp instead! */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FirstPersonCameraComponent;
+	UCameraComponent* FirstPersonCameraComponent = nullptr;
 
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputMappingContext* DefaultMappingContext;
+	UInputMappingContext* DefaultMappingContext = nullptr;
 
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputAction* JumpAction;
+	UInputAction* JumpAction = nullptr;
 
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputAction* MoveAction;
+	UInputAction* MoveAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SprintAction;
+	class UInputAction* SprintAction = nullptr;
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void PressedSprint();
@@ -102,10 +102,10 @@ class AOctahedronCharacter : public ACharacter
 	FVector SlideDirection;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UTimelineComponent* SlideTL;
+	UTimelineComponent* SlideTL = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* SlideAlphaCurve;
+	UCurveFloat* SlideAlphaCurve = nullptr;
 
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void SlideTLCallback(float val);
@@ -117,13 +117,13 @@ class AOctahedronCharacter : public ACharacter
 
 	/** Crouch Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* CrouchAction;
+	UInputAction* CrouchAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UTimelineComponent* CrouchTL;
+	UTimelineComponent* CrouchTL = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* CrouchAlphaCurve;
+	UCurveFloat* CrouchAlphaCurve = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float BaseWalkSpeed{ 600.f };
@@ -132,16 +132,16 @@ class AOctahedronCharacter : public ACharacter
 	void CrouchTLCallback(float val);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
-	USoundBase* FootstepCue;
+	USoundBase* FootstepCue = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
-	USoundBase* JumpCue;
+	USoundBase* JumpCue = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
-	USoundBase* LandCue;
+	USoundBase* LandCue = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, meta = (AllowPrivateAccess = "true"))
-	USoundBase* SlideCue;
+	USoundBase* SlideCue = nullptr;
 	
 public:
 	AOctahedronCharacter();
@@ -154,7 +154,7 @@ public:
 		
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
+	class UInputAction* LookAction = nullptr;
 
 	/** Bool for AnimBP to switch to another animation set */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
@@ -170,13 +170,12 @@ public:
 
 	/** Bool for AnimBP to switch to another animation set */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
-	UTP_WeaponComponent* CurrentWeapon;
+	UTP_WeaponComponent* CurrentWeapon = nullptr;
 
 	/** Setter to set the bool */
 	UFUNCTION(Category = Weapon)
 	void SetCurrentWeapon(UTP_WeaponComponent* NewWeapon);
 
-	/** Getter for the bool */
 	UFUNCTION(BlueprintPure, Category = Weapon)
 	UTP_WeaponComponent* GetCurrentWeapon();
 
@@ -264,9 +263,9 @@ protected:
 	void Dip(float Speed = 1.f, float Strength = 1.f);
 	float DipStrength{ 1.f };
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UTimelineComponent* DipTL;
+	UTimelineComponent* DipTL = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* DipAlphaCurve;
+	UCurveFloat* DipAlphaCurve = nullptr;
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void DipTlCallback(float val);
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
@@ -274,22 +273,22 @@ protected:
 	void LandingDip();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UTimelineComponent* WalkingTL;
+	UTimelineComponent* WalkingTL = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* WalkLeftRightAlphaCurve;
+	UCurveFloat* WalkLeftRightAlphaCurve = nullptr;
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void WalkLeftRightTLCallback(float val);
 	float WalkLeftRightAlpha;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* WalkUpDownAlphaCurve;
+	UCurveFloat* WalkUpDownAlphaCurve = nullptr;
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void WalkUpDownTLCallback(float val);
 	float WalkUpDownAlpha;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* WalkRollAlphaCurve;
+	UCurveFloat* WalkRollAlphaCurve = nullptr;
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void WalkRollTLCallback(float val);
 	float WalkRollAlpha;

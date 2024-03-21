@@ -20,27 +20,18 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	USceneComponent* DefaultSceneComponent;
+	USceneComponent* DefaultSceneComponent = nullptr;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	virtual void BeginPlay(
-		USkeletalMeshComponent* InWeaponMesh,
-		UNiagaraSystem* InMuzzleFlash_FX,
-		UNiagaraSystem* InTracer_FX,
-		UNiagaraSystem* InShellEject_FX,
-		UStaticMesh* InShellEjectMesh,
-		FName* InMuzzleSocket,
-		FName* InShellEjectSocket
-	);
 
 	TArray<FVector> ImpactPositions;
 
-	UNiagaraComponent* NC_MuzzleFlash;
+	UNiagaraComponent* NC_MuzzleFlash = nullptr;
 	bool MuzzleFlashTrigger;
-	UNiagaraComponent* NC_ShellEject;
+	UNiagaraComponent* NC_ShellEject = nullptr;
 	bool ShellEjectTrigger;
-	UNiagaraComponent* NC_Tracer;
+	UNiagaraComponent* NC_Tracer = nullptr;
 	bool TracerTrigger;
 
 	FTimerHandle CheckDestroyEffectTimerHandle;
@@ -50,13 +41,13 @@ public:
 	// Called every frame
 	//virtual void Tick(float DeltaTime) override;
 
-	USkeletalMeshComponent* WeaponMesh;
-	UNiagaraSystem* MuzzleFlash_FX;
-	UNiagaraSystem* Tracer_FX;
-	UNiagaraSystem* ShellEject_FX;
-	UStaticMesh* ShellEjectMesh;
-	FName* MuzzleSocket;
-	FName* ShellEjectSocket;
+	USkeletalMeshComponent* WeaponMesh = nullptr;
+	UNiagaraSystem* MuzzleFlash_FX = nullptr;
+	UNiagaraSystem* Tracer_FX = nullptr;
+	UNiagaraSystem* ShellEject_FX = nullptr;
+	UStaticMesh* ShellEjectMesh = nullptr;
+	FName* MuzzleSocket = nullptr;
+	FName* ShellEjectSocket = nullptr;
 
 	UFUNCTION(BlueprintCallable)
 	void WeaponFire(TArray<FVector> InImpactPositions);

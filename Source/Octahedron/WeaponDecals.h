@@ -28,7 +28,7 @@ protected:
 	FVector MuzzlePosition;
 
 	void RemoveInvalidSurfaces();
-	UNiagaraComponent* NC_ImpactDecals;
+	UNiagaraComponent* NC_ImpactDecals = nullptr;
 	bool ImpactDecalsTrigger;
 
 	FTimerHandle CheckDestroyEffectTimerHandle;
@@ -46,6 +46,6 @@ public:
 		FVector InMuzzlePosition
 	);
 
-	UNiagaraSystem* ImpactDecals_FX;
+	UNiagaraSystem* ImpactDecals_FX = nullptr;
 
 };

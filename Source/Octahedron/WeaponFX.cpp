@@ -22,67 +22,6 @@ void AWeaponFX::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AWeaponFX::BeginPlay(
-	USkeletalMeshComponent* InWeaponMesh,
-	UNiagaraSystem* InMuzzleFlash_FX,
-	UNiagaraSystem* InTracer_FX,
-	UNiagaraSystem* InShellEject_FX,
-	UStaticMesh* InShellEjectMesh,
-	FName* InMuzzleSocket,
-	FName* InShellEjectSocket
-)
-{
-	/*if (InWeaponMesh == nullptr)
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("WeaponMesh for the effect actor is missing!"));
-		Destroy();
-		return;
-	}
-
-	if (InMuzzleFlash_FX == nullptr)
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("MuzzleFlash_FX for the effect actor is missing!"));
-		Destroy();
-		return;
-	}
-
-	if (InTracer_FX == nullptr)
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("Tracer_FX for the effect actor is missing!"));
-		Destroy();
-		return;
-	}
-
-	if (InShellEjectMesh == nullptr)
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("ShellEjectMesh for the effect actor is missing!"));
-		Destroy();
-		return;
-	}
-
-	if (InMuzzleSocket == nullptr)
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("MuzzleSocket for the effect actor is missing!"));
-		Destroy();
-		return;
-	}
-
-	if (InShellEjectSocket == nullptr)
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("ShellEjectSocket for the effect actor is missing!"));
-		Destroy();
-		return;
-	}*/
-
-	WeaponMesh = InWeaponMesh;
-	MuzzleFlash_FX = InMuzzleFlash_FX;
-	Tracer_FX = InTracer_FX;
-	ShellEject_FX = InShellEject_FX;
-	ShellEjectMesh = InShellEjectMesh;
-	MuzzleSocket = InMuzzleSocket;
-	ShellEjectSocket = InShellEjectSocket;
-}
-
 void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 {
 	ImpactPositions = InImpactPositions;
