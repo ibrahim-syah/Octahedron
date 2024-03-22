@@ -22,7 +22,8 @@ class UMetaSoundSource;
 class UDefaultCameraShakeBase;
 class UCameraShakeBase;
 
-
+DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
+DECLARE_DELEGATE(FOnFireAnimationDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -166,6 +167,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void ForceStopFire();
 
+	FOnFireAnimationDelegate WeaponFireAnimateDelegate;
+
 	/** Stow the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Stow();
@@ -173,6 +176,9 @@ public:
 	/** Equip the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Equip();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	float EquipTime{ 1.f };
 
 	UPROPERTY(BlueprintAssignable)
 	FOnEquipSignature OnEquipDelegate;
@@ -210,7 +216,7 @@ public:
 	USightMeshComponent* ScopeSightMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
-	UUserWidget* ScopeReticleWidget = nullptr;
+	TSubclassOf<UUserWidget> ScopeReticleWidget = nullptr;
 
 	UFUNCTION(BlueprintPure)
 	bool GetIsReloading() const { return IsReloading; };
@@ -325,10 +331,11 @@ private:
 	APlayerController* PCRef = nullptr;
 
 	bool IsEquipping;
-	UFUNCTION()
-	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+	//UFUNCTION()
+	//void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle EquipDelayTimerHandle;
 	void SetIsEquippingFalse();
+	FOnWeaponChange WeaponChangeDelegate;
 
 	bool IsReloading;
 	UFUNCTION()

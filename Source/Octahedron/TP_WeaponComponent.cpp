@@ -22,6 +22,7 @@
 #include "WeaponSounds.h"
 #include "DefaultCameraShakeBase.h"
 #include "Curves/CurveVector.h"
+#include "Public/FPAnimInstance.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -93,12 +94,6 @@ void UTP_WeaponComponent::PressedFire()
 void UTP_WeaponComponent::ReleasedFire()
 {
 	IsPlayerHoldingShootButton = false;
-	/*if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
-	{
-		return;
-	}*/
-
-	//StopFire();
 }
 
 void UTP_WeaponComponent::PressedReload()
@@ -347,15 +342,7 @@ void UTP_WeaponComponent::Fire()
 		);
 	}
 
-	/*float newRate = 1.f / Recoil_Speed;
-	RecoilTL->SetPlayRate(newRate);
-	if (!IsOriginRecoilRotatorStored)
-	{
-		OriginRecoilRotator = Character->Controller->GetControlRotation();
-		IsOriginRecoilRotatorStored = true;
-		UE_LOG(LogTemp, Display, TEXT("Stored Origin Recoil: %f"), OriginRecoilRotator.Pitch);
-	}
-	RecoilTL->Play();*/
+	WeaponFireAnimateDelegate.ExecuteIfBound();
 	
 	if (!IsValid(WeaponSounds))
 	{
@@ -415,35 +402,12 @@ void UTP_WeaponComponent::Equip()
 	}
 	IsEquipping = true;
 
+	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
+	WeaponChangeDelegate.Execute(this);
 
-	if (EquipAnimation != nullptr)
-	{
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			AnimInstance->Montage_Play(EquipAnimation, 1.f);
+	WeaponFireAnimateDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("Fire"));
 
-			FOnMontageBlendingOutStarted BlendOutDelegate;
-			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::EquipAnimationBlendOut);
-			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
-		}
-	}
-}
-
-void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
-{
-	if (bInterrupted)
-	{
-		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(EquipDelayTimerHandle);
-		if (Character != nullptr && !isTimerActive)
-		{
-			Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, 0.2f, false);
-		}
-	}
-	else
-	{
-		SetIsEquippingFalse();
-	}
+	Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, EquipTime, false);
 }
 
 void UTP_WeaponComponent::SetIsEquippingFalse()
@@ -585,7 +549,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	}
 
 	// Try and play equip animation if specified
-	//Equip(); // commented out because making a keyframed equip animation for all weapons is expensive. So i just use blend space from idle to base pose instead
+	Equip();
 
 	OnEquipDelegate.Broadcast(Character, this);
 	
@@ -623,59 +587,6 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 		CanFire = true;
 	}
 }
-
-//void UTP_WeaponComponent::RecoilTLUpdateEvent()
-//{
-//	if (Character == nullptr)
-//	{
-//		return;
-//	}
-//
-//	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
-//	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
-//}
-//
-//void UTP_WeaponComponent::CompensateRecoilAlphaTLCallback(float val)
-//{
-//	CompensateRecoilAlpha = val;
-//}
-//
-//void UTP_WeaponComponent::CompensateRecoilTLUpdateEvent()
-//{
-//	FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
-//	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
-//	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);
-//	float absolutePitch = fabs(DeltaRecoil.Pitch);
-//	float dividedDeltaPitch = absolutePitch / 1.f;
-//	float lerpedEase = UKismetMathLibrary::Lerp(0.f, dividedDeltaPitch, CompensateRecoilAlpha);
-//	Character->GetLocalViewingPlayerController()->AddPitchInput(lerpedEase);
-//	UE_LOG(LogTemp, Display, TEXT("lerped compensate recoil: %f"), lerpedEase);
-//}
-//
-//void UTP_WeaponComponent::FinishedRecoilDelegate()
-//{
-//	UE_LOG(LogTemp, Display, TEXT("FINISHED RECOIL"));
-//	/*if (RecoilTLDirection == ETimelineDirection::Backward)
-//	{
-//		UE_LOG(LogTemp, Display, TEXT("RESETTING RECOIL"));
-//		ResetRecoil();
-//	}*/
-//}
-//
-//void UTP_WeaponComponent::ResetRecoil()
-//{
-//	IsOriginRecoilRotatorStored = false;
-//}
-//
-//void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
-//{
-//	RecoilPitch = val;
-//}
-//
-//void UTP_WeaponComponent::RecoilYawTLCallback(float val)
-//{
-//	RecoilYaw = val;
-//}
 
 //Call this function when the firing begins, the recoil starts here
 void UTP_WeaponComponent::RecoilStart()

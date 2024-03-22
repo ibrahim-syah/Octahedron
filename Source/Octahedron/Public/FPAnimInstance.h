@@ -1,0 +1,127 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Animation/AnimInstance.h"
+#include "Octahedron/ECustomMovementMode.h"
+#include "FPAnimInstance.generated.h"
+
+class AOctahedronCharacter;
+class UTP_WeaponComponent;
+
+/**
+ * 
+ */
+UCLASS()
+class OCTAHEDRON_API UFPAnimInstance : public UAnimInstance
+{
+	GENERATED_BODY()
+	
+public:
+	UFPAnimInstance();
+
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeBeginPlay() override;
+
+	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
+	void SetCurrentWeapon(UTP_WeaponComponent* Weapon);
+
+	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
+	void Fire();
+
+protected:
+	void ModifyForADS();
+	void ModifyForSprint(float DeltaSeconds);
+	void InterpRecoil(float DeltaSeconds);
+	void InterpFinalRecoil(float DeltaSeconds);
+
+protected:
+	bool IsMoving;
+	bool IsInAir;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	bool IsHasWeapon;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	AOctahedronCharacter* Character = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	UTP_WeaponComponent* CurrentWeapon = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector LocationLagPos;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float CrouchAlpha;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector WalkAnimPos;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FRotator WalkAnimRot;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float WalkAnimAlpha;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float DipAlpha;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector PitchOffsetPos;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector CamRotOffset;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FRotator CamRotCurrent;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FRotator CamRotRate;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FRotator InAirTilt;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector InAirOffset;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector CamOffset;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float CamAnimAlpha;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector CamOffsetCurrent;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float ADS_Alpha;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float ADS_Alpha_Lerp;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector ADSOffset;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	UAnimSequence* CurrentWeaponIdlePose = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	ECustomMovementMode MoveMode;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector SprintAnimPos;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FRotator SprintAnimRot;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FTransform LeftHandIK;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FTransform RecoilTransform;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FTransform FinalRecoilTransform;
+
+};
