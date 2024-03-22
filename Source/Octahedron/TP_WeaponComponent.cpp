@@ -391,7 +391,6 @@ void UTP_WeaponComponent::Fire()
 	//	}
 	//}
 
-	Character->GetMesh1P()->GetAnimInstance()->CallFunction()
 }
 
 void UTP_WeaponComponent::StopFire()
