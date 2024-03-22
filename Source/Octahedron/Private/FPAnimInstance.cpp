@@ -117,5 +117,20 @@ void UFPAnimInstance::InterpFinalRecoil(float DeltaSeconds)
 
 void UFPAnimInstance::Fire()
 {
-	FinalRecoilTransform.SetRotation(FRotator(0.f, 0.f, -5.f).Quaternion());
+	FVector RecoilLoc = FinalRecoilTransform.GetLocation();
+	RecoilLoc += FVector(
+		FMath::RandRange(-0.1f, 0.1f),
+		FMath::RandRange(-3.f, -1.f),
+		FMath::RandRange(0.2f, 1.f)
+	);
+	
+	FRotator RecoilRot = FinalRecoilTransform.GetRotation().Rotator();
+	RecoilRot += FRotator(
+		FMath::RandRange(-5.f, 5.f),
+		FMath::RandRange(-1.f, 1.f),
+		FMath::RandRange(-3.f, -1.f)
+	);
+
+	FinalRecoilTransform.SetLocation(RecoilLoc);
+	FinalRecoilTransform.SetRotation(RecoilRot.Quaternion());
 }
