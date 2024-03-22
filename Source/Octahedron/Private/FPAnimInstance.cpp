@@ -31,8 +31,11 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		if (IsValid(CurrentWeapon) && IsValid(CurrentWeaponIdlePose))
 		{
-			InterpRecoil(DeltaSeconds);
-			InterpFinalRecoil(DeltaSeconds);
+			if (!RecoilTransform.Equals(FTransform()) || !FinalRecoilTransform.Equals(FTransform()))
+			{
+				InterpRecoil(DeltaSeconds);
+				InterpFinalRecoil(DeltaSeconds);
+			}
 
 			FTransform A = CurrentWeapon->GetSocketTransform(FName("S_LeftHand"));
 			FTransform rightHandTransform = Character->GetMesh1P()->GetSocketTransform(FName("hand_r"));
@@ -119,16 +122,16 @@ void UFPAnimInstance::Fire()
 {
 	FVector RecoilLoc = FinalRecoilTransform.GetLocation();
 	RecoilLoc += FVector(
-		FMath::RandRange(-0.1f, 0.1f),
-		FMath::RandRange(-3.f, -1.f),
-		FMath::RandRange(0.2f, 1.f)
+		FMath::RandRange(-0.1f, 0.1f) * ADS_Alpha_Lerp,
+		FMath::RandRange(-3.f, -1.f) * ADS_Alpha_Lerp,
+		FMath::RandRange(0.2f, 1.f) * ADS_Alpha_Lerp
 	);
 	
 	FRotator RecoilRot = FinalRecoilTransform.GetRotation().Rotator();
 	RecoilRot += FRotator(
-		FMath::RandRange(-5.f, 5.f),
-		FMath::RandRange(-1.f, 1.f),
-		FMath::RandRange(-3.f, -1.f)
+		FMath::RandRange(-5.f, 5.f) * ADS_Alpha_Lerp,
+		FMath::RandRange(-1.f, 1.f) * ADS_Alpha_Lerp,
+		FMath::RandRange(-3.f, -1.f) * ADS_Alpha_Lerp
 	);
 
 	FinalRecoilTransform.SetLocation(RecoilLoc);
