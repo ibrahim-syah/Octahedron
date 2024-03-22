@@ -19,6 +19,8 @@ class AWeaponImpacts;
 class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
+class UDefaultCameraShakeBase;
+class UCameraShakeBase;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
@@ -30,26 +32,26 @@ class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
 
 public:
 	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category=Projectile)
-	TSubclassOf<class AOctahedronProjectile> ProjectileClass;
+	UPROPERTY(EditAnywhere, Category=Projectile)
+	TSubclassOf<class AOctahedronProjectile> ProjectileClass = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UMaterialInstance* FP_Material;
+	UMaterialInstance* FP_Material = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimSequence* IdlePose;
+	UAnimSequence* IdlePose = nullptr;
 	
 	/** AnimMontage to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* FireAnimation;
+	UAnimMontage* FireAnimation = nullptr;
 
 	/** AnimMontage to play when equipping or picking up the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* EquipAnimation;
+	UAnimMontage* EquipAnimation = nullptr;
 
 	/** AnimMontage to play when reloading the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* ReloadAnimation;
+	UAnimMontage* ReloadAnimation = nullptr;
 
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
@@ -103,8 +105,8 @@ public:
 	EFireMode FireMode{ EFireMode::Single };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
-	UMaterialParameterCollection* MPC_FP;
-	UMaterialParameterCollectionInstance* MPC_FP_Instance;
+	UMaterialParameterCollection* MPC_FP = nullptr;
+	UMaterialParameterCollectionInstance* MPC_FP_Instance = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float FOV_Base{ 90.f };
@@ -120,32 +122,32 @@ public:
 
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	class UInputMappingContext* FireMappingContext;
+	class UInputMappingContext* FireMappingContext = nullptr;
 
 	/** Fire Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	class UInputAction* FireAction;
+	class UInputAction* FireAction = nullptr;
 
 	/** ADS Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ADSAction;
+	class UInputAction* ADSAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UTimelineComponent* ADSTL;
+	UTimelineComponent* ADSTL = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* ADSAlphaCurve;
+	UCurveFloat* ADSAlphaCurve = nullptr;
 	float ADSAlpha;
 
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void ADSTLCallback(float val);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SwitchFireModeAction;
+	class UInputAction* SwitchFireModeAction = nullptr;
 
 	/** Reload Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ReloadAction;
+	class UInputAction* ReloadAction = nullptr;
 
 	/** Sets default values for this component's properties */
 	UTP_WeaponComponent();
@@ -205,76 +207,21 @@ public:
 
 	/** Scope Sight Mesh */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
-	USightMeshComponent* ScopeSightMesh;
+	USightMeshComponent* ScopeSightMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ADS")
-	UUserWidget* ScopeReticleWidget;
+	UUserWidget* ScopeReticleWidget = nullptr;
 
 	UFUNCTION(BlueprintPure)
 	bool GetIsReloading() const { return IsReloading; };
 
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//UTimelineComponent* RecoilTL;
 
-	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//void RecoilTLUpdateEvent();
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//UTimelineComponent* CompensateRecoilTL;
-	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//void CompensateRecoilAlphaTLCallback(float val);
-	//float CompensateRecoilAlpha;
-	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//void CompensateRecoilTLUpdateEvent();
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//UCurveFloat* CompensateRecoilAlphaCurve;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	//float CompensateRecoilSpeed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
-
-	//FRotator DeltaRecoil;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	//float Recoil_Speed{ 1.f }; // 1 is 100% speed, bigger is slower, pretty confusing, need rework!
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	//float RecoilMaxThreshold{ 8.f };
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	//float RecoilReversePlayRate{ 13.f };
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	//float RecoilPitchReverseOffsetScale{ 13.f };
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	//float RecoilYawReverseOffsetScale{ 3.f };
-
-	//FRotator OriginRecoilRotator;
-	//bool IsOriginRecoilRotatorStored{ false };
-
-	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//void FinishedRecoilDelegate();
-
-	//UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
-	//void ResetRecoil();
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//UCurveFloat* RecoilPitchCurve;
-	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//void RecoilPitchTLCallback(float val);
-	//float RecoilPitch;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//UCurveFloat* RecoilYawCurve;
-	//UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
-	//void RecoilYawTLCallback(float val);
-	//float RecoilYaw;
-
-
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+	TSubclassOf<UCameraShakeBase> FireCamShake = nullptr;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	UCurveVector* RecoilCurve;
+	UCurveVector* RecoilCurve = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	bool FiringClient = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
@@ -320,41 +267,41 @@ public:
 
 	// Effects
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* MuzzleFlash_FX;
+	UNiagaraSystem* MuzzleFlash_FX = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* Tracer_FX;
+	UNiagaraSystem* Tracer_FX = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* ShellEject_FX;
+	UNiagaraSystem* ShellEject_FX = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UStaticMesh* ShellEjectMesh;
+	UStaticMesh* ShellEjectMesh = nullptr;
 
-	AWeaponFX* WeaponFX;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* ImpactDecals_FX;
-
-	AWeaponDecals* WeaponDecals;
+	AWeaponFX* WeaponFX = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* ConcreteImpact_FX;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* GlassImpact_FX;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* CharacterSparksImpact_FX;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* DamageNumber_FX;
+	UNiagaraSystem* ImpactDecals_FX = nullptr;
 
-	AWeaponImpacts* WeaponImpacts;
+	AWeaponDecals* WeaponDecals = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* ConcreteImpact_FX = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* GlassImpact_FX = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* CharacterSparksImpact_FX = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* DamageNumber_FX = nullptr;
+
+	AWeaponImpacts* WeaponImpacts = nullptr;
 
 	AOctahedronCharacter* GetOwningCharacter() { return Character; }
 
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
-	UMetaSoundSource* FireSound;
-	AWeaponSounds* WeaponSounds;
+	UMetaSoundSource* FireSound = nullptr;
+	AWeaponSounds* WeaponSounds = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
 	float FireSoundDelayScale{ 0.5f };
 
@@ -374,8 +321,8 @@ protected:
 
 private:
 	/** The Character holding this weapon*/
-	AOctahedronCharacter* Character;
-	APlayerController* PCRef;
+	AOctahedronCharacter* Character = nullptr;
+	APlayerController* PCRef = nullptr;
 
 	bool IsEquipping;
 	UFUNCTION()

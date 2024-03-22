@@ -17,6 +17,9 @@ AWeaponSounds::AWeaponSounds()
 
 void AWeaponSounds::WeaponFire()
 {
+	const float delay = 3.f;
+	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponSounds::CheckDestroyEffect, delay, true, delay);
+
 	if (FireSound != nullptr)
 	{
 		if (!IsValid(FireAudioComp) || !FireAudioComp->IsActive())
@@ -30,9 +33,6 @@ void AWeaponSounds::WeaponFire()
 		}
 		FireAudioComp->SetTriggerParameter(FName("Fire"));
 	}
-
-	const float delay = 3.f;
-	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponSounds::CheckDestroyEffect, delay, true, delay);
 }
 
 void AWeaponSounds::CheckDestroyEffect()
@@ -47,11 +47,11 @@ void AWeaponSounds::CheckDestroyEffect()
 }
 
 // Called when the game starts or when spawned
-//void AWeaponSounds::BeginPlay()
-//{
-//	Super::BeginPlay();
-//	
-//}
+void AWeaponSounds::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
 
 // Called every frame
 //void AWeaponSounds::Tick(float DeltaTime)

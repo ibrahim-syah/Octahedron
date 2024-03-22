@@ -57,6 +57,9 @@ void AWeaponImpacts::WeaponFire(
 	FVector inMuzzlePosition
 )
 {
+	const float delay = 3.f;
+	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponImpacts::CheckDestroyEffect, delay, true, delay);
+
 	ImpactPositions = inImpactPositions;
 	ImpactNormals = inImpactNormals;
 	ImpactSurfaces = inImpactSurfaces;
@@ -166,9 +169,6 @@ void AWeaponImpacts::WeaponFire(
 	GlassNormals.Empty();
 	ConcreteImpacts.Empty();
 	ConcreteNormals.Empty();
-
-	const float delay = 3.f;
-	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponImpacts::CheckDestroyEffect, delay, true, delay);
 }
 
 void AWeaponImpacts::CheckDestroyEffect()

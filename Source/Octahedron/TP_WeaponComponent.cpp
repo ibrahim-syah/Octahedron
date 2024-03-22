@@ -20,6 +20,7 @@
 #include "WeaponDecals.h"
 #include "WeaponImpacts.h"
 #include "WeaponSounds.h"
+#include "DefaultCameraShakeBase.h"
 #include "Curves/CurveVector.h"
 
 // Sets default values for this component's properties
@@ -373,7 +374,12 @@ void UTP_WeaponComponent::Fire()
 		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	}
 	WeaponSounds->WeaponFire();
-	
+
+	if (IsValid(FireCamShake))
+	{
+		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake);
+	}
+
 	// Try and play a firing animation if specified
 	if (FireAnimation != nullptr)
 	{
@@ -388,27 +394,6 @@ void UTP_WeaponComponent::Fire()
 
 void UTP_WeaponComponent::StopFire()
 {
-	////RecoilTL->SetPlayRate(RecoilReversePlayRate);
-	////RecoilTL->Reverse();
-	//RecoilTL->Stop();
-	//RecoilTL->SetPlaybackPosition(0.f, false, false);
-
-	//// idk how to access the IA_Look scalar modifier, so I'll just harcode the pitch input scale to 1 for now
-	////auto modifiers = Character->LookAction->Modifiers;
-	////UE_LOG(LogTemp, Display, TEXT("LookAction modifiers arr len: %f"), modifiers.Num());
-	////UInputModifierScalar* scale = Cast<UInputModifierScalar>(modifier);
-	////UE_LOG(LogTemp, Display, TEXT("First lookaction Modifier: %f"), scale->Scalar);
-
-	///*FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
-	//DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
-	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);*/
-	//float newRate = 1.f / CompensateRecoilSpeed;
-	//CompensateRecoilTL->SetPlayRate(newRate);
-	//CompensateRecoilTL->PlayFromStart();
-	//ResetRecoil();
-
-
-
 	RecoilStop();
 }
 
@@ -442,22 +427,6 @@ void UTP_WeaponComponent::Equip()
 			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
 		}
 	}
-
-	Character->ADS_Offset = ADS_Offset;
-
-	if (ScopeSightMesh != nullptr)
-	{
-		if (ScopeSightMesh->FP_Material_Holo != nullptr)
-		{
-			ScopeSightMesh->SetMaterial(0, ScopeSightMesh->FP_Material_Holo);
-		}
-		if (ScopeSightMesh->FP_Material_Mesh != nullptr)
-		{
-			ScopeSightMesh->SetMaterial(1, ScopeSightMesh->FP_Material_Mesh);
-		}
-	}
-
-	OnEquipDelegate.Broadcast(Character, this);
 }
 
 void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
@@ -600,9 +569,24 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	{
 		SetMaterial(0, FP_Material);
 	}
+	Character->ADS_Offset = ADS_Offset;
+
+	if (ScopeSightMesh != nullptr)
+	{
+		if (ScopeSightMesh->FP_Material_Holo != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(0, ScopeSightMesh->FP_Material_Holo);
+		}
+		if (ScopeSightMesh->FP_Material_Mesh != nullptr)
+		{
+			ScopeSightMesh->SetMaterial(1, ScopeSightMesh->FP_Material_Mesh);
+		}
+	}
 
 	// Try and play equip animation if specified
-	Equip();
+	//Equip(); // commented out because making a keyframed equip animation for all weapons is expensive. So i just use blend space from idle to base pose instead
+
+	OnEquipDelegate.Broadcast(Character, this);
 	
 	// switch bHasWeapon so the animation blueprint can switch to another animation set
 	Character->SetHasWeapon(true);

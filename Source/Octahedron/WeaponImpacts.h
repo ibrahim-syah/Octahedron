@@ -37,10 +37,10 @@ protected:
 
 	void SplitArrayBySurface();
 
-	UNiagaraComponent* NC_Concrete;
-	UNiagaraComponent* NC_Glass;
-	UNiagaraComponent* NC_CharacterSparks;
-	UNiagaraComponent* NC_DamageNumber;
+	UNiagaraComponent* NC_Concrete = nullptr;
+	UNiagaraComponent* NC_Glass = nullptr;
+	UNiagaraComponent* NC_CharacterSparks = nullptr;
+	UNiagaraComponent* NC_DamageNumber = nullptr;
 
 	FTimerHandle CheckDestroyEffectTimerHandle;
 	void CheckDestroyEffect();
@@ -56,10 +56,10 @@ public:
 		FVector inMuzzlePosition
 	);
 
-	UNiagaraSystem* ConcreteImpact_FX;
-	UNiagaraSystem* GlassImpact_FX;
-	UNiagaraSystem* CharacterSparksImpact_FX;
-	UNiagaraSystem* DamageNumber_FX;
-	UTP_WeaponComponent* WeaponRef;
+	UNiagaraSystem* ConcreteImpact_FX = nullptr;
+	UNiagaraSystem* GlassImpact_FX = nullptr;
+	UNiagaraSystem* CharacterSparksImpact_FX = nullptr;
+	UNiagaraSystem* DamageNumber_FX = nullptr;
+	UTP_WeaponComponent* WeaponRef = nullptr;
 
 };
