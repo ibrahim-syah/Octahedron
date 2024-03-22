@@ -58,7 +58,8 @@ void AWeaponImpacts::WeaponFire(
 )
 {
 	const float delay = 3.f;
-	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponImpacts::CheckDestroyEffect, delay, true, delay);
+	FTimerHandle CheckDestroyEffectTimerHandle;
+	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponImpacts::CheckDestroyEffect, delay);
 
 	ImpactPositions = inImpactPositions;
 	ImpactNormals = inImpactNormals;
