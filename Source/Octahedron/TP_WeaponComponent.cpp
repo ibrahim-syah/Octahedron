@@ -725,12 +725,12 @@ void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, boo
 	{
 		SetIsReloadingFalse();
 	}
-	Character->GetFPAnimInstance()->IsLeftHandIKActive = true;
 }
 
 void UTP_WeaponComponent::SetIsReloadingFalse()
 {
 	IsReloading = false;
+	Character->GetFPAnimInstance()->IsLeftHandIKActive = true;
 
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(ReloadDelayTimerHandle);
