@@ -364,7 +364,7 @@ void UTP_WeaponComponent::Fire()
 
 	if (IsValid(FireCamShake))
 	{
-		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake);
+		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake, ADSAlphaLerp);
 	}
 
 	// Try and play a firing animation if specified
@@ -506,6 +506,7 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 	}
 
 	ADSAlpha = val;
+	ADSAlphaLerp = FMath::Lerp(0.2f, 1.f, (1.f - ADSAlpha));
 	Character->ADSAlpha = ADSAlpha;
 	float lerpedFOV = FMath::Lerp(FOV_Base, FOV_ADS, ADSAlpha);
 	UCameraComponent* camera = Character->GetFirstPersonCameraComponent();
@@ -660,8 +661,8 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 		recoiltime = GetWorld()->GetTimerManager().GetTimerElapsed(FireTimer);
 		RecoilVec = RecoilCurve->GetVectorValue(recoiltime);
 		Del.Roll = 0;
-		Del.Pitch = (RecoilVec.Y);
-		Del.Yaw = (RecoilVec.Z);
+		Del.Pitch = (RecoilVec.Y * ADSAlphaLerp);
+		Del.Yaw = (RecoilVec.Z * ADSAlphaLerp);
 		PlayerDeltaRot = PCRef->GetControlRotation() - RecoilStartRot - RecoilDeltaRot;
 		PCRef->SetControlRotation(RecoilStartRot + PlayerDeltaRot + Del);
 		RecoilDeltaRot = Del;

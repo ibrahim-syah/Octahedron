@@ -132,7 +132,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* ADSAlphaCurve = nullptr;
-	float ADSAlpha;
+	float ADSAlpha{ 0.f };
+	float ADSAlphaLerp{ 1.f };
 
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void ADSTLCallback(float val);
