@@ -139,4 +139,9 @@ protected:
 	FRotator RecoilRotMin{ -5.f, -1.f, -3.f };
 	FRotator RecoilRotMax{ 5.f, 1.f, -1.f };
 
+	FVector RecoilLocMinADS{ 0.f, -7.f, 0.f };
+	FVector RecoilLocMaxADS{ 0.f, -6.f, 0.f };
+	FRotator RecoilRotMinADS{ 0.f, 0.f, 0.f };
+	FRotator RecoilRotMaxADS{ 0.f, 0.f, 0.f };
+
 };

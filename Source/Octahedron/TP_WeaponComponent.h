@@ -223,33 +223,33 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	UCurveVector* RecoilCurve = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	bool FiringClient = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//bool FiringClient = false;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	bool bRecoil;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	bool bRecoilRecovery;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FTimerHandle FireTimer;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FTimerHandle RecoveryTimer;
-	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilTimerFunction();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilStartRot;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilDeltaRot;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator PlayerDeltaRot;
-	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilStart();
-	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilStop();
-	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoveryStart();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator Del;
-	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoveryTimerFunction();
 	UPROPERTY(BlueprintReadWrite)
 	float RecoveryTime = 1.0f;
@@ -257,7 +257,7 @@ public:
 	float RecoverySpeed = 10.0f;
 	UPROPERTY(BlueprintReadWrite)
 	float MaxRecoilPitch = 10.0f;
-	UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilTick(float DeltaTime);
 	bool IsShouldRecoil = false;
 
@@ -270,6 +270,15 @@ public:
 	FRotator RecoilRotMin{ -5.f, -1.f, -3.f };
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilRotMax{ 5.f, 1.f, -1.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FVector RecoilLocMinADS{ 0.f, -7.f, 0.f };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FVector RecoilLocMaxADS{ 0.f, -6.f, 0.f };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilRotMinADS{ 0.f, 0.f, 0.f };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilRotMaxADS{ 0.f, 0.f, 0.f };
 
 
 

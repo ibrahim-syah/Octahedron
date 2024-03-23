@@ -88,6 +88,11 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		RecoilLocMax = CurrentWeapon->RecoilLocMin;
 		RecoilRotMin = CurrentWeapon->RecoilRotMin;
 		RecoilRotMax = CurrentWeapon->RecoilRotMax;
+
+		RecoilLocMinADS = CurrentWeapon->RecoilLocMinADS;
+		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
+		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
+		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;
 	}
 }
 
@@ -135,18 +140,23 @@ void UFPAnimInstance::SnapLeftHandToWeapon()
 
 void UFPAnimInstance::Fire()
 {
+	FVector locMin = FMath::Lerp(RecoilLocMinADS, RecoilLocMin, ADS_Alpha);
+	FVector locMax = FMath::Lerp(RecoilLocMaxADS, RecoilLocMax, ADS_Alpha);
+	FRotator rotMin = FMath::Lerp(RecoilRotMinADS, RecoilRotMin, ADS_Alpha);
+	FRotator rotMax = FMath::Lerp(RecoilRotMaxADS, RecoilRotMax, ADS_Alpha);
+
 	FVector RecoilLoc = FinalRecoilTransform.GetLocation();
 	RecoilLoc += FVector(
-		FMath::RandRange(RecoilLocMin.X, RecoilLocMax.X) * ADS_Alpha_Lerp,
-		FMath::RandRange(RecoilLocMin.Y, RecoilLocMax.Y),
-		FMath::RandRange(RecoilLocMin.Z, RecoilLocMax.Z) * ADS_Alpha_Lerp
+		FMath::RandRange(locMin.X, locMax.X),
+		FMath::RandRange(locMin.Y, locMax.Y),
+		FMath::RandRange(locMin.Z, locMax.Z)
 	);
 	
 	FRotator RecoilRot = FinalRecoilTransform.GetRotation().Rotator();
 	RecoilRot += FRotator(
-		FMath::RandRange(RecoilRotMin.Pitch, RecoilRotMax.Pitch) * ADS_Alpha_Lerp,
-		FMath::RandRange(RecoilRotMin.Yaw, RecoilRotMax.Yaw) * ADS_Alpha_Lerp,
-		FMath::RandRange(RecoilRotMin.Roll, RecoilRotMax.Roll) * ADS_Alpha_Lerp
+		FMath::RandRange(rotMin.Pitch, rotMax.Pitch),
+		FMath::RandRange(rotMin.Yaw, rotMax.Yaw),
+		FMath::RandRange(rotMin.Roll, rotMax.Roll)
 	);
 
 	FinalRecoilTransform.SetLocation(RecoilLoc);
