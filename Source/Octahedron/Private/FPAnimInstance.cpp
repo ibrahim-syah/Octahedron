@@ -81,6 +81,7 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		IsHasWeapon = true;
 		CurrentWeapon = Weapon;
 		CurrentWeaponIdlePose = CurrentWeapon->IdlePose;
+		IsLeftHandIKActive = true;
 	}
 }
 
@@ -127,7 +128,6 @@ void UFPAnimInstance::SnapLeftHandToWeapon()
 	Character->GetMesh1P()->TransformToBoneSpace(FName("hand_r"), TLeftHandSocket.GetLocation(), TLeftHandSocket.GetRotation().Rotator(), boneSpaceLoc, boneSpaceRot);
 	TLeftHand.SetLocation(boneSpaceLoc);
 	TLeftHand.SetRotation(boneSpaceRot.Quaternion());
-	IsLeftHandIKActive = true;
 }
 
 void UFPAnimInstance::Fire()

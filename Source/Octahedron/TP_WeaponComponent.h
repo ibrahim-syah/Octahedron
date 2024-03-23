@@ -42,9 +42,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimSequence* IdlePose = nullptr;
 	
-	/** AnimMontage to play each time we fire */
+	///** AnimMontage to play each time we fire on FP Mesh*/
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	//UAnimMontage* FireAnimation = nullptr;
+
+	/** AnimMontage to play each time we fire on Weapon*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* FireAnimation = nullptr;
+	UAnimSequence* WeaponFireAnimation = nullptr;
 
 	/** AnimMontage to play when equipping or picking up the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)

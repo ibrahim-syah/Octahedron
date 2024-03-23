@@ -378,6 +378,12 @@ void UTP_WeaponComponent::Fire()
 	//	}
 	//}
 
+	// Try and play a firing animation if specified
+	if (WeaponFireAnimation != nullptr)
+	{
+		PlayAnimation(WeaponFireAnimation, false);
+	}
+
 }
 
 void UTP_WeaponComponent::StopFire()
