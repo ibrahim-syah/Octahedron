@@ -18,6 +18,7 @@ class UInputMappingContext;
 class UTimelineComponent;
 class TP_WeaponComponent;
 struct FInputActionValue;
+class UFPAnimInstance;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -209,6 +210,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void ForceStartSlide();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFPAnimInstance* GetFPAnimInstance() { return FPAnimInstance; }
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -349,6 +353,7 @@ private:
 
 	int32 JumpsLeft{ 2 };
 	int32 JumpsMax{ 2 };
+	UFPAnimInstance* FPAnimInstance = nullptr;
 
 public:
 	FVector GetLocationLagPos() { return LocationLagPos; }

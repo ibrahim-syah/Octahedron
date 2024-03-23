@@ -30,6 +30,9 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
 	void Fire();
 
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	bool IsLeftHandIKActive;
+
 protected:
 	void ModifyForADS();
 	void ModifyForSprint(float DeltaSeconds);

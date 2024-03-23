@@ -17,6 +17,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "TP_WeaponComponent.h"
+#include "Public/FPAnimInstance.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -199,6 +200,11 @@ void AOctahedronCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	if (UFPAnimInstance* fpAnimInstance = Cast<UFPAnimInstance>(Mesh1P->GetAnimInstance()))
+	{
+		FPAnimInstance = fpAnimInstance;
+	}
 
 	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))

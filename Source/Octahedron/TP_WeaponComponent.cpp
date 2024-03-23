@@ -431,14 +431,14 @@ void UTP_WeaponComponent::Reload()
 
 	if (Character != nullptr && ReloadAnimation != nullptr)
 	{
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
+		if (Character->GetFPAnimInstance())
 		{
-			AnimInstance->Montage_Play(ReloadAnimation, 1.f);
+			Character->GetFPAnimInstance()->IsLeftHandIKActive = false;
+			Character->GetFPAnimInstance()->Montage_Play(ReloadAnimation, 1.f);
 
 			FOnMontageBlendingOutStarted BlendOutDelegate;
 			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
-			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
+			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
 		}
 	}
 }
@@ -725,6 +725,7 @@ void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, boo
 	{
 		SetIsReloadingFalse();
 	}
+	Character->GetFPAnimInstance()->IsLeftHandIKActive = true;
 }
 
 void UTP_WeaponComponent::SetIsReloadingFalse()
