@@ -24,8 +24,8 @@ void AWeaponFX::BeginPlay()
 
 void AWeaponFX::WeaponFire(TArray<FVector> InImpactPositions)
 {
-	const float delay = 3.f;
-	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponFX::CheckDestroyEffect, delay, true, delay);
+	//const float delay = 3.f;
+	//GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponFX::CheckDestroyEffect, delay, true, delay);
 	ImpactPositions = InImpactPositions;
 
 	FVector MuzzleLocation = WeaponMesh->GetSocketTransform(*MuzzleSocket, ERelativeTransformSpace::RTS_Actor).GetLocation();

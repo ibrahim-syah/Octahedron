@@ -476,9 +476,8 @@ void UTP_WeaponComponent::EnterADS()
 	{
 		return;
 	}
-
-	float newRate = 1.f / ADS_Speed;
-	ADSTL->SetPlayRate(newRate);
+	
+	ADSTL->SetPlayRate(FMath::Clamp(ADS_Speed, 0.1f, 10.f));
 
 	Character->ForceStopSprint();
 	ADSTL->Play();

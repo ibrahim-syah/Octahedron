@@ -48,6 +48,9 @@ protected:
 	bool IsHasWeapon;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float EquipTime{ 1.f };
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	AOctahedronCharacter* Character = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
