@@ -364,7 +364,7 @@ void UTP_WeaponComponent::Fire()
 
 	if (IsValid(FireCamShake))
 	{
-		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake, ADSAlphaLerp);
+		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake);
 	}
 
 	// Try and play a firing animation if specified
@@ -661,8 +661,8 @@ void UTP_WeaponComponent::RecoilTick(float DeltaTime)
 		recoiltime = GetWorld()->GetTimerManager().GetTimerElapsed(FireTimer);
 		RecoilVec = RecoilCurve->GetVectorValue(recoiltime);
 		Del.Roll = 0;
-		Del.Pitch = (RecoilVec.Y * ADSAlphaLerp);
-		Del.Yaw = (RecoilVec.Z * ADSAlphaLerp);
+		Del.Pitch = (RecoilVec.Y);
+		Del.Yaw = (RecoilVec.Z);
 		PlayerDeltaRot = PCRef->GetControlRotation() - RecoilStartRot - RecoilDeltaRot;
 		PCRef->SetControlRotation(RecoilStartRot + PlayerDeltaRot + Del);
 		RecoilDeltaRot = Del;
