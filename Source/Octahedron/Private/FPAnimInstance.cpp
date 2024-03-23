@@ -66,7 +66,7 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		CamOffsetCurrent = UKismetMathLibrary::VInterpTo(CamOffsetCurrent, CamOffset, DeltaSeconds, interpSpeed);
 
 		ADS_Alpha = (1.f - Character->GetADSAlpha());
-		ADS_Alpha_Lerp = FMath::Lerp(0.3f, 1.f, ADS_Alpha);
+		ADS_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha);
 
 		ModifyForADS();
 
@@ -90,7 +90,7 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 void UFPAnimInstance::ModifyForADS()
 {
 	CamAnimAlpha = CamAnimAlpha * ADS_Alpha_Lerp;
-	WalkAnimAlpha = WalkAnimAlpha * ADS_Alpha_Lerp;
+	WalkAnimAlpha = WalkAnimAlpha * ADS_Alpha;
 	CrouchAlpha = CrouchAlpha * ADS_Alpha;
 	DipAlpha = DipAlpha * ADS_Alpha_Lerp;
 }
