@@ -36,10 +36,7 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				InterpRecoil(DeltaSeconds);
 				InterpFinalRecoil(DeltaSeconds);
 			}
-
-			FTransform A = CurrentWeapon->GetSocketTransform(FName("S_LeftHand"));
-			FTransform rightHandTransform = Character->GetMesh1P()->GetSocketTransform(FName("hand_r"));
-			LeftHandIK = UKismetMathLibrary::MakeRelativeTransform(A, rightHandTransform);
+			SnapLeftHandToWeapon();
 		}
 
 		LocationLagPos = Character->GetLocationLagPos();
@@ -116,6 +113,20 @@ void UFPAnimInstance::InterpFinalRecoil(float DeltaSeconds)
 	float interpSpeed = (1.f / DeltaSeconds) / 10.f;
 	FinalRecoilTransform = UKismetMathLibrary::TInterpTo(FinalRecoilTransform, FTransform(), DeltaSeconds, interpSpeed);
 	
+}
+
+void UFPAnimInstance::SnapLeftHandToWeapon()
+{
+	/*FTransform A = CurrentWeapon->GetSocketTransform(FName("S_LeftHand"));
+			FTransform rightHandTransform = Character->GetMesh1P()->GetSocketTransform(FName("hand_r"));
+			LeftHandIK = UKismetMathLibrary::MakeRelativeTransform(A, rightHandTransform);*/
+
+	FTransform TLeftHandSocket = CurrentWeapon->GetSocketTransform(FName("S_LeftHand"));
+	FVector boneSpaceLoc;
+	FRotator boneSpaceRot;
+	Character->GetMesh1P()->TransformToBoneSpace(FName("hand_r"), TLeftHandSocket.GetLocation(), TLeftHandSocket.GetRotation().Rotator(), boneSpaceLoc, boneSpaceRot);
+	TLeftHand.SetLocation(boneSpaceLoc);
+	TLeftHand.SetRotation(boneSpaceRot.Quaternion());
 }
 
 void UFPAnimInstance::Fire()

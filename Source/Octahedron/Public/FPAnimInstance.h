@@ -35,6 +35,7 @@ protected:
 	void ModifyForSprint(float DeltaSeconds);
 	void InterpRecoil(float DeltaSeconds);
 	void InterpFinalRecoil(float DeltaSeconds);
+	void SnapLeftHandToWeapon();
 
 protected:
 	bool IsMoving;
@@ -115,8 +116,11 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FRotator SprintAnimRot;
 
+	/*UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FTransform LeftHandIK;*/
+
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
-	FTransform LeftHandIK;
+	FTransform TLeftHand;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FTransform RecoilTransform;
