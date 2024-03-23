@@ -83,6 +83,11 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		CurrentWeaponIdlePose = CurrentWeapon->IdlePose;
 		IsLeftHandIKActive = true;
 		EquipTime = CurrentWeapon->EquipTime;
+
+		RecoilLocMin = CurrentWeapon->RecoilLocMin;
+		RecoilLocMax = CurrentWeapon->RecoilLocMin;
+		RecoilRotMin = CurrentWeapon->RecoilRotMin;
+		RecoilRotMax = CurrentWeapon->RecoilRotMax;
 	}
 }
 
@@ -106,22 +111,19 @@ void UFPAnimInstance::ModifyForSprint(float DeltaSeconds)
 
 void UFPAnimInstance::InterpRecoil(float DeltaSeconds)
 {
-	float interpSpeed = (1.f / DeltaSeconds) / 10.f;
+	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
 	RecoilTransform = UKismetMathLibrary::TInterpTo(RecoilTransform, FinalRecoilTransform, DeltaSeconds, interpSpeed);
 }
 
 void UFPAnimInstance::InterpFinalRecoil(float DeltaSeconds)
 {
-	float interpSpeed = (1.f / DeltaSeconds) / 10.f;
+	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
 	FinalRecoilTransform = UKismetMathLibrary::TInterpTo(FinalRecoilTransform, FTransform(), DeltaSeconds, interpSpeed);
 	
 }
 
 void UFPAnimInstance::SnapLeftHandToWeapon()
 {
-	/*FTransform A = CurrentWeapon->GetSocketTransform(FName("S_LeftHand"));
-			FTransform rightHandTransform = Character->GetMesh1P()->GetSocketTransform(FName("hand_r"));
-			LeftHandIK = UKismetMathLibrary::MakeRelativeTransform(A, rightHandTransform);*/
 
 	FTransform TLeftHandSocket = CurrentWeapon->GetSocketTransform(FName("S_LeftHand"));
 	FVector boneSpaceLoc;
@@ -135,16 +137,16 @@ void UFPAnimInstance::Fire()
 {
 	FVector RecoilLoc = FinalRecoilTransform.GetLocation();
 	RecoilLoc += FVector(
-		FMath::RandRange(-0.1f, 0.1f) * ADS_Alpha_Lerp,
-		FMath::RandRange(-3.f, -1.f) * ADS_Alpha_Lerp,
-		FMath::RandRange(0.2f, 1.f) * ADS_Alpha_Lerp
+		FMath::RandRange(RecoilLocMin.X, RecoilLocMax.X) * ADS_Alpha_Lerp,
+		FMath::RandRange(RecoilLocMin.Y, RecoilLocMax.Y),
+		FMath::RandRange(RecoilLocMin.Z, RecoilLocMax.Z) * ADS_Alpha_Lerp
 	);
 	
 	FRotator RecoilRot = FinalRecoilTransform.GetRotation().Rotator();
 	RecoilRot += FRotator(
-		FMath::RandRange(-5.f, 5.f) * ADS_Alpha_Lerp,
-		FMath::RandRange(-1.f, 1.f) * ADS_Alpha_Lerp,
-		FMath::RandRange(-3.f, -1.f) * ADS_Alpha_Lerp
+		FMath::RandRange(RecoilRotMin.Pitch, RecoilRotMax.Pitch) * ADS_Alpha_Lerp,
+		FMath::RandRange(RecoilRotMin.Yaw, RecoilRotMax.Yaw) * ADS_Alpha_Lerp,
+		FMath::RandRange(RecoilRotMin.Roll, RecoilRotMax.Roll) * ADS_Alpha_Lerp
 	);
 
 	FinalRecoilTransform.SetLocation(RecoilLoc);

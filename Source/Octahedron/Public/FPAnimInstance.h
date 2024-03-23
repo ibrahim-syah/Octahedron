@@ -134,4 +134,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FTransform FinalRecoilTransform;
 
+	FVector RecoilLocMin{ -0.1f, -3.f, 0.2f };
+	FVector RecoilLocMax{ 0.1f, -1.f, 1.f };
+	FRotator RecoilRotMin{ -5.f, -1.f, -3.f };
+	FRotator RecoilRotMax{ 5.f, 1.f, -1.f };
+
 };

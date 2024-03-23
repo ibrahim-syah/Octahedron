@@ -261,6 +261,16 @@ public:
 	void RecoilTick(float DeltaTime);
 	bool IsShouldRecoil = false;
 
+	// Weapon Mesh Recoil/Kick
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FVector RecoilLocMin{ -0.1f, -3.f, 0.2f };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FVector RecoilLocMax{ 0.1f, -1.f, 1.f };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilRotMin{ -5.f, -1.f, -3.f };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	FRotator RecoilRotMax{ 5.f, 1.f, -1.f };
+
 
 
 
