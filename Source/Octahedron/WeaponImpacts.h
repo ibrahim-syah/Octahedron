@@ -42,6 +42,7 @@ protected:
 	UNiagaraComponent* NC_CharacterSparks = nullptr;
 	UNiagaraComponent* NC_DamageNumber = nullptr;
 
+	FTimerHandle CheckDestroyEffectTimerHandle;
 	void CheckDestroyEffect();
 
 public:	

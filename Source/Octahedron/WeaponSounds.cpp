@@ -17,8 +17,8 @@ AWeaponSounds::AWeaponSounds()
 
 void AWeaponSounds::WeaponFire()
 {
-	//const float delay = 3.f;
-	//GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponSounds::CheckDestroyEffect, delay, true, delay);
+	const float delay = 3.f;
+	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponSounds::CheckDestroyEffect, delay, true, delay);
 
 	if (FireSound != nullptr)
 	{

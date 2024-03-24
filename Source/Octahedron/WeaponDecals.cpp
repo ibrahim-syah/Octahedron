@@ -38,8 +38,8 @@ void AWeaponDecals::RemoveInvalidSurfaces()
 
 void AWeaponDecals::WeaponFire(TArray<FVector> InImpactPositions, TArray<FVector> InImpactNormals, TArray<int32> InImpactSurfaces, FVector InMuzzlePosition)
 {
-	//const float delay = 3.f;
-	//GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponDecals::CheckDestroyEffect, delay, true, delay);
+	const float delay = 3.f;
+	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponDecals::CheckDestroyEffect, delay, true, delay);
 	ImpactPositions = InImpactPositions;
 	ImpactNormals = InImpactNormals;
 	ImpactSurfaces = InImpactSurfaces;

@@ -57,8 +57,8 @@ void AWeaponImpacts::WeaponFire(
 	FVector inMuzzlePosition
 )
 {
-	//const float delay = 3.f;
-	//GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponImpacts::CheckDestroyEffect, delay);
+	const float delay = 3.f;
+	GetWorldTimerManager().SetTimer(CheckDestroyEffectTimerHandle, this, &AWeaponImpacts::CheckDestroyEffect, delay);
 
 	ImpactPositions = inImpactPositions;
 	ImpactNormals = inImpactNormals;
