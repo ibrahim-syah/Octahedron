@@ -34,6 +34,8 @@ public:
 	bool IsLeftHandIKActive;
 
 protected:
+	void SetSightTransform();
+	void SetRelativeHandTransform();
 	void ModifyForADS();
 	void ModifyForSprint(float DeltaSeconds);
 	void InterpRecoil(float DeltaSeconds);
@@ -100,6 +102,13 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FVector CamOffsetCurrent;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FTransform SightTransform;
+	bool IsSightTransformSet;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FTransform RelativeHandTransform;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	float ADS_Alpha;

@@ -5,6 +5,8 @@
 #include "Octahedron/OctahedronCharacter.h"
 #include "Octahedron/TP_WeaponComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Camera/CameraComponent.h"
+
 
 UFPAnimInstance::UFPAnimInstance()
 {
@@ -31,6 +33,12 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		if (IsValid(CurrentWeapon) && IsValid(CurrentWeaponIdlePose))
 		{
+			if (!IsSightTransformSet)
+			{
+				SetSightTransform();
+				SetRelativeHandTransform();
+				IsSightTransformSet = true;
+			}
 			if (!RecoilTransform.Equals(FTransform()) || !FinalRecoilTransform.Equals(FTransform()))
 			{
 				InterpRecoil(DeltaSeconds);
@@ -94,6 +102,26 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
 		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;
 	}
+}
+
+void UFPAnimInstance::SetSightTransform()
+{
+	const FTransform cameraWorldTransform = Character->GetFirstPersonCameraComponent()->GetComponentTransform();
+	const FTransform mesh1pWorldTransform = Character->GetMesh1P()->GetComponentTransform();
+
+	const FTransform relativeTransform = UKismetMathLibrary::MakeRelativeTransform(cameraWorldTransform, mesh1pWorldTransform);
+
+	SightTransform.SetLocation(relativeTransform.GetLocation() + relativeTransform.GetRotation().GetForwardVector() * CurrentWeapon->Sight_ForwardLength);
+	SightTransform.SetRotation(relativeTransform.Rotator().Quaternion());
+
+}
+
+void UFPAnimInstance::SetRelativeHandTransform()
+{
+	RelativeHandTransform = UKismetMathLibrary::MakeRelativeTransform(
+		CurrentWeapon->GetSocketTransform("Sight"),
+		Character->GetMesh1P()->GetSocketTransform("hand_r")
+	);
 }
 
 void UFPAnimInstance::ModifyForADS()

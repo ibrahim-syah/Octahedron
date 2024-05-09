@@ -105,6 +105,9 @@ public:
 	UMaterialParameterCollectionInstance* MPC_FP_Instance = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	float Sight_ForwardLength{ 30.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float FOV_Base{ 90.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
