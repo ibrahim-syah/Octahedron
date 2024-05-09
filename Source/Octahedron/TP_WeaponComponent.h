@@ -16,7 +16,7 @@ class UNiagaraSystem;
 //class AWeaponFX;
 //class AWeaponDecals;
 //class AWeaponImpacts;
-//class AWeaponSounds;
+class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
 class UDefaultCameraShakeBase;
@@ -329,7 +329,7 @@ public:
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
 	UMetaSoundSource* FireSound = nullptr;
-	//AWeaponSounds* WeaponSounds = nullptr;
+	AWeaponSounds* WeaponSounds = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
 	float FireSoundDelayScale{ 0.5f };
 
