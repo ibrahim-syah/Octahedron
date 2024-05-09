@@ -259,6 +259,7 @@ void UTP_WeaponComponent::Fire()
 		TArray<FVector> impactPositions;
 		TArray<FVector> impactNormals;
 		TArray<int32> impactSurfaceTypes;
+		//TArray<EPhysicalSurface> impactSurfaceTypes;
 
 		for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
 		{
@@ -277,7 +278,9 @@ void UTP_WeaponComponent::Fire()
 			}
 		}
 
-		if (!IsValid(WeaponFX))
+		OnWeaponFireDelegate.Broadcast(impactPositions, impactNormals, impactSurfaceTypes);
+
+		/*if (!IsValid(WeaponFX))
 		{
 			FTransform spawnTransform{ FRotator(), FVector() };
 			auto DeferredWeaponFXActor = Cast<AWeaponFX>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponFX::StaticClass(), spawnTransform));
@@ -344,12 +347,12 @@ void UTP_WeaponComponent::Fire()
 			impactNormals,
 			impactSurfaceTypes,
 			muzzlePosition
-		);
+		);*/
 	}
 
 	WeaponFireAnimateDelegate.ExecuteIfBound();
 	
-	if (!IsValid(WeaponSounds))
+	/*if (!IsValid(WeaponSounds))
 	{
 		FTransform spawnTransform{ FRotator(), FVector() };
 		auto DeferredWeaponSoundsActor = Cast<AWeaponSounds>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponSounds::StaticClass(), spawnTransform));
@@ -365,7 +368,7 @@ void UTP_WeaponComponent::Fire()
 		WeaponSounds = DeferredWeaponSoundsActor;
 		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	}
-	WeaponSounds->WeaponFire();
+	WeaponSounds->WeaponFire();*/
 
 	if (IsValid(FireCamShake))
 	{

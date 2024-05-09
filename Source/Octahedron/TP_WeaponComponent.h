@@ -13,10 +13,10 @@ class USightMeshComponent;
 class UUserWidget;
 class UCurveVector;
 class UNiagaraSystem;
-class AWeaponFX;
-class AWeaponDecals;
-class AWeaponImpacts;
-class AWeaponSounds;
+//class AWeaponFX;
+//class AWeaponDecals;
+//class AWeaponImpacts;
+//class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
 class UDefaultCameraShakeBase;
@@ -25,6 +25,7 @@ class UCameraShakeBase;
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DELEGATE(FOnFireAnimationDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnWeaponFireSignature, TArray<FVector>, ImpactPositions, TArray<FVector>, ImpactNormals, TArray<int32>, ImpactSurfaceTypes);
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
@@ -155,6 +156,10 @@ public:
 	/** Make the weapon Fire a Projectile */
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
+
+	// weapon fire effect (Shell eject, muzzle flash, tracer) implemented in blueprint but called from cpp (Fire() function)
+	UPROPERTY(BlueprintAssignable)
+	FOnWeaponFireSignature OnWeaponFireDelegate;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void StopFire();
@@ -298,12 +303,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UStaticMesh* ShellEjectMesh = nullptr;
 
-	AWeaponFX* WeaponFX = nullptr;
+	//AWeaponFX* WeaponFX = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* ImpactDecals_FX = nullptr;
 
-	AWeaponDecals* WeaponDecals = nullptr;
+	//AWeaponDecals* WeaponDecals = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* ConcreteImpact_FX = nullptr;
@@ -314,14 +319,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* DamageNumber_FX = nullptr;
 
-	AWeaponImpacts* WeaponImpacts = nullptr;
+	//AWeaponImpacts* WeaponImpacts = nullptr;
 
 	AOctahedronCharacter* GetOwningCharacter() { return Character; }
 
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
 	UMetaSoundSource* FireSound = nullptr;
-	AWeaponSounds* WeaponSounds = nullptr;
+	//AWeaponSounds* WeaponSounds = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
 	float FireSoundDelayScale{ 0.5f };
 
