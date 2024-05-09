@@ -254,31 +254,30 @@ void UTP_WeaponComponent::Fire()
 			MuzzleTraceResults.Add(MuzzleTraceResult);
 		}
 
-		FVector muzzlePosition = GetSocketLocation(MuzzleSocketName);
-		TArray<FVector> tracerPositions;
-		TArray<FVector> impactPositions;
-		TArray<FVector> impactNormals;
-		TArray<int32> impactSurfaceTypes;
-		//TArray<EPhysicalSurface> impactSurfaceTypes;
+		//FVector muzzlePosition = GetSocketLocation(MuzzleSocketName);
+		//TArray<FVector> tracerPositions;
+		//TArray<FVector> impactPositions;
+		//TArray<FVector> impactNormals;
+		////TArray<UPhysicalMaterial> impactSurfaceTypes;
 
-		for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
-		{
-			FHitResult hitResult = MuzzleTraceResults[i];
+		//for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
+		//{
+		//	FHitResult hitResult = MuzzleTraceResults[i];
 
-			if (hitResult.bBlockingHit)
-			{
-				tracerPositions.Add(hitResult.Location);
-				impactPositions.Add(hitResult.Location);
-				impactNormals.Add(hitResult.Normal);
-				impactSurfaceTypes.Add(hitResult.PhysMaterial->SurfaceType.GetIntValue());
-			}
-			else
-			{
-				tracerPositions.Add(hitResult.TraceEnd);
-			}
-		}
+		//	if (hitResult.bBlockingHit)
+		//	{
+		//		tracerPositions.Add(hitResult.Location);
+		//		impactPositions.Add(hitResult.Location);
+		//		impactNormals.Add(hitResult.Normal);
+		//		//impactSurfaceTypes.Add(hitResult.PhysMaterial.Get());
+		//	}
+		//	else
+		//	{
+		//		tracerPositions.Add(hitResult.TraceEnd);
+		//	}
+		//}
 
-		OnWeaponFireDelegate.Broadcast(impactPositions, impactNormals, impactSurfaceTypes);
+		OnWeaponFireDelegate.Broadcast(MuzzleTraceResults);
 
 		/*if (!IsValid(WeaponFX))
 		{

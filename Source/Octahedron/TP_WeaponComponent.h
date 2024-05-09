@@ -22,10 +22,10 @@ class UMetaSoundSource;
 class UDefaultCameraShakeBase;
 class UCameraShakeBase;
 
-DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DELEGATE(FOnFireAnimationDelegate);
+DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFireSignature, TArray<FHitResult>, HitResults);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnWeaponFireSignature, TArray<FVector>, ImpactPositions, TArray<FVector>, ImpactNormals, TArray<int32>, ImpactSurfaceTypes);
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
