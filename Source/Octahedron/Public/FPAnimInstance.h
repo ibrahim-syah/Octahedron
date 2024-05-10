@@ -116,8 +116,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	float ADS_Alpha_Lerp;
 
-	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
-	FVector ADSOffset;
+	/*UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	FVector ADSOffset;*/
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	UAnimSequence* CurrentWeaponIdlePose = nullptr;

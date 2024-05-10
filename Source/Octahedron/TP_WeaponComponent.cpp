@@ -351,7 +351,7 @@ void UTP_WeaponComponent::Fire()
 
 	WeaponFireAnimateDelegate.ExecuteIfBound();
 	
-	if (!IsValid(WeaponSounds))
+	/*if (!IsValid(WeaponSounds))
 	{
 		FTransform spawnTransform{ FRotator(), FVector() };
 		auto DeferredWeaponSoundsActor = Cast<AWeaponSounds>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponSounds::StaticClass(), spawnTransform));
@@ -367,7 +367,7 @@ void UTP_WeaponComponent::Fire()
 		WeaponSounds = DeferredWeaponSoundsActor;
 		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	}
-	WeaponSounds->WeaponFire();
+	WeaponSounds->WeaponFire();*/
 
 	if (IsValid(FireCamShake))
 	{
@@ -547,7 +547,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	{
 		SetMaterial(0, FP_Material);
 	}
-	Character->ADS_Offset = ADS_Offset;
+	//Character->ADS_Offset = ADS_Offset;
 
 	if (ScopeSightMesh != nullptr)
 	{

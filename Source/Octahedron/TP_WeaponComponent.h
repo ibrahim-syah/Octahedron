@@ -16,7 +16,7 @@ class UNiagaraSystem;
 //class AWeaponFX;
 //class AWeaponDecals;
 //class AWeaponImpacts;
-class AWeaponSounds;
+//class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
 class UDefaultCameraShakeBase;
@@ -116,8 +116,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float ADS_Speed{ 0.35f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
-	FVector ADS_Offset;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
+	FVector ADS_Offset;*/
 
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
@@ -329,7 +329,7 @@ public:
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
 	UMetaSoundSource* FireSound = nullptr;
-	AWeaponSounds* WeaponSounds = nullptr;
+	//AWeaponSounds* WeaponSounds = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
 	float FireSoundDelayScale{ 0.5f };
 

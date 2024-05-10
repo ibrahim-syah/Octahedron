@@ -180,8 +180,8 @@ public:
 	UFUNCTION(BlueprintPure, Category = Weapon)
 	UTP_WeaponComponent* GetCurrentWeapon();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
-	FVector ADS_Offset;
+	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector ADS_Offset;*/
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float ADSAlpha;
@@ -371,7 +371,7 @@ public:
 	FVector GetCamOffsetCurrent() { return CamOffsetCurrent; }
 	float GetCamAnimAlpha() { return CamAnimAlpha; }
 	float GetADSAlpha() { return ADSAlpha; }
-	FVector GetADSOffset() { return ADS_Offset; }
+	//FVector GetADSOffset() { return ADS_Offset; }
 	ECustomMovementMode GetMoveMode() { return MoveMode; }
 };
 

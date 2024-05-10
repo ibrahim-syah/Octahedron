@@ -75,7 +75,7 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		ModifyForADS();
 
-		ADSOffset = Character->GetADSOffset();
+		//ADSOffset = Character->GetADSOffset();
 		MoveMode = Character->GetMoveMode();
 
 		ModifyForSprint(DeltaSeconds);
