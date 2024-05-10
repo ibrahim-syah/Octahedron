@@ -189,6 +189,52 @@ void UTP_WeaponComponent::Fire()
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
 		{
+			// Trace from center screen to max weapon range
+			UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
+			FVector StartVector = Camera->GetComponentLocation();
+			FVector ForwardVector = Camera->GetForwardVector();
+			float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
+			FHitResult MuzzleTraceResult;
+
+			FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread + (1 / PelletSpread));
+			FVector ResultingVector = RandomDirection * Range;
+			FVector EndVector = StartVector + ResultingVector;
+
+			FHitResult CameraTraceResult{};
+			FCollisionQueryParams Params = FCollisionQueryParams();
+			Params.AddIgnoredActor(Character);
+			bool isHit = GetWorld()->LineTraceSingleByChannel(
+				CameraTraceResult,
+				StartVector,
+				EndVector,
+				ECollisionChannel::ECC_Visibility,
+				Params
+			);
+
+			// Trace from weapon muzzle to center trace hit location
+
+			FVector EndTrace{};
+			if (isHit)
+			{
+				FVector ScaledDirection = RandomDirection * 10.f;
+				EndTrace = CameraTraceResult.Location + ScaledDirection;
+			}
+			else
+			{
+				EndTrace = CameraTraceResult.TraceEnd;
+			}
+
+			Params.bReturnPhysicalMaterial = true;
+			GetWorld()->LineTraceSingleByChannel(
+				MuzzleTraceResult,
+				GetSocketLocation(MuzzleSocketName),
+				EndTrace,
+				ECollisionChannel::ECC_Visibility,
+				Params
+			);
+
+			OnWeaponProjectileFireDelegate.Broadcast(MuzzleTraceResult);
+
 			const FRotator SpawnRotation = PCRef->PlayerCameraManager->GetCameraRotation();
 			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 			const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
@@ -239,9 +285,6 @@ void UTP_WeaponComponent::Fire()
 				EndTrace = CameraTraceResult.TraceEnd;
 			}
 
-			//const FName TraceTag("MyTraceTag");
-			//GetWorld()->DebugDrawTraceTag = TraceTag;
-			//Params.TraceTag = TraceTag;
 			Params.bReturnPhysicalMaterial = true;
 			FHitResult MuzzleTraceResult{};
 			GetWorld()->LineTraceSingleByChannel(
@@ -254,136 +297,15 @@ void UTP_WeaponComponent::Fire()
 			MuzzleTraceResults.Add(MuzzleTraceResult);
 		}
 
-		//FVector muzzlePosition = GetSocketLocation(MuzzleSocketName);
-		//TArray<FVector> tracerPositions;
-		//TArray<FVector> impactPositions;
-		//TArray<FVector> impactNormals;
-		////TArray<UPhysicalMaterial> impactSurfaceTypes;
-
-		//for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
-		//{
-		//	FHitResult hitResult = MuzzleTraceResults[i];
-
-		//	if (hitResult.bBlockingHit)
-		//	{
-		//		tracerPositions.Add(hitResult.Location);
-		//		impactPositions.Add(hitResult.Location);
-		//		impactNormals.Add(hitResult.Normal);
-		//		//impactSurfaceTypes.Add(hitResult.PhysMaterial.Get());
-		//	}
-		//	else
-		//	{
-		//		tracerPositions.Add(hitResult.TraceEnd);
-		//	}
-		//}
-
-		OnWeaponFireDelegate.Broadcast(MuzzleTraceResults);
-
-		/*if (!IsValid(WeaponFX))
-		{
-			FTransform spawnTransform{ FRotator(), FVector() };
-			auto DeferredWeaponFXActor = Cast<AWeaponFX>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponFX::StaticClass(), spawnTransform));
-			if (DeferredWeaponFXActor != nullptr)
-			{
-				DeferredWeaponFXActor->WeaponMesh = this;
-				DeferredWeaponFXActor->MuzzleFlash_FX = MuzzleFlash_FX;
-				DeferredWeaponFXActor->Tracer_FX = Tracer_FX;
-				DeferredWeaponFXActor->ShellEject_FX = ShellEject_FX;
-				DeferredWeaponFXActor->ShellEjectMesh = ShellEjectMesh;
-				DeferredWeaponFXActor->MuzzleSocket = &MuzzleSocketName;
-				DeferredWeaponFXActor->ShellEjectSocket = &ShellEjectSocketName;
-
-				UGameplayStatics::FinishSpawningActor(DeferredWeaponFXActor, spawnTransform);
-			}
-
-			WeaponFX = DeferredWeaponFXActor;
-			WeaponFX->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-		WeaponFX->WeaponFire(tracerPositions);
-
-
-		if (!IsValid(WeaponDecals))
-		{
-			FTransform spawnTransform{ FRotator(), FVector() };
-			auto DeferredWeaponDecalsActor = Cast<AWeaponDecals>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponDecals::StaticClass(), spawnTransform));
-			if (DeferredWeaponDecalsActor != nullptr)
-			{
-				DeferredWeaponDecalsActor->ImpactDecals_FX = ImpactDecals_FX;
-
-				UGameplayStatics::FinishSpawningActor(DeferredWeaponDecalsActor, spawnTransform);
-			}
-
-			WeaponDecals = DeferredWeaponDecalsActor;
-			WeaponDecals->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-		WeaponDecals->WeaponFire(
-			impactPositions,
-			impactNormals,
-			impactSurfaceTypes,
-			muzzlePosition
-		);
-
-		if (impactPositions.Num() > 0 && !IsValid(WeaponImpacts))
-		{
-			FTransform spawnTransform{ FRotator(), FVector() };
-			auto DeferredWeaponImpactsActor = Cast<AWeaponImpacts>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponImpacts::StaticClass(), spawnTransform));
-			if (DeferredWeaponImpactsActor != nullptr)
-			{
-				DeferredWeaponImpactsActor->ConcreteImpact_FX = ConcreteImpact_FX;
-				DeferredWeaponImpactsActor->GlassImpact_FX = GlassImpact_FX;
-				DeferredWeaponImpactsActor->CharacterSparksImpact_FX = CharacterSparksImpact_FX;
-				DeferredWeaponImpactsActor->DamageNumber_FX = DamageNumber_FX;
-				DeferredWeaponImpactsActor->WeaponRef = this;
-
-				UGameplayStatics::FinishSpawningActor(DeferredWeaponImpactsActor, spawnTransform);
-			}
-
-			WeaponImpacts = DeferredWeaponImpactsActor;
-			WeaponImpacts->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-		WeaponImpacts->WeaponFire(
-			impactPositions,
-			impactNormals,
-			impactSurfaceTypes,
-			muzzlePosition
-		);*/
+		OnWeaponHitScanFireDelegate.Broadcast(MuzzleTraceResults);
 	}
 
 	WeaponFireAnimateDelegate.ExecuteIfBound();
-	
-	/*if (!IsValid(WeaponSounds))
-	{
-		FTransform spawnTransform{ FRotator(), FVector() };
-		auto DeferredWeaponSoundsActor = Cast<AWeaponSounds>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponSounds::StaticClass(), spawnTransform));
-		if (DeferredWeaponSoundsActor != nullptr)
-		{
-			DeferredWeaponSoundsActor->WeaponRef = this;
-			DeferredWeaponSoundsActor->FireSound = FireSound;
-			DeferredWeaponSoundsActor->FireSoundInterval = FireDelay * FireSoundDelayScale;
-
-			UGameplayStatics::FinishSpawningActor(DeferredWeaponSoundsActor, spawnTransform);
-		}
-
-		WeaponSounds = DeferredWeaponSoundsActor;
-		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-	}
-	WeaponSounds->WeaponFire();*/
 
 	if (IsValid(FireCamShake))
 	{
 		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake);
 	}
-
-	// Try and play a firing animation if specified
-	//if (FireAnimation != nullptr)
-	//{
-	//	// Get the animation object for the arms mesh
-	//	UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-	//	if (AnimInstance != nullptr)
-	//	{
-	//		AnimInstance->Montage_Play(FireAnimation, 1.f);
-	//	}
-	//}
 
 	// Try and play a firing animation if specified
 	if (WeaponFireAnimation != nullptr)

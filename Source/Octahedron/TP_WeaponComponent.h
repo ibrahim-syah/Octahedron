@@ -24,7 +24,8 @@ class UCameraShakeBase;
 
 DECLARE_DELEGATE(FOnFireAnimationDelegate);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFireSignature, TArray<FHitResult>, HitResults);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHitScanFireSignature, TArray<FHitResult>, HitResults);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -163,7 +164,11 @@ public:
 
 	// weapon fire effect (Shell eject, muzzle flash, tracer) implemented in blueprint but called from cpp (Fire() function)
 	UPROPERTY(BlueprintAssignable)
-	FOnWeaponFireSignature OnWeaponFireDelegate;
+	FOnWeaponHitScanFireSignature OnWeaponHitScanFireDelegate;
+
+	// weapon projectile fire effect (no hit result passed)
+	UPROPERTY(BlueprintAssignable)
+	FOnWeaponProjectileFireSignature OnWeaponProjectileFireDelegate;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void StopFire();
