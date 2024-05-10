@@ -662,7 +662,8 @@ void AOctahedronCharacter::GetLookInputVars(FRotator CamRotPrev)
 	float clampedYaw = FMath::Clamp(deltaCamRotYaw, -5.f, 5.f);
 	FRotator newRotator = FRotator(0.f, clampedYaw, clampedPitchInverse);
 	float deltaSeconds = GetWorld()->DeltaTimeSeconds;
-	float interpSpeed = (1.f / deltaSeconds) / 10.f;
+	float weaponWeight = bHasWeapon ? FMath::Clamp(CurrentWeapon->WeaponSwaySpeed, 6.f, 80.f) : 6.f;
+	float interpSpeed = (1.f / deltaSeconds) / weaponWeight;
 	CamRotRate = UKismetMathLibrary::RInterpTo(CamRotRate, newRotator, deltaSeconds, interpSpeed);
 
 

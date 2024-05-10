@@ -334,6 +334,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
 	float FireSoundDelayScale{ 0.5f };
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Cosmetics)
+	float WeaponSwaySpeed{ 10.f }; // determine how heavy the weapon is for weapon sway speed, larger means faster. clamped at [6, 80]
+
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()
