@@ -89,6 +89,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float FireRate{ 560.f }; // in rounds per minute. e.g. 60 RPM means there is a delay of 1 second for every shot
+	UPROPERTY(BlueprintReadOnly, Category = Gameplay)
 	float FireDelay{};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
