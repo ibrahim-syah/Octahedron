@@ -330,6 +330,7 @@ public:
 
 	//AWeaponImpacts* WeaponImpacts = nullptr;
 
+	UFUNCTION(BlueprintCallable)
 	AOctahedronCharacter* GetOwningCharacter() { return Character; }
 
 	// SFX
