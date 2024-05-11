@@ -189,6 +189,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	float EquipTime{ 1.f };
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	USoundBase* EquipSound = nullptr;
+
 	UPROPERTY(BlueprintAssignable)
 	FOnEquipSignature OnEquipDelegate;
 

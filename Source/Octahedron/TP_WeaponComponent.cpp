@@ -351,6 +351,13 @@ void UTP_WeaponComponent::Equip()
 
 	WeaponFireAnimateDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("Fire"));
 
+	if (IsValid(EquipSound))
+	{
+		UGameplayStatics::SpawnSoundAttached(
+			EquipSound,
+			this
+		);
+	}
 	Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, EquipTime, false);
 }
 
