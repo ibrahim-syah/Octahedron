@@ -250,6 +250,7 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::StopMove);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::Look);
@@ -411,6 +412,11 @@ void AOctahedronCharacter::Move(const FInputActionValue& Value)
 
 		CheckStopSprint(MovementVector.Y);
 	}
+}
+
+void AOctahedronCharacter::StopMove(const FInputActionValue& Value)
+{
+	CheckStopSprint(0.f);
 }
 
 void AOctahedronCharacter::Look(const FInputActionValue& Value)
