@@ -924,12 +924,13 @@ UTP_WeaponComponent* AOctahedronCharacter::GetCurrentWeapon()
 	return CurrentWeapon;
 }
 
+// can the character perform actions?
+// these actions cannot be performed while sprinting
 bool AOctahedronCharacter::CanAct()
 {
 	if (MoveMode != ECustomMovementMode::Sprinting)
 	{
 		return true;
 	}
-	ForceStopSprint();
 	return false;
 }

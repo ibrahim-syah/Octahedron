@@ -66,9 +66,13 @@ void UTP_WeaponComponent::BeginPlay()
 void UTP_WeaponComponent::PressedFire()
 {
 	IsPlayerHoldingShootButton = true;
-	if (Character == nullptr || PCRef == nullptr || !Character->CanAct() || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (Character == nullptr || PCRef == nullptr || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
+	}
+	if (!Character->CanAct())
+	{
+		Character->ForceStopSprint();
 	}
 
 	// Ensure the timer is cleared by using the timer handle
@@ -100,9 +104,13 @@ void UTP_WeaponComponent::ReleasedFire()
 
 void UTP_WeaponComponent::PressedReload()
 {
-	if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
+	if (Character == nullptr || PCRef == nullptr)
 	{
 		return;
+	}
+	if (!Character->CanAct())
+	{
+		Character->ForceStopSprint();
 	}
 
 	Reload();
@@ -110,7 +118,7 @@ void UTP_WeaponComponent::PressedReload()
 
 void UTP_WeaponComponent::PressedSwitchFireMode()
 {
-	if (!CanSwitchFireMode || Character == nullptr || PCRef == nullptr || !Character->CanAct())
+	if (!CanSwitchFireMode || Character == nullptr || PCRef == nullptr)
 	{
 		return;
 	}
