@@ -33,6 +33,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	bool IsLeftHandIKActive;
 
+	float BaseSprintBlendOutTime = 0.45f;
+	float InstantSprintBlendOutTime = 0.f;
+	void SetSprintBlendOutTime(float blendOutTime) { SprintBlendOutTime = blendOutTime; };
+
 protected:
 	void SetSightTransform();
 	void SetRelativeHandTransform();
@@ -130,6 +134,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FRotator SprintAnimRot;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float SprintBlendOutTime = 0.45f;
 
 	/*UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FTransform LeftHandIK;*/

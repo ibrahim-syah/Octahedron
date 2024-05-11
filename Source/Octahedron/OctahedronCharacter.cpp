@@ -764,6 +764,7 @@ void AOctahedronCharacter::StartSprint()
 	switch (MoveMode)
 	{
 	case ECustomMovementMode::Walking:
+		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->BaseSprintBlendOutTime);
 		MoveMode = ECustomMovementMode::Sprinting;
 		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * SprintSpeedMultiplier;
 

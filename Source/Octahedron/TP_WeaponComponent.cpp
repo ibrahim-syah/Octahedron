@@ -72,6 +72,7 @@ void UTP_WeaponComponent::PressedFire()
 	}
 	if (!Character->CanAct())
 	{
+		Character->GetFPAnimInstance()->SetSprintBlendOutTime(Character->GetFPAnimInstance()->InstantSprintBlendOutTime);
 		Character->ForceStopSprint();
 	}
 
