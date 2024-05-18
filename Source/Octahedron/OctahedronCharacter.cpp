@@ -761,6 +761,10 @@ void AOctahedronCharacter::ForceStartSlide()
 
 void AOctahedronCharacter::StartSprint()
 {
+	if (GetCharacterMovement()->GetLastUpdateVelocity().Length() <= 0.f)
+	{
+		return;
+	}
 	switch (MoveMode)
 	{
 	case ECustomMovementMode::Walking:
