@@ -322,6 +322,8 @@ void UTP_WeaponComponent::Fire()
 		PlayAnimation(WeaponFireAnimation, false);
 	}
 
+	Character->MakeNoise(1.f, Character, GetComponentLocation());
+
 }
 
 void UTP_WeaponComponent::StopFire()

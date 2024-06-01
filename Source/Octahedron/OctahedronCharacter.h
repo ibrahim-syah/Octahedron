@@ -19,6 +19,7 @@ class UTimelineComponent;
 class TP_WeaponComponent;
 struct FInputActionValue;
 class UFPAnimInstance;
+class UPawnNoiseEmitterComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
