@@ -41,7 +41,7 @@ class AOctahedronCharacter : public ACharacter
 	USceneComponent* Offset_Root = nullptr;
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Mesh, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Mesh1P = nullptr;
 
 	/** Cam_Root spring arm */
@@ -49,7 +49,7 @@ class AOctahedronCharacter : public ACharacter
 	USpringArmComponent* Cam_Root = nullptr;
 
 	/** Cam Skeleton */
-	UPROPERTY(VisibleDefaultsOnly)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Cam_Skel = nullptr;
 
 	
