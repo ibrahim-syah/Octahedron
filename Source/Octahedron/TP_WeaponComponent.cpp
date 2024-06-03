@@ -22,6 +22,7 @@
 #include "WeaponSounds.h"
 #include "DefaultCameraShakeBase.h"
 #include "Curves/CurveVector.h"
+#include "Public/FPAnimInstance.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -65,9 +66,14 @@ void UTP_WeaponComponent::BeginPlay()
 void UTP_WeaponComponent::PressedFire()
 {
 	IsPlayerHoldingShootButton = true;
-	if (Character == nullptr || PCRef == nullptr || !Character->CanAct() || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (Character == nullptr || PCRef == nullptr || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
+	}
+	if (!Character->CanAct())
+	{
+		Character->GetFPAnimInstance()->SetSprintBlendOutTime(Character->GetFPAnimInstance()->InstantSprintBlendOutTime);
+		Character->ForceStopSprint();
 	}
 
 	// Ensure the timer is cleared by using the timer handle
@@ -77,7 +83,9 @@ void UTP_WeaponComponent::PressedFire()
 	switch (FireMode)
 	{
 	case EFireMode::Single:
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, true, 0.f);
+		//Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, false, 0.f);
+		SingleFire();
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
 		break;
 	case EFireMode::Burst:
 		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, FireDelay, true, 0.f);
@@ -93,19 +101,17 @@ void UTP_WeaponComponent::PressedFire()
 void UTP_WeaponComponent::ReleasedFire()
 {
 	IsPlayerHoldingShootButton = false;
-	/*if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
-	{
-		return;
-	}*/
-
-	//StopFire();
 }
 
 void UTP_WeaponComponent::PressedReload()
 {
-	if (Character == nullptr || PCRef == nullptr || !Character->CanAct())
+	if (Character == nullptr || PCRef == nullptr)
 	{
 		return;
+	}
+	if (!Character->CanAct())
+	{
+		Character->ForceStopSprint();
 	}
 
 	Reload();
@@ -113,7 +119,7 @@ void UTP_WeaponComponent::PressedReload()
 
 void UTP_WeaponComponent::PressedSwitchFireMode()
 {
-	if (!CanSwitchFireMode || Character == nullptr || PCRef == nullptr || !Character->CanAct())
+	if (!CanSwitchFireMode || Character == nullptr || PCRef == nullptr)
 	{
 		return;
 	}
@@ -143,9 +149,9 @@ void UTP_WeaponComponent::SingleFire()
 {
 	Fire();
 
-	// Ensure the timer is cleared by using the timer handle
-	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
-	FireRateDelayTimerHandle.Invalidate();
+	//// Ensure the timer is cleared by using the timer handle
+	//GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+	//FireRateDelayTimerHandle.Invalidate();
 	StopFire();
 }
 
@@ -159,6 +165,8 @@ void UTP_WeaponComponent::BurstFire()
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
 
+
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
 		BurstFireCurrent = 0;
 		StopFire();
 	}
@@ -172,6 +180,7 @@ void UTP_WeaponComponent::FullAutoFire()
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
 
+		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
 		StopFire();
 	}
 }
@@ -189,6 +198,53 @@ void UTP_WeaponComponent::Fire()
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
 		{
+			// Trace from center screen to max weapon range
+			UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
+			FVector StartVector = Camera->GetComponentLocation();
+			FVector ForwardVector = Camera->GetForwardVector();
+			float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
+			FHitResult MuzzleTraceResult;
+
+			FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread + (1 / PelletSpread));
+			FVector ResultingVector = RandomDirection * Range;
+			FVector EndVector = StartVector + ResultingVector;
+
+			FHitResult CameraTraceResult{};
+			FCollisionQueryParams Params = FCollisionQueryParams();
+			Params.AddIgnoredActor(GetOwner());
+			Params.AddIgnoredActor(Character);
+			bool isHit = GetWorld()->LineTraceSingleByChannel(
+				CameraTraceResult,
+				StartVector,
+				EndVector,
+				ECollisionChannel::ECC_GameTraceChannel2,
+				Params
+			);
+
+			// Trace from weapon muzzle to center trace hit location
+
+			FVector EndTrace{};
+			if (isHit)
+			{
+				FVector ScaledDirection = RandomDirection * 10.f;
+				EndTrace = CameraTraceResult.Location + ScaledDirection;
+			}
+			else
+			{
+				EndTrace = CameraTraceResult.TraceEnd;
+			}
+
+			Params.bReturnPhysicalMaterial = true;
+			GetWorld()->LineTraceSingleByChannel(
+				MuzzleTraceResult,
+				GetSocketLocation(MuzzleSocketName),
+				EndTrace,
+				ECollisionChannel::ECC_GameTraceChannel2,
+				Params
+			);
+
+			OnWeaponProjectileFireDelegate.Broadcast(MuzzleTraceResult);
+
 			const FRotator SpawnRotation = PCRef->PlayerCameraManager->GetCameraRotation();
 			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 			const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
@@ -217,12 +273,13 @@ void UTP_WeaponComponent::Fire()
 
 			FHitResult CameraTraceResult{};
 			FCollisionQueryParams Params = FCollisionQueryParams();
+			Params.AddIgnoredActor(GetOwner());
 			Params.AddIgnoredActor(Character);
 			bool isHit = GetWorld()->LineTraceSingleByChannel(
 				CameraTraceResult,
 				StartVector,
 				EndVector,
-				ECollisionChannel::ECC_Visibility,
+				ECollisionChannel::ECC_GameTraceChannel2,
 				Params
 			);
 
@@ -239,141 +296,22 @@ void UTP_WeaponComponent::Fire()
 				EndTrace = CameraTraceResult.TraceEnd;
 			}
 
-			//const FName TraceTag("MyTraceTag");
-			//GetWorld()->DebugDrawTraceTag = TraceTag;
-			//Params.TraceTag = TraceTag;
 			Params.bReturnPhysicalMaterial = true;
 			FHitResult MuzzleTraceResult{};
 			GetWorld()->LineTraceSingleByChannel(
 				MuzzleTraceResult,
 				GetSocketLocation(MuzzleSocketName),
 				EndTrace,
-				ECollisionChannel::ECC_Visibility,
+				ECollisionChannel::ECC_GameTraceChannel2,
 				Params
 			);
 			MuzzleTraceResults.Add(MuzzleTraceResult);
 		}
 
-		FVector muzzlePosition = GetSocketLocation(MuzzleSocketName);
-		TArray<FVector> tracerPositions;
-		TArray<FVector> impactPositions;
-		TArray<FVector> impactNormals;
-		TArray<int32> impactSurfaceTypes;
-
-		for (int32 i = 0; i < MuzzleTraceResults.Num(); i++)
-		{
-			FHitResult hitResult = MuzzleTraceResults[i];
-
-			if (hitResult.bBlockingHit)
-			{
-				tracerPositions.Add(hitResult.Location);
-				impactPositions.Add(hitResult.Location);
-				impactNormals.Add(hitResult.Normal);
-				impactSurfaceTypes.Add(hitResult.PhysMaterial->SurfaceType.GetIntValue());
-			}
-			else
-			{
-				tracerPositions.Add(hitResult.TraceEnd);
-			}
-		}
-
-		if (!IsValid(WeaponFX))
-		{
-			FTransform spawnTransform{ FRotator(), FVector() };
-			auto DeferredWeaponFXActor = Cast<AWeaponFX>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponFX::StaticClass(), spawnTransform));
-			if (DeferredWeaponFXActor != nullptr)
-			{
-				DeferredWeaponFXActor->WeaponMesh = this;
-				DeferredWeaponFXActor->MuzzleFlash_FX = MuzzleFlash_FX;
-				DeferredWeaponFXActor->Tracer_FX = Tracer_FX;
-				DeferredWeaponFXActor->ShellEject_FX = ShellEject_FX;
-				DeferredWeaponFXActor->ShellEjectMesh = ShellEjectMesh;
-				DeferredWeaponFXActor->MuzzleSocket = &MuzzleSocketName;
-				DeferredWeaponFXActor->ShellEjectSocket = &ShellEjectSocketName;
-
-				UGameplayStatics::FinishSpawningActor(DeferredWeaponFXActor, spawnTransform);
-			}
-
-			WeaponFX = DeferredWeaponFXActor;
-			WeaponFX->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-		WeaponFX->WeaponFire(tracerPositions);
-
-
-		if (!IsValid(WeaponDecals))
-		{
-			FTransform spawnTransform{ FRotator(), FVector() };
-			auto DeferredWeaponDecalsActor = Cast<AWeaponDecals>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponDecals::StaticClass(), spawnTransform));
-			if (DeferredWeaponDecalsActor != nullptr)
-			{
-				DeferredWeaponDecalsActor->ImpactDecals_FX = ImpactDecals_FX;
-
-				UGameplayStatics::FinishSpawningActor(DeferredWeaponDecalsActor, spawnTransform);
-			}
-
-			WeaponDecals = DeferredWeaponDecalsActor;
-			WeaponDecals->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-		WeaponDecals->WeaponFire(
-			impactPositions,
-			impactNormals,
-			impactSurfaceTypes,
-			muzzlePosition
-		);
-
-		if (impactPositions.Num() > 0 && !IsValid(WeaponImpacts))
-		{
-			FTransform spawnTransform{ FRotator(), FVector() };
-			auto DeferredWeaponImpactsActor = Cast<AWeaponImpacts>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponImpacts::StaticClass(), spawnTransform));
-			if (DeferredWeaponImpactsActor != nullptr)
-			{
-				DeferredWeaponImpactsActor->ConcreteImpact_FX = ConcreteImpact_FX;
-				DeferredWeaponImpactsActor->GlassImpact_FX = GlassImpact_FX;
-				DeferredWeaponImpactsActor->CharacterSparksImpact_FX = CharacterSparksImpact_FX;
-				DeferredWeaponImpactsActor->DamageNumber_FX = DamageNumber_FX;
-				DeferredWeaponImpactsActor->WeaponRef = this;
-
-				UGameplayStatics::FinishSpawningActor(DeferredWeaponImpactsActor, spawnTransform);
-			}
-
-			WeaponImpacts = DeferredWeaponImpactsActor;
-			WeaponImpacts->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-		WeaponImpacts->WeaponFire(
-			impactPositions,
-			impactNormals,
-			impactSurfaceTypes,
-			muzzlePosition
-		);
+		OnWeaponHitScanFireDelegate.Broadcast(MuzzleTraceResults);
 	}
 
-	/*float newRate = 1.f / Recoil_Speed;
-	RecoilTL->SetPlayRate(newRate);
-	if (!IsOriginRecoilRotatorStored)
-	{
-		OriginRecoilRotator = Character->Controller->GetControlRotation();
-		IsOriginRecoilRotatorStored = true;
-		UE_LOG(LogTemp, Display, TEXT("Stored Origin Recoil: %f"), OriginRecoilRotator.Pitch);
-	}
-	RecoilTL->Play();*/
-	
-	if (!IsValid(WeaponSounds))
-	{
-		FTransform spawnTransform{ FRotator(), FVector() };
-		auto DeferredWeaponSoundsActor = Cast<AWeaponSounds>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, AWeaponSounds::StaticClass(), spawnTransform));
-		if (DeferredWeaponSoundsActor != nullptr)
-		{
-			DeferredWeaponSoundsActor->WeaponRef = this;
-			DeferredWeaponSoundsActor->FireSound = FireSound;
-			DeferredWeaponSoundsActor->FireSoundInterval = FireDelay * FireSoundDelayScale;
-
-			UGameplayStatics::FinishSpawningActor(DeferredWeaponSoundsActor, spawnTransform);
-		}
-
-		WeaponSounds = DeferredWeaponSoundsActor;
-		WeaponSounds->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-	}
-	WeaponSounds->WeaponFire();
+	WeaponFireAnimateDelegate.ExecuteIfBound();
 
 	if (IsValid(FireCamShake))
 	{
@@ -381,15 +319,13 @@ void UTP_WeaponComponent::Fire()
 	}
 
 	// Try and play a firing animation if specified
-	if (FireAnimation != nullptr)
+	if (WeaponFireAnimation != nullptr)
 	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
-		}
+		PlayAnimation(WeaponFireAnimation, false);
 	}
+
+	Character->MakeNoise(1.f, Character, GetComponentLocation());
+
 }
 
 void UTP_WeaponComponent::StopFire()
@@ -414,35 +350,19 @@ void UTP_WeaponComponent::Equip()
 	}
 	IsEquipping = true;
 
+	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
+	WeaponChangeDelegate.Execute(this);
 
-	if (EquipAnimation != nullptr)
-	{
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			AnimInstance->Montage_Play(EquipAnimation, 1.f);
+	WeaponFireAnimateDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("Fire"));
 
-			FOnMontageBlendingOutStarted BlendOutDelegate;
-			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::EquipAnimationBlendOut);
-			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
-		}
-	}
-}
-
-void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
-{
-	if (bInterrupted)
+	if (IsValid(EquipSound))
 	{
-		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(EquipDelayTimerHandle);
-		if (Character != nullptr && !isTimerActive)
-		{
-			Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, 0.2f, false);
-		}
+		UGameplayStatics::SpawnSoundAttached(
+			EquipSound,
+			this
+		);
 	}
-	else
-	{
-		SetIsEquippingFalse();
-	}
+	Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, EquipTime, false);
 }
 
 void UTP_WeaponComponent::SetIsEquippingFalse()
@@ -466,14 +386,14 @@ void UTP_WeaponComponent::Reload()
 
 	if (Character != nullptr && ReloadAnimation != nullptr)
 	{
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
+		if (Character->GetFPAnimInstance())
 		{
-			AnimInstance->Montage_Play(ReloadAnimation, 1.f);
+			Character->GetFPAnimInstance()->IsLeftHandIKActive = false;
+			Character->GetFPAnimInstance()->Montage_Play(ReloadAnimation, 1.f);
 
 			FOnMontageBlendingOutStarted BlendOutDelegate;
 			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
-			AnimInstance->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
+			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
 		}
 	}
 }
@@ -505,9 +425,8 @@ void UTP_WeaponComponent::EnterADS()
 	{
 		return;
 	}
-
-	float newRate = 1.f / ADS_Speed;
-	ADSTL->SetPlayRate(newRate);
+	
+	ADSTL->SetPlayRate(FMath::Clamp(ADS_Speed, 0.1f, 10.f));
 
 	Character->ForceStopSprint();
 	ADSTL->Play();
@@ -536,6 +455,7 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 	}
 
 	ADSAlpha = val;
+	ADSAlphaLerp = FMath::Lerp(0.2f, 1.f, (1.f - ADSAlpha));
 	Character->ADSAlpha = ADSAlpha;
 	float lerpedFOV = FMath::Lerp(FOV_Base, FOV_ADS, ADSAlpha);
 	UCameraComponent* camera = Character->GetFirstPersonCameraComponent();
@@ -569,7 +489,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	{
 		SetMaterial(0, FP_Material);
 	}
-	Character->ADS_Offset = ADS_Offset;
+	//Character->ADS_Offset = ADS_Offset;
 
 	if (ScopeSightMesh != nullptr)
 	{
@@ -584,7 +504,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	}
 
 	// Try and play equip animation if specified
-	//Equip(); // commented out because making a keyframed equip animation for all weapons is expensive. So i just use blend space from idle to base pose instead
+	Equip();
 
 	OnEquipDelegate.Broadcast(Character, this);
 	
@@ -622,59 +542,6 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 		CanFire = true;
 	}
 }
-
-//void UTP_WeaponComponent::RecoilTLUpdateEvent()
-//{
-//	if (Character == nullptr)
-//	{
-//		return;
-//	}
-//
-//	Character->GetLocalViewingPlayerController()->AddPitchInput(RecoilPitch);
-//	Character->GetLocalViewingPlayerController()->AddYawInput(RecoilYaw);
-//}
-//
-//void UTP_WeaponComponent::CompensateRecoilAlphaTLCallback(float val)
-//{
-//	CompensateRecoilAlpha = val;
-//}
-//
-//void UTP_WeaponComponent::CompensateRecoilTLUpdateEvent()
-//{
-//	FRotator PostRecoilRotator = Character->Controller->GetControlRotation();
-//	DeltaRecoil = UKismetMathLibrary::NormalizedDeltaRotator(OriginRecoilRotator, PostRecoilRotator);
-//	//UE_LOG(LogTemp, Display, TEXT("abs of deltaPitch: %f"), DeltaRecoil.Pitch);
-//	float absolutePitch = fabs(DeltaRecoil.Pitch);
-//	float dividedDeltaPitch = absolutePitch / 1.f;
-//	float lerpedEase = UKismetMathLibrary::Lerp(0.f, dividedDeltaPitch, CompensateRecoilAlpha);
-//	Character->GetLocalViewingPlayerController()->AddPitchInput(lerpedEase);
-//	UE_LOG(LogTemp, Display, TEXT("lerped compensate recoil: %f"), lerpedEase);
-//}
-//
-//void UTP_WeaponComponent::FinishedRecoilDelegate()
-//{
-//	UE_LOG(LogTemp, Display, TEXT("FINISHED RECOIL"));
-//	/*if (RecoilTLDirection == ETimelineDirection::Backward)
-//	{
-//		UE_LOG(LogTemp, Display, TEXT("RESETTING RECOIL"));
-//		ResetRecoil();
-//	}*/
-//}
-//
-//void UTP_WeaponComponent::ResetRecoil()
-//{
-//	IsOriginRecoilRotatorStored = false;
-//}
-//
-//void UTP_WeaponComponent::RecoilPitchTLCallback(float val)
-//{
-//	RecoilPitch = val;
-//}
-//
-//void UTP_WeaponComponent::RecoilYawTLCallback(float val)
-//{
-//	RecoilYaw = val;
-//}
 
 //Call this function when the firing begins, the recoil starts here
 void UTP_WeaponComponent::RecoilStart()
@@ -818,6 +685,7 @@ void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, boo
 void UTP_WeaponComponent::SetIsReloadingFalse()
 {
 	IsReloading = false;
+	Character->GetFPAnimInstance()->IsLeftHandIKActive = true;
 
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(ReloadDelayTimerHandle);

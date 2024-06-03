@@ -18,6 +18,8 @@ class UInputMappingContext;
 class UTimelineComponent;
 class TP_WeaponComponent;
 struct FInputActionValue;
+class UFPAnimInstance;
+class UPawnNoiseEmitterComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -39,7 +41,7 @@ class AOctahedronCharacter : public ACharacter
 	USceneComponent* Offset_Root = nullptr;
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Mesh, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Mesh1P = nullptr;
 
 	/** Cam_Root spring arm */
@@ -47,7 +49,7 @@ class AOctahedronCharacter : public ACharacter
 	USpringArmComponent* Cam_Root = nullptr;
 
 	/** Cam Skeleton */
-	UPROPERTY(VisibleDefaultsOnly)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Cam_Skel = nullptr;
 
 	
@@ -179,8 +181,8 @@ public:
 	UFUNCTION(BlueprintPure, Category = Weapon)
 	UTP_WeaponComponent* GetCurrentWeapon();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
-	FVector ADS_Offset;
+	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
+	FVector ADS_Offset;*/
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	float ADSAlpha;
@@ -209,9 +211,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void ForceStartSlide();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UFPAnimInstance* GetFPAnimInstance() { return FPAnimInstance; }
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
+	void StopMove(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
@@ -229,6 +235,7 @@ protected:
 
 public:
 	/** Returns Mesh1P subobject **/
+	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
@@ -348,5 +355,25 @@ private:
 
 	int32 JumpsLeft{ 2 };
 	int32 JumpsMax{ 2 };
+	UFPAnimInstance* FPAnimInstance = nullptr;
+
+public:
+	FVector GetLocationLagPos() { return LocationLagPos; }
+	float GetCrouchAlpha() { return CrouchAlpha; }
+	FVector GetWalkAnimPos() { return WalkAnimPos; }
+	FRotator GetWalkAnimRot() { return WalkAnimRot; }
+	float GetWalkAnimAlpha() { return WalkAnimAlpha; }
+	float GetDipAlpha() { return DipAlpha; }
+	FVector GetPitchOffsetPos() { return PitchOffsetPos; }
+	FVector GetCamRotOffset() { return CamRotOffset; }
+	FRotator GetCamRotCurrent() { return CamRotCurrent; }
+	FRotator GetCamRotRate() { return CamRotRate; }
+	FRotator GetInAirTilt() { return InAirTilt; }
+	FVector GetInAirOffset() { return InAirOffset; }
+	FVector GetCamOffsetCurrent() { return CamOffsetCurrent; }
+	float GetCamAnimAlpha() { return CamAnimAlpha; }
+	float GetADSAlpha() { return ADSAlpha; }
+	//FVector GetADSOffset() { return ADS_Offset; }
+	ECustomMovementMode GetMoveMode() { return MoveMode; }
 };
 

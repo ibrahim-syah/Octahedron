@@ -17,6 +17,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "TP_WeaponComponent.h"
+#include "Public/FPAnimInstance.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -200,6 +201,11 @@ void AOctahedronCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
+	if (UFPAnimInstance* fpAnimInstance = Cast<UFPAnimInstance>(Mesh1P->GetAnimInstance()))
+	{
+		FPAnimInstance = fpAnimInstance;
+	}
+
 	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -244,6 +250,7 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::StopMove);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::Look);
@@ -405,6 +412,11 @@ void AOctahedronCharacter::Move(const FInputActionValue& Value)
 
 		CheckStopSprint(MovementVector.Y);
 	}
+}
+
+void AOctahedronCharacter::StopMove(const FInputActionValue& Value)
+{
+	CheckStopSprint(0.f);
 }
 
 void AOctahedronCharacter::Look(const FInputActionValue& Value)
@@ -656,7 +668,8 @@ void AOctahedronCharacter::GetLookInputVars(FRotator CamRotPrev)
 	float clampedYaw = FMath::Clamp(deltaCamRotYaw, -5.f, 5.f);
 	FRotator newRotator = FRotator(0.f, clampedYaw, clampedPitchInverse);
 	float deltaSeconds = GetWorld()->DeltaTimeSeconds;
-	float interpSpeed = (1.f / deltaSeconds) / 10.f;
+	float weaponWeight = bHasWeapon ? FMath::Clamp(CurrentWeapon->WeaponSwaySpeed, 6.f, 80.f) : 6.f;
+	float interpSpeed = (1.f / deltaSeconds) / weaponWeight;
 	CamRotRate = UKismetMathLibrary::RInterpTo(CamRotRate, newRotator, deltaSeconds, interpSpeed);
 
 
@@ -748,9 +761,14 @@ void AOctahedronCharacter::ForceStartSlide()
 
 void AOctahedronCharacter::StartSprint()
 {
+	if (GetCharacterMovement()->GetLastUpdateVelocity().Length() <= 0.f)
+	{
+		return;
+	}
 	switch (MoveMode)
 	{
 	case ECustomMovementMode::Walking:
+		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->BaseSprintBlendOutTime);
 		MoveMode = ECustomMovementMode::Sprinting;
 		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * SprintSpeedMultiplier;
 
@@ -911,12 +929,13 @@ UTP_WeaponComponent* AOctahedronCharacter::GetCurrentWeapon()
 	return CurrentWeapon;
 }
 
+// can the character perform actions?
+// these actions cannot be performed while sprinting
 bool AOctahedronCharacter::CanAct()
 {
 	if (MoveMode != ECustomMovementMode::Sprinting)
 	{
 		return true;
 	}
-	ForceStopSprint();
 	return false;
 }
