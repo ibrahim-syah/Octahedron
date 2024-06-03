@@ -211,12 +211,13 @@ void UTP_WeaponComponent::Fire()
 
 			FHitResult CameraTraceResult{};
 			FCollisionQueryParams Params = FCollisionQueryParams();
+			Params.AddIgnoredActor(GetOwner());
 			Params.AddIgnoredActor(Character);
 			bool isHit = GetWorld()->LineTraceSingleByChannel(
 				CameraTraceResult,
 				StartVector,
 				EndVector,
-				ECollisionChannel::ECC_Visibility,
+				ECollisionChannel::ECC_GameTraceChannel2,
 				Params
 			);
 
@@ -238,7 +239,7 @@ void UTP_WeaponComponent::Fire()
 				MuzzleTraceResult,
 				GetSocketLocation(MuzzleSocketName),
 				EndTrace,
-				ECollisionChannel::ECC_Visibility,
+				ECollisionChannel::ECC_GameTraceChannel2,
 				Params
 			);
 
@@ -272,12 +273,13 @@ void UTP_WeaponComponent::Fire()
 
 			FHitResult CameraTraceResult{};
 			FCollisionQueryParams Params = FCollisionQueryParams();
+			Params.AddIgnoredActor(GetOwner());
 			Params.AddIgnoredActor(Character);
 			bool isHit = GetWorld()->LineTraceSingleByChannel(
 				CameraTraceResult,
 				StartVector,
 				EndVector,
-				ECollisionChannel::ECC_Visibility,
+				ECollisionChannel::ECC_GameTraceChannel2,
 				Params
 			);
 
@@ -300,7 +302,7 @@ void UTP_WeaponComponent::Fire()
 				MuzzleTraceResult,
 				GetSocketLocation(MuzzleSocketName),
 				EndTrace,
-				ECollisionChannel::ECC_Visibility,
+				ECollisionChannel::ECC_GameTraceChannel2,
 				Params
 			);
 			MuzzleTraceResults.Add(MuzzleTraceResult);
