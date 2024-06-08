@@ -21,7 +21,7 @@ public:
 	// Sets default values for this actor's properties
 	ACustomProjectile();
 
-	UPROPERTY(EditAnywhere, Category = Components)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Components)
 	UBoxComponent* BoxCollision = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = Components)

@@ -244,19 +244,7 @@ void UTP_WeaponComponent::Fire()
 				Params
 			);
 
-			OnWeaponProjectileFireDelegate.Broadcast(MuzzleTraceResult);
-
-			//const FRotator SpawnRotation = PCRef->PlayerCameraManager->GetCameraRotation();
-			//// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			//const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
-	
-			////Set Spawn Collision Handling Override
-			//FActorSpawnParameters ActorSpawnParams;
-			//ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-			//ActorSpawnParams.Instigator = Character;
-	
-			//// Spawn the projectile at the muzzle
-			//ACustomProjectile* projectile = World->SpawnActor<ACustomProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			OnWeaponProjectileFireDelegate.Broadcast(MuzzleTraceResult); // projectile is spawned in bp
 		}
 	}
 	else // hitscan weapon
