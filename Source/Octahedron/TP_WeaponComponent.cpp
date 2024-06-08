@@ -23,6 +23,7 @@
 #include "DefaultCameraShakeBase.h"
 #include "Curves/CurveVector.h"
 #include "Public/FPAnimInstance.h"
+#include "Public/CustomProjectile.h"
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -245,16 +246,17 @@ void UTP_WeaponComponent::Fire()
 
 			OnWeaponProjectileFireDelegate.Broadcast(MuzzleTraceResult);
 
-			const FRotator SpawnRotation = PCRef->PlayerCameraManager->GetCameraRotation();
-			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
+			//const FRotator SpawnRotation = PCRef->PlayerCameraManager->GetCameraRotation();
+			//// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+			//const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
 	
-			//Set Spawn Collision Handling Override
-			FActorSpawnParameters ActorSpawnParams;
-			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+			////Set Spawn Collision Handling Override
+			//FActorSpawnParameters ActorSpawnParams;
+			//ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+			//ActorSpawnParams.Instigator = Character;
 	
-			// Spawn the projectile at the muzzle
-			World->SpawnActor<AOctahedronProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			//// Spawn the projectile at the muzzle
+			//ACustomProjectile* projectile = World->SpawnActor<ACustomProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
 	else // hitscan weapon

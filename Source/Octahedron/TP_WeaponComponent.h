@@ -21,6 +21,7 @@ struct FInputActionValue;
 class UMetaSoundSource;
 class UDefaultCameraShakeBase;
 class UCameraShakeBase;
+class ACustomProjectile;
 
 DECLARE_DELEGATE(FOnFireAnimationDelegate);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
@@ -34,9 +35,9 @@ class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
 	GENERATED_BODY()
 
 public:
-	/** Projectile class to spawn */
-	UPROPERTY(EditAnywhere, Category=Projectile)
-	TSubclassOf<class AOctahedronProjectile> ProjectileClass = nullptr;
+	/** projectile class to spawn */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
+	TSubclassOf<ACustomProjectile> ProjectileClass = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UMaterialInstance* FP_Material = nullptr;
