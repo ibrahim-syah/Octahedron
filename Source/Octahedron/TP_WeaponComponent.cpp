@@ -194,7 +194,7 @@ void UTP_WeaponComponent::Fire()
 	}
 
 	// Try and fire a projectile
-	if (ProjectileClass != nullptr)
+	if (IsProjectileWeapon)
 	{
 		UWorld* const World = GetWorld();
 		if (World != nullptr)

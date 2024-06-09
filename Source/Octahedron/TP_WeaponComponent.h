@@ -37,7 +37,7 @@ class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
 public:
 	/** projectile class to spawn */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
-	TSubclassOf<ACustomProjectile> ProjectileClass = nullptr;
+	bool IsProjectileWeapon = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UMaterialInstance* FP_Material = nullptr;
