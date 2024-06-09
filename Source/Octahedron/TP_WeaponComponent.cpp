@@ -67,7 +67,7 @@ void UTP_WeaponComponent::BeginPlay()
 void UTP_WeaponComponent::PressedFire()
 {
 	IsPlayerHoldingShootButton = true;
-	if (Character == nullptr || PCRef == nullptr || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (Character == nullptr || PCRef == nullptr || IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -75,6 +75,29 @@ void UTP_WeaponComponent::PressedFire()
 	{
 		Character->GetFPAnimInstance()->SetSprintBlendOutTime(Character->GetFPAnimInstance()->InstantSprintBlendOutTime);
 		Character->ForceStopSprint();
+	}
+	if (Character->GetFPAnimInstance()->Montage_IsPlaying(ReloadAnimation))
+	{
+		Character->GetFPAnimInstance()->Montage_Stop(0.f, ReloadAnimation);
+	}
+	if (CurrentMagazineCount <= 0)
+	{
+		StopFire();
+		IsPlayerHoldingShootButton = false;
+		if (IsValid(DryFireSound))
+		{
+			UGameplayStatics::SpawnSoundAttached(
+				DryFireSound,
+				this
+			);
+		}
+
+		if (RemainingAmmo > 0)
+		{
+			Reload();
+			return;
+		}
+		return;
 	}
 
 	// Ensure the timer is cleared by using the timer handle
@@ -114,7 +137,7 @@ void UTP_WeaponComponent::PressedReload()
 	{
 		Character->ForceStopSprint();
 	}
-
+	
 	Reload();
 }
 
@@ -190,6 +213,26 @@ void UTP_WeaponComponent::Fire()
 {
 	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
+		return;
+	}
+
+	if (CurrentMagazineCount <= 0)
+	{
+		StopFire();
+		IsPlayerHoldingShootButton = false;
+		if (IsValid(DryFireSound))
+		{
+			UGameplayStatics::SpawnSoundAttached(
+				DryFireSound,
+				this
+			);
+		}
+
+		if (RemainingAmmo > 0)
+		{
+			Reload();
+			return;
+		}
 		return;
 	}
 
@@ -316,6 +359,7 @@ void UTP_WeaponComponent::Fire()
 
 	Character->MakeNoise(1.f, Character, GetComponentLocation());
 
+	CurrentMagazineCount = FMath::Max(CurrentMagazineCount - 1, 0);
 }
 
 void UTP_WeaponComponent::StopFire()
@@ -364,9 +408,21 @@ void UTP_WeaponComponent::SetIsEquippingFalse()
 	EquipDelayTimerHandle.Invalidate();
 }
 
+void UTP_WeaponComponent::OnReloaded()
+{
+	int toBeLoaded = FMath::Min(RemainingAmmo, MaxMagazineCount);
+	RemainingAmmo = FMath::Max(RemainingAmmo - toBeLoaded, 0);
+	CurrentMagazineCount = FMath::Clamp(toBeLoaded, 0, MaxMagazineCount);
+	SetIsReloadingFalse();
+}
+
 void UTP_WeaponComponent::Reload()
 {
 	if (IsReloading || IsEquipping)
+	{
+		return;
+	}
+	if (RemainingAmmo <= 0 || CurrentMagazineCount >= MaxMagazineCount)
 	{
 		return;
 	}
@@ -381,9 +437,11 @@ void UTP_WeaponComponent::Reload()
 			Character->GetFPAnimInstance()->IsLeftHandIKActive = false;
 			Character->GetFPAnimInstance()->Montage_Play(ReloadAnimation, 1.f);
 
-			FOnMontageBlendingOutStarted BlendOutDelegate;
+			/*FOnMontageBlendingOutStarted BlendOutDelegate;
 			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
-			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
+			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);*/
+
+			// remove this blend out logic and just call OnReloaded from the anim notify whatever
 		}
 	}
 }
