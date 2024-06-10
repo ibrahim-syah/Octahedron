@@ -394,13 +394,13 @@ private:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Gameplay")
-	int MaxMagazineCount = 12;
+	int32 MaxMagazineCount = 12;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-	int CurrentMagazineCount = 0;
+	int32 CurrentMagazineCount = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-	int RemainingAmmo = 26;
+	int32 RemainingAmmo = 26;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USoundBase* DryFireSound = nullptr;

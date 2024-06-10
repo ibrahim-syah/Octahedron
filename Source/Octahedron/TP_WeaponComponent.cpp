@@ -287,6 +287,7 @@ void UTP_WeaponComponent::Fire()
 				Params
 			);
 
+			CurrentMagazineCount = FMath::Max(CurrentMagazineCount - 1, 0);
 			OnWeaponProjectileFireDelegate.Broadcast(MuzzleTraceResult); // projectile is spawned in bp
 		}
 	}
@@ -341,6 +342,7 @@ void UTP_WeaponComponent::Fire()
 			MuzzleTraceResults.Add(MuzzleTraceResult);
 		}
 
+		CurrentMagazineCount = FMath::Max(CurrentMagazineCount - 1, 0);
 		OnWeaponHitScanFireDelegate.Broadcast(MuzzleTraceResults);
 	}
 
@@ -358,8 +360,6 @@ void UTP_WeaponComponent::Fire()
 	}
 
 	Character->MakeNoise(1.f, Character, GetComponentLocation());
-
-	CurrentMagazineCount = FMath::Max(CurrentMagazineCount - 1, 0);
 }
 
 void UTP_WeaponComponent::StopFire()
@@ -413,7 +413,6 @@ void UTP_WeaponComponent::OnReloaded()
 	int toBeLoaded = FMath::Min(RemainingAmmo, MaxMagazineCount);
 	RemainingAmmo = FMath::Max(RemainingAmmo - toBeLoaded, 0);
 	CurrentMagazineCount = FMath::Clamp(toBeLoaded, 0, MaxMagazineCount);
-	SetIsReloadingFalse();
 }
 
 void UTP_WeaponComponent::Reload()
@@ -437,9 +436,9 @@ void UTP_WeaponComponent::Reload()
 			Character->GetFPAnimInstance()->IsLeftHandIKActive = false;
 			Character->GetFPAnimInstance()->Montage_Play(ReloadAnimation, 1.f);
 
-			/*FOnMontageBlendingOutStarted BlendOutDelegate;
+			FOnMontageBlendingOutStarted BlendOutDelegate;
 			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
-			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);*/
+			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
 
 			// remove this blend out logic and just call OnReloaded from the anim notify whatever
 		}
@@ -448,6 +447,7 @@ void UTP_WeaponComponent::Reload()
 
 void UTP_WeaponComponent::CancelReload()
 {
+	SetIsReloadingFalse();
 	if (Character != nullptr && ReloadAnimation != nullptr)
 	{
 		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
