@@ -24,6 +24,7 @@ class UCameraShakeBase;
 class ACustomProjectile;
 
 DECLARE_DELEGATE(FOnFireAnimationDelegate);
+DECLARE_DELEGATE(FOnReloadSuccessDelegate);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHitScanFireSignature, TArray<FHitResult>, HitResults);
@@ -390,4 +391,20 @@ private:
 
 	UFUNCTION()
 	void FullAutoFire();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Gameplay")
+	int32 MaxMagazineCount = 12;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	int32 CurrentMagazineCount = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	int32 RemainingAmmo = 26;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	USoundBase* DryFireSound = nullptr;
+
+	UFUNCTION(BlueprintCallable)
+	void OnReloaded();
 };
