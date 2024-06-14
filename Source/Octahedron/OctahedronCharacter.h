@@ -214,6 +214,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	UFPAnimInstance* GetFPAnimInstance() { return FPAnimInstance; }
 
+	float GetBaseWalkSpeed() { return BaseWalkSpeed; }
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);

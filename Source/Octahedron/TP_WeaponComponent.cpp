@@ -10,6 +10,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
 #include "Components/TimelineComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Materials/MaterialParameterCollection.h"
@@ -517,6 +518,9 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 	float lerpedB = FMath::Lerp(0.f, 30.f, ADSAlpha);
 	FLinearColor newColor = FLinearColor(OutColor.R, OutColor.G, lerpedB, OutColor.A);
 	MPC_FP_Instance->SetVectorParameterValue(FName("Offset"), newColor);
+
+	float newSpeedMultiplier = FMath::Clamp(ADSAlphaLerp, 0.5f, 1);
+	Character->GetCharacterMovement()->MaxWalkSpeed = Character->GetBaseWalkSpeed() * newSpeedMultiplier;
 }
 
 void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
