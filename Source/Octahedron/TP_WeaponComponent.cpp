@@ -93,7 +93,7 @@ void UTP_WeaponComponent::PressedFire()
 			);
 		}
 
-		if (RemainingAmmo > 0)
+		if (Character->GetRemainingAmmo(AmmoType) > 0)
 		{
 			Reload();
 			return;
@@ -229,7 +229,7 @@ void UTP_WeaponComponent::Fire()
 			);
 		}
 
-		if (RemainingAmmo > 0)
+		if (Character->GetRemainingAmmo(AmmoType) > 0)
 		{
 			Reload();
 			return;
@@ -411,8 +411,9 @@ void UTP_WeaponComponent::SetIsEquippingFalse()
 
 void UTP_WeaponComponent::OnReloaded()
 {
-	int toBeLoaded = FMath::Min(RemainingAmmo, MaxMagazineCount);
-	RemainingAmmo = FMath::Max(RemainingAmmo - toBeLoaded, 0);
+	int toBeLoaded = FMath::Min(Character->GetRemainingAmmo(AmmoType), MaxMagazineCount);
+	int newValue = FMath::Max(Character->GetRemainingAmmo(AmmoType) - toBeLoaded, 0);
+	Character->SetRemainingAmmo(AmmoType, newValue);
 	CurrentMagazineCount = FMath::Clamp(toBeLoaded, 0, MaxMagazineCount);
 }
 
@@ -422,7 +423,7 @@ void UTP_WeaponComponent::Reload()
 	{
 		return;
 	}
-	if (RemainingAmmo <= 0 || CurrentMagazineCount >= MaxMagazineCount)
+	if (Character->GetRemainingAmmo(AmmoType) <= 0 || CurrentMagazineCount >= MaxMagazineCount)
 	{
 		return;
 	}

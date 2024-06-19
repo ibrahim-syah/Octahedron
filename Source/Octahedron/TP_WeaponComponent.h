@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EFireMode.h"
+#include "Public/EAmmoType.h"
 #include "TP_WeaponComponent.generated.h"
 
 class AOctahedronCharacter;
@@ -392,14 +393,17 @@ private:
 	void FullAutoFire();
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	EAmmoType AmmoType{ EAmmoType::Primary };
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Gameplay")
 	int32 MaxMagazineCount = 12;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	int32 CurrentMagazineCount = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-	int32 RemainingAmmo = 26;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	int32 RemainingAmmo = 26;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USoundBase* DryFireSound = nullptr;
