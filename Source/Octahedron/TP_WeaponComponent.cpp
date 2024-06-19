@@ -477,7 +477,7 @@ void UTP_WeaponComponent::EnterADS()
 	
 	ADSTL->SetPlayRate(FMath::Clamp(ADS_Speed, 0.1f, 10.f));
 
-	Character->GetFPAnimInstance()->SetSprintBlendOutTime(0.2f);
+	Character->GetFPAnimInstance()->SetSprintBlendOutTime(0.25f);
 	Character->ForceStopSprint();
 	ADSTL->Play();
 }
