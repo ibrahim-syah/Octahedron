@@ -375,8 +375,8 @@ private:
 	FOnWeaponChange WeaponChangeDelegate;
 
 	bool IsReloading;
-	UFUNCTION()
-	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+	/*UFUNCTION()
+	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);*/
 	FTimerHandle ReloadDelayTimerHandle;
 
 	FTimerHandle FireRateDelayTimerHandle;
