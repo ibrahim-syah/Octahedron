@@ -437,11 +437,10 @@ void UTP_WeaponComponent::Reload()
 			Character->GetFPAnimInstance()->IsLeftHandIKActive = false;
 			Character->GetFPAnimInstance()->Montage_Play(ReloadAnimation, 1.f);
 
-			FOnMontageBlendingOutStarted BlendOutDelegate;
-			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
-			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);
-
 			// remove this blend out logic and just call OnReloaded from the anim notify whatever
+			/*FOnMontageBlendingOutStarted BlendOutDelegate;
+			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
+			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);*/
 		}
 	}
 }
@@ -477,6 +476,7 @@ void UTP_WeaponComponent::EnterADS()
 	
 	ADSTL->SetPlayRate(FMath::Clamp(ADS_Speed, 0.1f, 10.f));
 
+	Character->GetFPAnimInstance()->SetSprintBlendOutTime(0.25f);
 	Character->ForceStopSprint();
 	ADSTL->Play();
 }
@@ -718,21 +718,21 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
-{
-	if (bInterrupted)
-	{
-		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(ReloadDelayTimerHandle);
-		if (Character != nullptr && !isTimerActive) // prevent spam reload cancel
-		{
-			Character->GetWorldTimerManager().SetTimer(ReloadDelayTimerHandle, this, &UTP_WeaponComponent::SetIsReloadingFalse, 0.2f, false);
-		}
-	}
-	else
-	{
-		SetIsReloadingFalse();
-	}
-}
+//void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+//{
+//	if (bInterrupted)
+//	{
+//		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(ReloadDelayTimerHandle);
+//		if (Character != nullptr && !isTimerActive) // prevent spam reload cancel
+//		{
+//			Character->GetWorldTimerManager().SetTimer(ReloadDelayTimerHandle, this, &UTP_WeaponComponent::SetIsReloadingFalse, 0.2f, false);
+//		}
+//	}
+//	else
+//	{
+//		SetIsReloadingFalse();
+//	}
+//}
 
 void UTP_WeaponComponent::SetIsReloadingFalse()
 {

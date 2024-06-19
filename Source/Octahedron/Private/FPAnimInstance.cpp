@@ -69,7 +69,9 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		float interpSpeed = (1.f / DeltaSeconds) / 10.f;
 		CamOffsetCurrent = UKismetMathLibrary::VInterpTo(CamOffsetCurrent, CamOffset, DeltaSeconds, interpSpeed);
-
+		//IsADS = Character->GetADSAlpha() > 0.f ? 1.f : 0.f;
+		IsADS = FMath::CeilToFloat(Character->GetADSAlpha());
+		IsADSAlpha = 1.f - IsADS;
 		ADS_Alpha = (1.f - Character->GetADSAlpha());
 		ADS_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha);
 
@@ -127,7 +129,8 @@ void UFPAnimInstance::SetRelativeHandTransform()
 void UFPAnimInstance::ModifyForADS()
 {
 	CamAnimAlpha = CamAnimAlpha * ADS_Alpha_Lerp;
-	WalkAnimAlpha = WalkAnimAlpha * ADS_Alpha;
+	//WalkAnimAlpha = WalkAnimAlpha * ADS_Alpha;
+	WalkAnimAlpha = WalkAnimAlpha * IsADSAlpha;
 	CrouchAlpha = CrouchAlpha * ADS_Alpha;
 	DipAlpha = DipAlpha * ADS_Alpha_Lerp;
 }

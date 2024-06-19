@@ -375,10 +375,9 @@ private:
 	FOnWeaponChange WeaponChangeDelegate;
 
 	bool IsReloading;
-	UFUNCTION()
-	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+	/*UFUNCTION()
+	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);*/
 	FTimerHandle ReloadDelayTimerHandle;
-	void SetIsReloadingFalse();
 
 	FTimerHandle FireRateDelayTimerHandle;
 	bool IsPlayerHoldingShootButton;
@@ -407,4 +406,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void OnReloaded();
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsReloadingFalse();
 };
