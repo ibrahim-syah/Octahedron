@@ -88,11 +88,11 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 {
 	if (IsValid(Weapon))
 	{
-		IsHasWeapon = true;
 		CurrentWeapon = Weapon;
 		CurrentWeaponIdlePose = CurrentWeapon->IdlePose;
 		IsLeftHandIKActive = true;
 		EquipTime = CurrentWeapon->EquipTime;
+		IsHasWeapon = true;
 
 		RecoilLocMin = CurrentWeapon->RecoilLocMin;
 		RecoilLocMax = CurrentWeapon->RecoilLocMin;
@@ -110,13 +110,13 @@ void UFPAnimInstance::StowCurrentWeapon(UTP_WeaponComponent* Weapon)
 {
 	if (IsValid(Weapon))
 	{
-		IsHasWeapon = false;
 		CurrentWeapon = nullptr;
-		CurrentWeaponIdlePose = nullptr;
+		//CurrentWeaponIdlePose = nullptr;
 		IsLeftHandIKActive = false;
-		/*EquipTime = CurrentWeapon->EquipTime;
+		//EquipTime = CurrentWeapon->EquipTime;
+		IsHasWeapon = false;
 
-		RecoilLocMin = CurrentWeapon->RecoilLocMin;
+		/*RecoilLocMin = CurrentWeapon->RecoilLocMin;
 		RecoilLocMax = CurrentWeapon->RecoilLocMin;
 		RecoilRotMin = CurrentWeapon->RecoilRotMin;
 		RecoilRotMax = CurrentWeapon->RecoilRotMax;
