@@ -106,6 +106,28 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 	}
 }
 
+void UFPAnimInstance::StowCurrentWeapon(UTP_WeaponComponent* Weapon)
+{
+	if (IsValid(Weapon))
+	{
+		IsHasWeapon = false;
+		CurrentWeapon = nullptr;
+		CurrentWeaponIdlePose = nullptr;
+		IsLeftHandIKActive = false;
+		/*EquipTime = CurrentWeapon->EquipTime;
+
+		RecoilLocMin = CurrentWeapon->RecoilLocMin;
+		RecoilLocMax = CurrentWeapon->RecoilLocMin;
+		RecoilRotMin = CurrentWeapon->RecoilRotMin;
+		RecoilRotMax = CurrentWeapon->RecoilRotMax;
+
+		RecoilLocMinADS = CurrentWeapon->RecoilLocMinADS;
+		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
+		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
+		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;*/
+	}
+}
+
 void UFPAnimInstance::SetSightTransform()
 {
 	const FTransform cameraWorldTransform = Character->GetFirstPersonCameraComponent()->GetComponentTransform();

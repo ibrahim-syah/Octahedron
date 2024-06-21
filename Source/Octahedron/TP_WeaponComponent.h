@@ -30,6 +30,8 @@ DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHitScanFireSignature, TArray<FHitResult>, HitResults);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStowSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
@@ -161,6 +163,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void AttachWeapon(AOctahedronCharacter* TargetCharacter);
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void DetachWeapon(AOctahedronCharacter* TargetCharacter);
+
 	/** Make the weapon Fire a Projectile */
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
@@ -197,6 +202,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnEquipSignature OnEquipDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnStowSignature OnStowDelegate;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SwitchFireMode();
@@ -369,10 +377,12 @@ private:
 	APlayerController* PCRef = nullptr;
 
 	bool IsEquipping;
+	bool IsStowing;
 	//UFUNCTION()
 	//void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle EquipDelayTimerHandle;
 	void SetIsEquippingFalse();
+	void SetIsStowingFalse();
 	FOnWeaponChange WeaponChangeDelegate;
 
 	bool IsReloading;

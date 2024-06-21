@@ -28,6 +28,9 @@ public:
 	void SetCurrentWeapon(UTP_WeaponComponent* Weapon);
 
 	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
+	void StowCurrentWeapon(UTP_WeaponComponent* Weapon);
+
+	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
 	void Fire();
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
