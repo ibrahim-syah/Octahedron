@@ -112,7 +112,6 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FTransform SightTransform;
-	bool IsSightTransformSet;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FTransform RelativeHandTransform;

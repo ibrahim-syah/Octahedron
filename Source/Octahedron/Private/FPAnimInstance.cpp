@@ -33,12 +33,6 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		if (IsValid(CurrentWeapon) && IsValid(CurrentWeaponIdlePose))
 		{
-			if (!IsSightTransformSet)
-			{
-				SetSightTransform();
-				SetRelativeHandTransform();
-				IsSightTransformSet = true;
-			}
 			if (!RecoilTransform.Equals(FTransform()) || !FinalRecoilTransform.Equals(FTransform()))
 			{
 				InterpRecoil(DeltaSeconds);
@@ -103,6 +97,9 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
 		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
 		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;
+
+		SetSightTransform();
+		SetRelativeHandTransform();
 	}
 }
 
