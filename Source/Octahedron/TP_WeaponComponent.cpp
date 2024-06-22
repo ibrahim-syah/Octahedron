@@ -583,6 +583,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	}
 	SetIsEquippingFalse();
 	IsEquipping = true;
+	ADSTL->Activate(true);
 
 	// Attach the weapon to the First Person Character
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
@@ -654,6 +655,7 @@ void UTP_WeaponComponent::DetachWeapon()
 		return;
 	}
 	IsStowing = true;
+	ADSTL->Deactivate();
 
 	// Try and play stow animation
 	Stow();
@@ -667,6 +669,7 @@ bool UTP_WeaponComponent::InstantDetachWeapon()
 		return false;
 	}
 	IsStowing = true;
+	ADSTL->Deactivate();
 
 	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
 	WeaponChangeDelegate.Execute(this);
