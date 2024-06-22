@@ -43,6 +43,10 @@ void UTP_WeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (IsValid(GetOwner())) {
+		GetOwner()->AddOwnedComponent(ADSTL);
+	}
+
 	if (ADSAlphaCurve != nullptr)
 	{
 		FOnTimelineFloat onADSTLCallback;
@@ -446,6 +450,11 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 			Subsystem->RemoveMappingContext(FireMappingContext);
 		}
 
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			EnhancedInputComponent->ClearActionBindings();
+		}
+
 		CanFire = false;
 	}
 
@@ -518,7 +527,7 @@ void UTP_WeaponComponent::PressedADS()
 
 void UTP_WeaponComponent::EnterADS()
 {
-	if (IsReloading)
+	if (IsReloading || IsEquipping || IsStowing)
 	{
 		return;
 	}
@@ -551,7 +560,7 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 	{
 		return;
 	}
-
+	
 	ADSAlpha = val;
 	ADSAlphaLerp = FMath::Lerp(0.2f, 1.f, (1.f - ADSAlpha));
 	Character->ADSAlpha = ADSAlpha;
@@ -583,7 +592,6 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	}
 	SetIsEquippingFalse();
 	IsEquipping = true;
-	ADSTL->Activate(true);
 
 	// Attach the weapon to the First Person Character
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
@@ -593,7 +601,6 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	{
 		SetMaterial(0, FP_Material);
 	}
-	//Character->ADS_Offset = ADS_Offset;
 
 	if (ScopeSightMesh != nullptr)
 	{
@@ -655,7 +662,7 @@ void UTP_WeaponComponent::DetachWeapon()
 		return;
 	}
 	IsStowing = true;
-	ADSTL->Deactivate();
+	ExitADS(true);
 
 	// Try and play stow animation
 	Stow();
@@ -669,7 +676,7 @@ bool UTP_WeaponComponent::InstantDetachWeapon()
 		return false;
 	}
 	IsStowing = true;
-	ADSTL->Deactivate();
+	ExitADS(true);
 
 	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
 	WeaponChangeDelegate.Execute(this);
@@ -687,6 +694,11 @@ bool UTP_WeaponComponent::InstantDetachWeapon()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
 		{
 			Subsystem->RemoveMappingContext(FireMappingContext);
+		}
+
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			EnhancedInputComponent->ClearActionBindings();
 		}
 
 		CanFire = false;
