@@ -633,7 +633,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	}
 }
 
-void UTP_WeaponComponent::DetachWeapon(AOctahedronCharacter* TargetCharacter)
+void UTP_WeaponComponent::DetachWeapon()
 {
 	// Check that the character is valid, and the currently set weapon is this object
 	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || IsStowing || IsEquipping)

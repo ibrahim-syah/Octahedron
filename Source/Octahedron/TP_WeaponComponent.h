@@ -164,7 +164,7 @@ public:
 	void AttachWeapon(AOctahedronCharacter* TargetCharacter);
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void DetachWeapon(AOctahedronCharacter* TargetCharacter);
+	void DetachWeapon();
 
 	/** Make the weapon Fire a Projectile */
 	UFUNCTION(BlueprintCallable, Category="Weapon")
