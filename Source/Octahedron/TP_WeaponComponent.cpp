@@ -43,6 +43,10 @@ void UTP_WeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (IsValid(GetOwner())) {
+		GetOwner()->AddOwnedComponent(ADSTL);
+	}
+
 	if (ADSAlphaCurve != nullptr)
 	{
 		FOnTimelineFloat onADSTLCallback;
@@ -68,7 +72,7 @@ void UTP_WeaponComponent::BeginPlay()
 void UTP_WeaponComponent::PressedFire()
 {
 	IsPlayerHoldingShootButton = true;
-	if (Character == nullptr || PCRef == nullptr || IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (Character == nullptr || PCRef == nullptr || IsReloading || IsEquipping || IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -93,7 +97,7 @@ void UTP_WeaponComponent::PressedFire()
 			);
 		}
 
-		if (RemainingAmmo > 0)
+		if (Character->GetRemainingAmmo(AmmoType) > 0)
 		{
 			Reload();
 			return;
@@ -212,7 +216,7 @@ void UTP_WeaponComponent::FullAutoFire()
 
 void UTP_WeaponComponent::Fire()
 {
-	if (IsReloading || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (!CanFire || IsReloading || IsEquipping || IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -229,7 +233,7 @@ void UTP_WeaponComponent::Fire()
 			);
 		}
 
-		if (RemainingAmmo > 0)
+		if (Character->GetRemainingAmmo(AmmoType) > 0)
 		{
 			Reload();
 			return;
@@ -375,16 +379,21 @@ void UTP_WeaponComponent::ForceStopFire()
 
 void UTP_WeaponComponent::Stow()
 {
+	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	WeaponChangeDelegate.Execute(this);
+
+	if (IsValid(EquipSound))
+	{
+		UGameplayStatics::SpawnSoundAttached(
+			EquipSound,
+			this
+		);
+	}
+	Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsStowingFalse, EquipTime, false);
 }
 
 void UTP_WeaponComponent::Equip()
 {
-	if (IsEquipping || Character == nullptr)
-	{
-		return;
-	}
-	IsEquipping = true;
-
 	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
 	WeaponChangeDelegate.Execute(this);
 
@@ -397,32 +406,81 @@ void UTP_WeaponComponent::Equip()
 			this
 		);
 	}
-	Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, EquipTime, false);
+	if (Character != nullptr && ReloadAnimation != nullptr)
+	{
+		if (Character->GetFPAnimInstance())
+		{
+			Character->GetFPAnimInstance()->Montage_Play(EquipAnimation, 1.f);
+
+			FOnMontageBlendingOutStarted BlendOutDelegate;
+			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::EquipAnimationBlendOut);
+			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
+		}
+	}
+}
+
+void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+{
+	SetIsEquippingFalse();
 }
 
 void UTP_WeaponComponent::SetIsEquippingFalse()
 {
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(EquipDelayTimerHandle);
+	EquipDelayTimerHandle.Invalidate();
+
 	IsEquipping = false;
+}
+
+void UTP_WeaponComponent::SetIsStowingFalse()
+{
+	// Detach the weapon from the First Person Character
+	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
+	DetachFromComponent(DetachmentRules);
+
+	Character->SetHasWeapon(false);
+	Character->SetCurrentWeapon(nullptr);
+
+	PCRef = Cast<APlayerController>(Character->GetController());
+	if (PCRef != nullptr)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
+		{
+			Subsystem->RemoveMappingContext(FireMappingContext);
+		}
+
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			EnhancedInputComponent->ClearActionBindings();
+		}
+
+		CanFire = false;
+	}
 
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(EquipDelayTimerHandle);
 	EquipDelayTimerHandle.Invalidate();
+
+	IsStowing = false;
+	OnStowDelegate.Broadcast(Character, this);
 }
 
 void UTP_WeaponComponent::OnReloaded()
 {
-	int toBeLoaded = FMath::Min(RemainingAmmo, MaxMagazineCount);
-	RemainingAmmo = FMath::Max(RemainingAmmo - toBeLoaded, 0);
+	int toBeLoaded = FMath::Min(Character->GetRemainingAmmo(AmmoType), MaxMagazineCount);
+	int newValue = FMath::Max(Character->GetRemainingAmmo(AmmoType) - toBeLoaded, 0);
+	Character->SetRemainingAmmo(AmmoType, newValue);
 	CurrentMagazineCount = FMath::Clamp(toBeLoaded, 0, MaxMagazineCount);
 }
 
 void UTP_WeaponComponent::Reload()
 {
-	if (IsReloading || IsEquipping)
+	if (IsReloading || IsEquipping || IsStowing)
 	{
 		return;
 	}
-	if (RemainingAmmo <= 0 || CurrentMagazineCount >= MaxMagazineCount)
+	if (Character->GetRemainingAmmo(AmmoType) <= 0 || CurrentMagazineCount >= MaxMagazineCount)
 	{
 		return;
 	}
@@ -469,7 +527,7 @@ void UTP_WeaponComponent::PressedADS()
 
 void UTP_WeaponComponent::EnterADS()
 {
-	if (IsReloading)
+	if (IsReloading || IsEquipping || IsStowing)
 	{
 		return;
 	}
@@ -502,7 +560,7 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 	{
 		return;
 	}
-
+	
 	ADSAlpha = val;
 	ADSAlphaLerp = FMath::Lerp(0.2f, 1.f, (1.f - ADSAlpha));
 	Character->ADSAlpha = ADSAlpha;
@@ -528,10 +586,12 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	Character = TargetCharacter;
 
 	// Check that the character is valid, and has no weapon yet
-	if (Character == nullptr || Character->GetHasWeapon() || Character->GetCurrentWeapon())
+	if (Character == nullptr || Character->GetCurrentWeapon() == this)
 	{
 		return;
 	}
+	SetIsEquippingFalse();
+	IsEquipping = true;
 
 	// Attach the weapon to the First Person Character
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
@@ -541,7 +601,6 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	{
 		SetMaterial(0, FP_Material);
 	}
-	//Character->ADS_Offset = ADS_Offset;
 
 	if (ScopeSightMesh != nullptr)
 	{
@@ -593,6 +652,61 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 
 		CanFire = true;
 	}
+}
+
+void UTP_WeaponComponent::DetachWeapon()
+{
+	// Check that the character is valid, and the currently set weapon is this object
+	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || IsStowing || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	{
+		return;
+	}
+	IsStowing = true;
+	ExitADS(true);
+
+	// Try and play stow animation
+	Stow();
+}
+
+bool UTP_WeaponComponent::InstantDetachWeapon()
+{
+	// Check that the character is valid, and the currently set weapon is this object
+	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	{
+		return false;
+	}
+	IsStowing = true;
+	ExitADS(true);
+
+	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	WeaponChangeDelegate.Execute(this);
+
+	// Detach the weapon from the First Person Character
+	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
+	DetachFromComponent(DetachmentRules);
+
+	Character->SetHasWeapon(false);
+	Character->SetCurrentWeapon(nullptr);
+
+	PCRef = Cast<APlayerController>(Character->GetController());
+	if (PCRef != nullptr)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
+		{
+			Subsystem->RemoveMappingContext(FireMappingContext);
+		}
+
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			EnhancedInputComponent->ClearActionBindings();
+		}
+
+		CanFire = false;
+	}
+
+	IsStowing = false;
+	OnStowDelegate.Broadcast(Character, this);
+	return true;
 }
 
 //Call this function when the firing begins, the recoil starts here

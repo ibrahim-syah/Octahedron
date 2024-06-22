@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "ECustomMovementMode.h"
+#include "Public/EAmmoType.h"
 #include "OctahedronCharacter.generated.h"
 
 
@@ -72,6 +73,21 @@ class AOctahedronCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SprintAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchToPrimaryAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchToSpecialAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchToHeavyAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchToPrevWeaponAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchToNextWeaponAction = nullptr;
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void PressedSprint();
@@ -164,11 +180,11 @@ public:
 
 	/** Setter to set the bool */
 	UFUNCTION(BlueprintCallable, Category = Weapon)
-	void SetHasWeapon(bool bNewHasWeapon);
+	void SetHasWeapon(bool bNewHasWeapon) { bHasWeapon = bNewHasWeapon; }
 
 	/** Getter for the bool */
 	UFUNCTION(BlueprintCallable, Category = Weapon)
-	bool GetHasWeapon();
+	bool GetHasWeapon() { return bHasWeapon; }
 
 	/** Bool for AnimBP to switch to another animation set */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
@@ -176,10 +192,10 @@ public:
 
 	/** Setter to set the bool */
 	UFUNCTION(Category = Weapon)
-	void SetCurrentWeapon(UTP_WeaponComponent* NewWeapon);
+	void SetCurrentWeapon(UTP_WeaponComponent* NewWeapon) { CurrentWeapon = NewWeapon; }
 
 	UFUNCTION(BlueprintPure, Category = Weapon)
-	UTP_WeaponComponent* GetCurrentWeapon();
+	UTP_WeaponComponent* GetCurrentWeapon() { return CurrentWeapon; }
 
 	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector ADS_Offset;*/
@@ -359,6 +375,11 @@ private:
 	int32 JumpsMax{ 2 };
 	UFPAnimInstance* FPAnimInstance = nullptr;
 
+	int32 SpecialAmmoRemaining = 300;
+	int32 HeavyAmmoRemaining = 20;
+
+
+
 public:
 	FVector GetLocationLagPos() { return LocationLagPos; }
 	float GetCrouchAlpha() { return CrouchAlpha; }
@@ -377,5 +398,17 @@ public:
 	float GetADSAlpha() { return ADSAlpha; }
 	//FVector GetADSOffset() { return ADS_Offset; }
 	ECustomMovementMode GetMoveMode() { return MoveMode; }
+
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	int32 GetRemainingAmmo(EAmmoType AmmoType);
+
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	int32 SetRemainingAmmo(EAmmoType AmmoType, int32 NewValue);
+
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	int32 GetSpecialAmmoRemaining() { return SpecialAmmoRemaining; }
+
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	int32 GetHeavyAmmoRemaining() { return HeavyAmmoRemaining; }
 };
 

@@ -33,12 +33,6 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		if (IsValid(CurrentWeapon) && IsValid(CurrentWeaponIdlePose))
 		{
-			if (!IsSightTransformSet)
-			{
-				SetSightTransform();
-				SetRelativeHandTransform();
-				IsSightTransformSet = true;
-			}
 			if (!RecoilTransform.Equals(FTransform()) || !FinalRecoilTransform.Equals(FTransform()))
 			{
 				InterpRecoil(DeltaSeconds);
@@ -88,11 +82,11 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 {
 	if (IsValid(Weapon))
 	{
-		IsHasWeapon = true;
 		CurrentWeapon = Weapon;
 		CurrentWeaponIdlePose = CurrentWeapon->IdlePose;
 		IsLeftHandIKActive = true;
 		EquipTime = CurrentWeapon->EquipTime;
+		IsHasWeapon = true;
 
 		RecoilLocMin = CurrentWeapon->RecoilLocMin;
 		RecoilLocMax = CurrentWeapon->RecoilLocMin;
@@ -103,6 +97,31 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
 		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
 		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;
+
+		SetSightTransform();
+		SetRelativeHandTransform();
+	}
+}
+
+void UFPAnimInstance::StowCurrentWeapon(UTP_WeaponComponent* Weapon)
+{
+	if (IsValid(Weapon))
+	{
+		CurrentWeapon = nullptr;
+		//CurrentWeaponIdlePose = nullptr;
+		IsLeftHandIKActive = false;
+		//EquipTime = CurrentWeapon->EquipTime;
+		IsHasWeapon = false;
+
+		/*RecoilLocMin = CurrentWeapon->RecoilLocMin;
+		RecoilLocMax = CurrentWeapon->RecoilLocMin;
+		RecoilRotMin = CurrentWeapon->RecoilRotMin;
+		RecoilRotMax = CurrentWeapon->RecoilRotMax;
+
+		RecoilLocMinADS = CurrentWeapon->RecoilLocMinADS;
+		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
+		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
+		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;*/
 	}
 }
 

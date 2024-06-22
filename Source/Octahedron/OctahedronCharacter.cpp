@@ -715,6 +715,44 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 	CamAnimAlphaArg = CamAnimAlpha;
 }
 
+int32 AOctahedronCharacter::GetRemainingAmmo(EAmmoType AmmoType)
+{
+	switch (AmmoType)
+	{
+	case EAmmoType::Primary:
+		return 999;
+		break;
+	case EAmmoType::Special:
+		return SpecialAmmoRemaining;
+		break;
+	case EAmmoType::Heavy:
+		return HeavyAmmoRemaining;
+		break;
+	default:
+		return 0;
+	}
+}
+
+int32 AOctahedronCharacter::SetRemainingAmmo(EAmmoType AmmoType, int32 NewValue)
+{
+	switch (AmmoType)
+	{
+	case EAmmoType::Primary:
+		return 999;
+		break;
+	case EAmmoType::Special:
+		SpecialAmmoRemaining = NewValue;
+		return SpecialAmmoRemaining;
+		break;
+	case EAmmoType::Heavy:
+		HeavyAmmoRemaining = NewValue;
+		return HeavyAmmoRemaining;
+		break;
+	default:
+		return 0;
+	}
+}
+
 void AOctahedronCharacter::PressedSprint()
 {
 	if (bHasWeapon && CurrentWeapon->GetIsReloading())
@@ -907,26 +945,6 @@ void AOctahedronCharacter::SlideTLCallback(float val)
 void AOctahedronCharacter::FinishedSlideDelegate()
 {
 	StopSlide();
-}
-
-void AOctahedronCharacter::SetHasWeapon(bool bNewHasRifle)
-{
-	bHasWeapon = bNewHasRifle;
-}
-
-bool AOctahedronCharacter::GetHasWeapon()
-{
-	return bHasWeapon;
-}
-
-void AOctahedronCharacter::SetCurrentWeapon(UTP_WeaponComponent *NewWeapon)
-{
-	CurrentWeapon = NewWeapon;
-}
-
-UTP_WeaponComponent* AOctahedronCharacter::GetCurrentWeapon()
-{
-	return CurrentWeapon;
 }
 
 // can the character perform actions?

@@ -28,6 +28,9 @@ public:
 	void SetCurrentWeapon(UTP_WeaponComponent* Weapon);
 
 	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
+	void StowCurrentWeapon(UTP_WeaponComponent* Weapon);
+
+	UFUNCTION(BlueprintCallable, meta = (AllowPrivateAccess = "true"))
 	void Fire();
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
@@ -109,7 +112,6 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FTransform SightTransform;
-	bool IsSightTransformSet;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FTransform RelativeHandTransform;

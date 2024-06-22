@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EFireMode.h"
+#include "Public/EAmmoType.h"
 #include "TP_WeaponComponent.generated.h"
 
 class AOctahedronCharacter;
@@ -29,6 +30,8 @@ DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHitScanFireSignature, TArray<FHitResult>, HitResults);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStowSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
@@ -53,6 +56,10 @@ public:
 	/** AnimMontage to play when reloading the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* ReloadAnimation = nullptr;
+
+	/** AnimMontage to play when equipping the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* EquipAnimation = nullptr;
 
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
@@ -160,6 +167,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void AttachWeapon(AOctahedronCharacter* TargetCharacter);
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void DetachWeapon();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	bool InstantDetachWeapon();
+
 	/** Make the weapon Fire a Projectile */
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
@@ -196,6 +209,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnEquipSignature OnEquipDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnStowSignature OnStowDelegate;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SwitchFireMode();
@@ -368,10 +384,13 @@ private:
 	APlayerController* PCRef = nullptr;
 
 	bool IsEquipping;
-	//UFUNCTION()
-	//void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+	bool IsStowing;
+
+	UFUNCTION()
+	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle EquipDelayTimerHandle;
 	void SetIsEquippingFalse();
+	void SetIsStowingFalse();
 	FOnWeaponChange WeaponChangeDelegate;
 
 	bool IsReloading;
@@ -392,14 +411,17 @@ private:
 	void FullAutoFire();
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	EAmmoType AmmoType{ EAmmoType::Primary };
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Gameplay")
 	int32 MaxMagazineCount = 12;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	int32 CurrentMagazineCount = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-	int32 RemainingAmmo = 26;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	int32 RemainingAmmo = 26;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USoundBase* DryFireSound = nullptr;
