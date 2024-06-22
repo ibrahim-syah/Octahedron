@@ -379,6 +379,8 @@ void UTP_WeaponComponent::ForceStopFire()
 
 void UTP_WeaponComponent::Stow()
 {
+	Character->SetCurrentWeapon(nullptr);
+
 	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
 	WeaponChangeDelegate.Execute(this);
 
@@ -440,7 +442,6 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 	DetachFromComponent(DetachmentRules);
 
 	Character->SetHasWeapon(false);
-	Character->SetCurrentWeapon(nullptr);
 
 	PCRef = Cast<APlayerController>(Character->GetController());
 	if (PCRef != nullptr)
@@ -614,14 +615,15 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 		}
 	}
 
+	// ensure current weapon for Character Actor is set to the new one before calling SetCurrentWeapon in anim bp
+	Character->SetCurrentWeapon(this);
 	// Try and play equip animation if specified
 	Equip();
 
 	OnEquipDelegate.Broadcast(Character, this);
-	
-	// switch bHasWeapon so the animation blueprint can switch to another animation set
+
+	// switch bHasWeapon so the animation blueprint can switch to current weapon idle anim
 	Character->SetHasWeapon(true);
-	Character->SetCurrentWeapon(this);
 
 	PCRef = Cast<APlayerController>(Character->GetController());
 	// Set up action bindings
@@ -678,6 +680,8 @@ bool UTP_WeaponComponent::InstantDetachWeapon()
 	IsStowing = true;
 	ExitADS(true);
 
+	Character->SetCurrentWeapon(nullptr);
+
 	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
 	WeaponChangeDelegate.Execute(this);
 
@@ -686,7 +690,6 @@ bool UTP_WeaponComponent::InstantDetachWeapon()
 	DetachFromComponent(DetachmentRules);
 
 	Character->SetHasWeapon(false);
-	Character->SetCurrentWeapon(nullptr);
 
 	PCRef = Cast<APlayerController>(Character->GetController());
 	if (PCRef != nullptr)
