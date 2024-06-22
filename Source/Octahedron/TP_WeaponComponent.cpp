@@ -212,7 +212,7 @@ void UTP_WeaponComponent::FullAutoFire()
 
 void UTP_WeaponComponent::Fire()
 {
-	if (IsReloading || IsEquipping || IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	if (!CanFire || IsReloading || IsEquipping || IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -420,9 +420,6 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
 	DetachFromComponent(DetachmentRules);
 
-	OnStowDelegate.Broadcast(Character, this);
-
-
 	Character->SetHasWeapon(false);
 	Character->SetCurrentWeapon(nullptr);
 
@@ -442,6 +439,7 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 	EquipDelayTimerHandle.Invalidate();
 
 	IsStowing = false;
+	OnStowDelegate.Broadcast(Character, this);
 }
 
 void UTP_WeaponComponent::OnReloaded()
@@ -564,11 +562,11 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 	Character = TargetCharacter;
 
 	// Check that the character is valid, and has no weapon yet
-	if (Character == nullptr || Character->GetHasWeapon() || Character->GetCurrentWeapon() || IsEquipping)
+	if (Character == nullptr || Character->GetCurrentWeapon() == this)
 	{
 		return;
 	}
-
+	SetIsEquippingFalse();
 	IsEquipping = true;
 
 	// Attach the weapon to the First Person Character
@@ -636,7 +634,7 @@ void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
 void UTP_WeaponComponent::DetachWeapon()
 {
 	// Check that the character is valid, and the currently set weapon is this object
-	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || IsStowing || IsEquipping)
+	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || IsStowing || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -644,6 +642,41 @@ void UTP_WeaponComponent::DetachWeapon()
 
 	// Try and play stow animation
 	Stow();
+}
+
+bool UTP_WeaponComponent::InstantDetachWeapon()
+{
+	// Check that the character is valid, and the currently set weapon is this object
+	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
+	{
+		return false;
+	}
+	IsStowing = true;
+
+	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	WeaponChangeDelegate.Execute(this);
+
+	// Detach the weapon from the First Person Character
+	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
+	DetachFromComponent(DetachmentRules);
+
+	Character->SetHasWeapon(false);
+	Character->SetCurrentWeapon(nullptr);
+
+	PCRef = Cast<APlayerController>(Character->GetController());
+	if (PCRef != nullptr)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
+		{
+			Subsystem->RemoveMappingContext(FireMappingContext);
+		}
+
+		CanFire = false;
+	}
+
+	IsStowing = false;
+	OnStowDelegate.Broadcast(Character, this);
+	return true;
 }
 
 //Call this function when the firing begins, the recoil starts here

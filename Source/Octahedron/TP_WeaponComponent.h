@@ -166,6 +166,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void DetachWeapon();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	bool InstantDetachWeapon();
+
 	/** Make the weapon Fire a Projectile */
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
