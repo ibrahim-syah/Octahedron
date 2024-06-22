@@ -39,6 +39,8 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				InterpFinalRecoil(DeltaSeconds);
 			}
 			SnapLeftHandToWeapon();
+			SetSightTransform();
+			SetRelativeHandTransform();
 		}
 
 		LocationLagPos = Character->GetLocationLagPos();
@@ -97,9 +99,6 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
 		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
 		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;
-
-		SetSightTransform();
-		SetRelativeHandTransform();
 	}
 }
 
