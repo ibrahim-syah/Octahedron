@@ -402,7 +402,22 @@ void UTP_WeaponComponent::Equip()
 			this
 		);
 	}
-	Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsEquippingFalse, EquipTime, false);
+	if (Character != nullptr && ReloadAnimation != nullptr)
+	{
+		if (Character->GetFPAnimInstance())
+		{
+			Character->GetFPAnimInstance()->Montage_Play(EquipAnimation, 1.f);
+
+			FOnMontageBlendingOutStarted BlendOutDelegate;
+			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::EquipAnimationBlendOut);
+			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
+		}
+	}
+}
+
+void UTP_WeaponComponent::EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+{
+	SetIsEquippingFalse();
 }
 
 void UTP_WeaponComponent::SetIsEquippingFalse()

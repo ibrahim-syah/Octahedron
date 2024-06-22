@@ -57,6 +57,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* ReloadAnimation = nullptr;
 
+	/** AnimMontage to play when equipping the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* EquipAnimation = nullptr;
+
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
 	FVector MuzzleOffset;
@@ -381,8 +385,9 @@ private:
 
 	bool IsEquipping;
 	bool IsStowing;
-	//UFUNCTION()
-	//void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+
+	UFUNCTION()
+	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle EquipDelayTimerHandle;
 	void SetIsEquippingFalse();
 	void SetIsStowingFalse();
