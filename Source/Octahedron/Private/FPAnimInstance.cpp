@@ -230,6 +230,8 @@ void UFPAnimInstance::Fire()
 	FRotator rotMin = FMath::Lerp(RecoilRotMinADS, RecoilRotMin, ADS_Alpha);
 	FRotator rotMax = FMath::Lerp(RecoilRotMaxADS, RecoilRotMax, ADS_Alpha);
 
+	RecoilTransform = FTransform();
+
 	FVector RecoilLoc = RecoilTransform.GetLocation();
 	RecoilLoc += FVector(
 		FMath::RandRange(locMin.X, locMax.X),
