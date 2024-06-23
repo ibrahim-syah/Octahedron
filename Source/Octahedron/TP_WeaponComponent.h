@@ -315,6 +315,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilRotMaxADS{ 0.f, 0.f, 0.f };
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilKickInterpSpeedScale = 6.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilRecoveryInterpSpeedScale = 36.f;
+
 
 
 

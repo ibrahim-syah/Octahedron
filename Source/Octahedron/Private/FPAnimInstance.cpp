@@ -33,11 +33,19 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		if (IsValid(CurrentWeapon) && IsValid(CurrentWeaponIdlePose))
 		{
-			if (!RecoilTransform.Equals(FTransform()) || !FinalRecoilTransform.Equals(FTransform()))
+			if (IsRecoilKicking)
+			{
+				InterpRecoilKick(DeltaSeconds);
+			}
+			else if (IsRecoilRecovering)
+			{
+				InterpRecoilRecovery(DeltaSeconds);
+			}
+			/*if (!RecoilTransform.Equals(FTransform()) || !FinalRecoilTransform.Equals(FTransform()))
 			{
 				InterpRecoil(DeltaSeconds);
 				InterpFinalRecoil(DeltaSeconds);
-			}
+			}*/
 			SnapLeftHandToWeapon();
 			SetSightTransform();
 			SetRelativeHandTransform();
@@ -99,6 +107,9 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
 		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
 		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;
+
+		RecoilKickInterpSpeed = CurrentWeapon->RecoilKickInterpSpeedScale;
+		RecoilRecoveryInterpSpeed = CurrentWeapon->RecoilRecoveryInterpSpeedScale;
 	}
 }
 
@@ -163,17 +174,42 @@ void UFPAnimInstance::ModifyForSprint(float DeltaSeconds)
 	SprintAnimRot = UKismetMathLibrary::RInterpTo(SprintAnimRot, scaledWalkAnimRot, DeltaSeconds, interpSpeed);
 }
 
-void UFPAnimInstance::InterpRecoil(float DeltaSeconds)
+//void UFPAnimInstance::InterpRecoil(float DeltaSeconds)
+//{
+//	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
+//	//float interpSpeed = 15.f;
+//	RecoilTransform = UKismetMathLibrary::TInterpTo(RecoilTransform, FinalRecoilTransform, DeltaSeconds, interpSpeed);
+//}
+//
+//void UFPAnimInstance::InterpFinalRecoil(float DeltaSeconds)
+//{
+//	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
+//	//float interpSpeed = 5.f;
+//	FinalRecoilTransform = UKismetMathLibrary::TInterpTo(FinalRecoilTransform, FTransform(), DeltaSeconds, interpSpeed);
+//	
+//}
+
+void UFPAnimInstance::InterpRecoilKick(float DeltaSeconds)
 {
-	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
+	//float interpSpeed = (1.f / DeltaSeconds) / RecoilKickInterpSpeed;
+	float interpSpeed = 15.f;
 	RecoilTransform = UKismetMathLibrary::TInterpTo(RecoilTransform, FinalRecoilTransform, DeltaSeconds, interpSpeed);
+	if (RecoilTransform.Equals(FinalRecoilTransform, 0.1f))
+	{
+		IsRecoilKicking = false;
+		IsRecoilRecovering = true;
+	}
 }
 
-void UFPAnimInstance::InterpFinalRecoil(float DeltaSeconds)
+void UFPAnimInstance::InterpRecoilRecovery(float DeltaSeconds)
 {
-	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
-	FinalRecoilTransform = UKismetMathLibrary::TInterpTo(FinalRecoilTransform, FTransform(), DeltaSeconds, interpSpeed);
-	
+	//float interpSpeed = (1.f / DeltaSeconds) / RecoilRecoveryInterpSpeed;
+	float interpSpeed = 5.f;
+	RecoilTransform = UKismetMathLibrary::TInterpTo(RecoilTransform, FTransform(), DeltaSeconds, interpSpeed);
+	if (RecoilTransform.Equals(FTransform()))
+	{
+		IsRecoilRecovering = false;
+	}
 }
 
 void UFPAnimInstance::SnapLeftHandToWeapon()
@@ -194,14 +230,14 @@ void UFPAnimInstance::Fire()
 	FRotator rotMin = FMath::Lerp(RecoilRotMinADS, RecoilRotMin, ADS_Alpha);
 	FRotator rotMax = FMath::Lerp(RecoilRotMaxADS, RecoilRotMax, ADS_Alpha);
 
-	FVector RecoilLoc = FinalRecoilTransform.GetLocation();
+	FVector RecoilLoc = RecoilTransform.GetLocation();
 	RecoilLoc += FVector(
 		FMath::RandRange(locMin.X, locMax.X),
 		FMath::RandRange(locMin.Y, locMax.Y),
 		FMath::RandRange(locMin.Z, locMax.Z)
 	);
 	
-	FRotator RecoilRot = FinalRecoilTransform.GetRotation().Rotator();
+	FRotator RecoilRot = RecoilTransform.GetRotation().Rotator();
 	RecoilRot += FRotator(
 		FMath::RandRange(rotMin.Pitch, rotMax.Pitch),
 		FMath::RandRange(rotMin.Yaw, rotMax.Yaw),
@@ -210,4 +246,8 @@ void UFPAnimInstance::Fire()
 
 	FinalRecoilTransform.SetLocation(RecoilLoc);
 	FinalRecoilTransform.SetRotation(RecoilRot.Quaternion());
+
+	IsRecoilKicking = true;
+
+	UE_LOG(LogTemp, Display, TEXT("anim bp Fired and FinalRecoilTransform Updated to: %s"), *FinalRecoilTransform.GetLocation().ToString());
 }

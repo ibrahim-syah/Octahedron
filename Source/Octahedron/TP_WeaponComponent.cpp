@@ -67,6 +67,8 @@ void UTP_WeaponComponent::BeginPlay()
 	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
 
 	FireDelay = 60.f / FireRate;
+
+	CurrentMagazineCount = MaxMagazineCount;
 }
 
 void UTP_WeaponComponent::PressedFire()
