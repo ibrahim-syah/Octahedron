@@ -191,9 +191,9 @@ void UFPAnimInstance::ModifyForSprint(float DeltaSeconds)
 
 void UFPAnimInstance::InterpRecoilKick(float DeltaSeconds)
 {
-	//float interpSpeed = (1.f / DeltaSeconds) / RecoilKickInterpSpeed;
+	float interpSpeed = (1.f / DeltaSeconds) / RecoilKickInterpSpeed;
 	//float interpSpeed = 15.f;
-	float interpSpeed = RecoilKickInterpSpeed;
+	//float interpSpeed = RecoilKickInterpSpeed;
 	RecoilTransform = UKismetMathLibrary::TInterpTo(RecoilTransform, FinalRecoilTransform, DeltaSeconds, interpSpeed);
 	if (RecoilTransform.Equals(FinalRecoilTransform, 0.1f))
 	{
@@ -204,9 +204,9 @@ void UFPAnimInstance::InterpRecoilKick(float DeltaSeconds)
 
 void UFPAnimInstance::InterpRecoilRecovery(float DeltaSeconds)
 {
-	//float interpSpeed = (1.f / DeltaSeconds) / RecoilRecoveryInterpSpeed;
+	float interpSpeed = (1.f / DeltaSeconds) / RecoilRecoveryInterpSpeed;
 	//float interpSpeed = 5.f;
-	float interpSpeed = RecoilRecoveryInterpSpeed;
+	//float interpSpeed = RecoilRecoveryInterpSpeed;
 	RecoilTransform = UKismetMathLibrary::TInterpTo(RecoilTransform, FTransform(), DeltaSeconds, interpSpeed);
 	if (RecoilTransform.Equals(FTransform()))
 	{
