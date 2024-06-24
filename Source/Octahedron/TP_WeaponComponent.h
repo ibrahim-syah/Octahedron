@@ -221,7 +221,7 @@ public:
 	void Reload();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void CancelReload();
+	void CancelReload(float BlendTime);
 
 	/** Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")

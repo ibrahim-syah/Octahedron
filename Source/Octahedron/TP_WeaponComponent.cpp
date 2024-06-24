@@ -506,7 +506,7 @@ void UTP_WeaponComponent::Reload()
 	}
 }
 
-void UTP_WeaponComponent::CancelReload()
+void UTP_WeaponComponent::CancelReload(float BlendTime)
 {
 	SetIsReloadingFalse();
 	if (Character != nullptr && ReloadAnimation != nullptr)
@@ -514,7 +514,7 @@ void UTP_WeaponComponent::CancelReload()
 		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
 		if (AnimInstance != nullptr)
 		{
-			AnimInstance->Montage_Stop(0.25f, ReloadAnimation);
+			AnimInstance->Montage_Stop(BlendTime, ReloadAnimation);
 
 			Stop();
 		}
@@ -533,6 +533,11 @@ void UTP_WeaponComponent::EnterADS()
 	if (IsReloading || IsEquipping || IsStowing)
 	{
 		return;
+	}
+	if (Character->GetFPAnimInstance()->Montage_IsPlaying(ReloadAnimation))
+	{
+		Character->GetFPAnimInstance()->Montage_Stop(0.f, ReloadAnimation);
+		Stop();
 	}
 	
 	ADSTL->SetPlayRate(FMath::Clamp(ADS_Speed, 0.1f, 10.f));

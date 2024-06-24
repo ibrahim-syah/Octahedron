@@ -757,7 +757,7 @@ void AOctahedronCharacter::PressedSprint()
 {
 	if (bHasWeapon && CurrentWeapon->GetIsReloading())
 	{
-		CurrentWeapon->CancelReload();
+		CurrentWeapon->CancelReload(0.25f);
 	}
 
 	SprintToggle = !SprintToggle;
