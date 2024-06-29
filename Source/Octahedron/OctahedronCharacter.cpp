@@ -231,10 +231,7 @@ void AOctahedronCharacter::BeginPlay()
 
 void AOctahedronCharacter::Tick(float DeltaTime)
 {
-	/*if (CurrentWeapon != nullptr)
-	{
-		CurrentWeapon->RecoilTick(DeltaTime);
-	}*/
+	
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
