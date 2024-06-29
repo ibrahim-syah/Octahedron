@@ -735,17 +735,14 @@ void UTP_WeaponComponent::RecoilStart()
 		IsShouldRecoil = true;
 
 		//Timer for the recoil: I have set it to 10s but dependeding how long it takes to empty the gun mag, you can increase the time.
-		GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &UTP_WeaponComponent::RecoilTimerFunction, 10.0f, false);
+		GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &UTP_WeaponComponent::FireTimerFunction, RecoilToStableTime, false);
 
-		bRecoil = true;
-		bRecoilRecovery = false;
+		GetWorld()->GetTimerManager().SetTimer(RecoilTimer, this, &UTP_WeaponComponent::RecoilTimerCallback, (1.f / 60.f), true);
 	}
 }
 
-//Automatically called in RecoilStart(), no need to call this explicitly
-void UTP_WeaponComponent::RecoilTimerFunction()
+void UTP_WeaponComponent::FireTimerFunction()
 {
-	bRecoil = false;
 	GetWorld()->GetTimerManager().PauseTimer(FireTimer);
 }
 
@@ -755,75 +752,81 @@ void UTP_WeaponComponent::RecoilStop()
 	IsShouldRecoil = false;
 }
 
+void UTP_WeaponComponent::RecoilTimerCallback()
+{
+	float recoiltime;
+	FVector RecoilVec;
+
+	//Calculation of control rotation to update 
+	recoiltime = GetWorld()->GetTimerManager().GetTimerElapsed(FireTimer);
+	RecoilVec = RecoilCurve->GetVectorValue(recoiltime);
+	Del.Roll = 0;
+	Del.Pitch = (RecoilVec.Y);
+	Del.Yaw = (RecoilVec.Z);
+	PlayerDeltaRot = PCRef->GetControlRotation() - RecoilStartRot - RecoilDeltaRot;
+	PCRef->SetControlRotation(RecoilStartRot + PlayerDeltaRot + Del);
+	RecoilDeltaRot = Del;
+
+	//Conditionally start resetting the recoil
+	if (!IsShouldRecoil)
+	{
+		if (recoiltime > FireDelay)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
+			RecoilTimer.Invalidate();
+
+			GetWorld()->GetTimerManager().ClearTimer(FireTimer);
+			FireTimer.Invalidate();
+			RecoveryStart();
+		}
+	}
+	//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
+}
+
 //This function is automatically called, no need to call this. It is inside the Tick function
 void UTP_WeaponComponent::RecoveryStart()
 {
 	if (PCRef->GetControlRotation().Pitch > RecoilStartRot.Pitch)
 	{
-		bRecoilRecovery = true;
-		GetWorld()->GetTimerManager().SetTimer(RecoveryTimer, this, &UTP_WeaponComponent::RecoveryTimerFunction, RecoveryTime, false);
+		GetWorld()->GetTimerManager().SetTimer(StopRecoveryTimer, this, &UTP_WeaponComponent::StopRecoveryTimerFunction, RecoveryTime, false);
+		GetWorld()->GetTimerManager().SetTimer(RecoilRecoveryTimer, this, &UTP_WeaponComponent::RecoilRecoveryTimerCallback, (1.f / 60.f), true);
 	}
 }
 
 //This function too is automatically called from the recovery start function.
-void UTP_WeaponComponent::RecoveryTimerFunction()
+void UTP_WeaponComponent::StopRecoveryTimerFunction()
 {
-	bRecoilRecovery = false;
+	GetWorld()->GetTimerManager().ClearTimer(RecoilRecoveryTimer);
+	RecoilRecoveryTimer.Invalidate();
+	GetWorld()->GetTimerManager().ClearTimer(StopRecoveryTimer);
+	StopRecoveryTimer.Invalidate();
 }
 
-//Needs to be called on event tick to update the control rotation.
-void UTP_WeaponComponent::RecoilTick(float DeltaTime)
+void UTP_WeaponComponent::RecoilRecoveryTimerCallback()
 {
 	// servicable for now, but full auto still have a problem where if you move too far from the origin, the recovery is too strong (above the origin) or there won't be any recovery (below origin)
-	float recoiltime;
 	FVector RecoilVec;
 
-	if (bRecoil)
+	//Recoil resetting
+	FRotator tmprot = PCRef->GetControlRotation();
+	float deltaPitch = UKismetMathLibrary::NormalizedDeltaRotator(tmprot, RecoilStartRot).Pitch;
+	if (deltaPitch > 0)
 	{
-
-		//Calculation of control rotation to update 
-
-		recoiltime = GetWorld()->GetTimerManager().GetTimerElapsed(FireTimer);
-		RecoilVec = RecoilCurve->GetVectorValue(recoiltime);
-		Del.Roll = 0;
-		Del.Pitch = (RecoilVec.Y);
-		Del.Yaw = (RecoilVec.Z);
-		PlayerDeltaRot = PCRef->GetControlRotation() - RecoilStartRot - RecoilDeltaRot;
-		PCRef->SetControlRotation(RecoilStartRot + PlayerDeltaRot + Del);
-		RecoilDeltaRot = Del;
-
-		//Conditionally start resetting the recoil
-		if (!IsShouldRecoil)
-		{
-			if (recoiltime > FireDelay)
-			{
-				GetWorld()->GetTimerManager().ClearTimer(FireTimer);
-				bRecoil = false;
-				RecoveryStart();
-			}
-		}
-		//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
+		FRotator TargetRot = PCRef->GetControlRotation() - RecoilDeltaRot;
+		float InterpSpeed = UKismetMathLibrary::MapRangeClamped(deltaPitch, 0.f, MaxRecoilPitch, 3.f, 10.f);
+		//UE_LOG(LogTemp, Display, TEXT("interpspeed: %f"), InterpSpeed);
+		
+		PCRef->SetControlRotation(UKismetMathLibrary::RInterpTo(PCRef->GetControlRotation(), TargetRot, GetWorld()->DeltaTimeSeconds, InterpSpeed));
+		RecoilDeltaRot = RecoilDeltaRot + (PCRef->GetControlRotation() - tmprot);
 	}
-	else if (bRecoilRecovery)
+	else
 	{
-		//Recoil resetting
-		FRotator tmprot = PCRef->GetControlRotation();
-		float deltaPitch = UKismetMathLibrary::NormalizedDeltaRotator(tmprot, RecoilStartRot).Pitch;
-		if (deltaPitch > 0)
-		{
-			FRotator TargetRot = PCRef->GetControlRotation() - RecoilDeltaRot;
-			float InterpSpeed = UKismetMathLibrary::MapRangeClamped(deltaPitch, 0.f, MaxRecoilPitch, 3.f, 10.f);
-			//UE_LOG(LogTemp, Display, TEXT("interpspeed: %f"), InterpSpeed);
-			PCRef->SetControlRotation(UKismetMathLibrary::RInterpTo(PCRef->GetControlRotation(), TargetRot, DeltaTime, InterpSpeed));
-			RecoilDeltaRot = RecoilDeltaRot + (PCRef->GetControlRotation() - tmprot);
-		}
-		else
-		{
-			bRecoilRecovery = false;
-			RecoveryTimer.Invalidate();
-		}
-		//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
+		GetWorld()->GetTimerManager().ClearTimer(RecoilRecoveryTimer);
+		RecoilRecoveryTimer.Invalidate();
+		GetWorld()->GetTimerManager().ClearTimer(StopRecoveryTimer);
+		StopRecoveryTimer.Invalidate();
 	}
+	//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
 }
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -841,22 +844,6 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		}
 	}
 }
-
-//void UTP_WeaponComponent::ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
-//{
-//	if (bInterrupted)
-//	{
-//		bool isTimerActive = GetWorld()->GetTimerManager().IsTimerActive(ReloadDelayTimerHandle);
-//		if (Character != nullptr && !isTimerActive) // prevent spam reload cancel
-//		{
-//			Character->GetWorldTimerManager().SetTimer(ReloadDelayTimerHandle, this, &UTP_WeaponComponent::SetIsReloadingFalse, 0.2f, false);
-//		}
-//	}
-//	else
-//	{
-//		SetIsReloadingFalse();
-//	}
-//}
 
 void UTP_WeaponComponent::SetIsReloadingFalse()
 {
