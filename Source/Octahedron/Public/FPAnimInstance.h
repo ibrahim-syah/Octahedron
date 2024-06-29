@@ -41,12 +41,18 @@ public:
 	void SetSprintBlendOutTime(float blendOutTime) { SprintBlendOutTime = blendOutTime; };
 
 protected:
+	bool IsRecoilKicking = false;
+	float RecoilKickInterpSpeed = 6.f;
+	bool IsRecoilRecovering = false;
+	float RecoilRecoveryInterpSpeed = 6.f;
 	void SetSightTransform();
 	void SetRelativeHandTransform();
 	void ModifyForADS();
 	void ModifyForSprint(float DeltaSeconds);
-	void InterpRecoil(float DeltaSeconds);
-	void InterpFinalRecoil(float DeltaSeconds);
+	//void InterpRecoil(float DeltaSeconds);
+	//void InterpFinalRecoil(float DeltaSeconds);
+	void InterpRecoilKick(float DeltaSeconds);
+	void InterpRecoilRecovery(float DeltaSeconds);
 	void SnapLeftHandToWeapon();
 
 protected:

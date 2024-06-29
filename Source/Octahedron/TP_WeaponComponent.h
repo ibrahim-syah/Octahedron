@@ -221,7 +221,7 @@ public:
 	void Reload();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void CancelReload();
+	void CancelReload(float BlendTime);
 
 	/** Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
@@ -258,18 +258,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	UCurveVector* RecoilCurve = nullptr;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	//bool FiringClient = false;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	bool bRecoil;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	bool bRecoilRecovery;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	FTimerHandle RecoilTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	FTimerHandle RecoilRecoveryTimer;
+
 	FTimerHandle FireTimer;
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	FTimerHandle RecoveryTimer;
+	FTimerHandle StopRecoveryTimer;
 	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	void RecoilTimerFunction();
+	void FireTimerFunction();
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilStartRot;
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
@@ -285,7 +285,9 @@ public:
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator Del;
 	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	void RecoveryTimerFunction();
+	void StopRecoveryTimerFunction();
+	UPROPERTY(BlueprintReadWrite)
+	float RecoilToStableTime = 10.0f;
 	UPROPERTY(BlueprintReadWrite)
 	float RecoveryTime = 1.0f;
 	UPROPERTY(BlueprintReadWrite)
@@ -294,6 +296,8 @@ public:
 	float MaxRecoilPitch = 10.0f;
 	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilTick(float DeltaTime);
+	void RecoilTimerCallback();
+	void RecoilRecoveryTimerCallback();
 	bool IsShouldRecoil = false;
 
 	// Weapon Mesh Recoil/Kick
@@ -314,6 +318,12 @@ public:
 	FRotator RecoilRotMinADS{ 0.f, 0.f, 0.f };
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilRotMaxADS{ 0.f, 0.f, 0.f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilKickInterpSpeedScale = 6.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilRecoveryInterpSpeedScale = 36.f;
 
 
 

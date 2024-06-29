@@ -231,10 +231,7 @@ void AOctahedronCharacter::BeginPlay()
 
 void AOctahedronCharacter::Tick(float DeltaTime)
 {
-	if (CurrentWeapon != nullptr)
-	{
-		CurrentWeapon->RecoilTick(DeltaTime);
-	}
+	
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
@@ -757,7 +754,7 @@ void AOctahedronCharacter::PressedSprint()
 {
 	if (bHasWeapon && CurrentWeapon->GetIsReloading())
 	{
-		CurrentWeapon->CancelReload();
+		CurrentWeapon->CancelReload(0.25f);
 	}
 
 	SprintToggle = !SprintToggle;
