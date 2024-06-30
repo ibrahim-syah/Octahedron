@@ -14,10 +14,6 @@ class USightMeshComponent;
 class UUserWidget;
 class UCurveVector;
 class UNiagaraSystem;
-//class AWeaponFX;
-//class AWeaponDecals;
-//class AWeaponImpacts;
-//class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
 class UDefaultCameraShakeBase;
@@ -61,10 +57,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* FPEquipAnimation = nullptr;
 
-	///** Gun muzzle's offset from the characters location */
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	//FVector MuzzleOffset;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FName MuzzleSocketName{ "Muzzle" };
 
@@ -99,8 +91,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float FireRate{ 560.f }; // in rounds per minute. e.g. 60 RPM means there is a delay of 1 second for every shot
-	//UPROPERTY(BlueprintReadOnly, Category = Gameplay)
-	float FireDelay{ 0.f };
+	float FireDelay{ 0.f }; // used for determining the delay of the fire sound
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	int32 Pellets{ 1 }; // more than 1 means it's a pellet gun (shotgun)
