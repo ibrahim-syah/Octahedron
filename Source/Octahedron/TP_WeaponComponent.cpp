@@ -43,10 +43,6 @@ void UTP_WeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (IsValid(GetOwner())) {
-		GetOwner()->AddOwnedComponent(ADSTL);
-	}
-
 	if (ADSAlphaCurve != nullptr)
 	{
 		FOnTimelineFloat onADSTLCallback;
