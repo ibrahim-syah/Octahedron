@@ -17,6 +17,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "TP_WeaponComponent.h"
+#include "SightMeshComponent.h"
 #include "Public/FPAnimInstance.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -710,6 +711,235 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 
 	CamOffsetArg = CamOffsetCurrent;
 	CamAnimAlphaArg = CamAnimAlpha;
+}
+
+void AOctahedronCharacter::AttachWeapon(UTP_WeaponComponent* Weapon)
+{
+	Weapon->SetOwningCharacter(this);
+	if (GetCurrentWeapon() == Weapon)
+	{
+		return;
+	}
+	Weapon->SetIsEquippingFalse();
+	Weapon->IsEquipping = true;
+
+	// Attach the weapon to the First Person Character
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+	Weapon->AttachToComponent(GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
+
+	if (Weapon->FP_Material != nullptr)
+	{
+		Weapon->SetMaterial(0, Weapon->FP_Material);
+	}
+
+	if (Weapon->ScopeSightMesh != nullptr)
+	{
+		if (Weapon->ScopeSightMesh->FP_Material_Holo != nullptr)
+		{
+			Weapon->ScopeSightMesh->SetMaterial(0, Weapon->ScopeSightMesh->FP_Material_Holo);
+		}
+		if (Weapon->ScopeSightMesh->FP_Material_Mesh != nullptr)
+		{
+			Weapon->ScopeSightMesh->SetMaterial(1, Weapon->ScopeSightMesh->FP_Material_Mesh);
+		}
+	}
+
+	// ensure current weapon for Character Actor is set to the new one before calling SetCurrentWeapon in anim bp
+	SetCurrentWeapon(Weapon);
+	// Try and play equip animation if specified
+	Weapon->Equip();
+
+	Weapon->OnEquipDelegate.Broadcast(this, Weapon);
+
+	// switch bHasWeapon so the animation blueprint can switch to current weapon idle anim
+	SetHasWeapon(true);
+
+	APlayerController* PCRef = Cast<APlayerController>(GetController());
+	// Set up action bindings
+	if (PCRef != nullptr)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
+		{
+			// Set the priority of the mapping to 1, so that it overrides the Jump action with the Fire action when using touch input
+			Subsystem->AddMappingContext(FireMappingContext, 1);
+		}
+
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			// Fire
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &AOctahedronCharacter::PressedFire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::ReleasedFire);
+
+			// Reload
+			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::PressedReload);
+
+			// Switch Fire Mode
+			EnhancedInputComponent->BindAction(SwitchFireModeAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::PressedSwitchFireMode);
+
+			// ADS
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::PressedADS);
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::ReleasedADS);
+		}
+
+		Weapon->CanFire = true;
+	}
+}
+
+void AOctahedronCharacter::DetachWeapon()
+{
+	// Check that the character is valid, and the currently set weapon is this object
+	if (!GetHasWeapon() || GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsStowing || GetCurrentWeapon()->IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
+	{
+		return;
+	}
+	GetCurrentWeapon()->IsStowing = true;
+	GetCurrentWeapon()->ExitADS(true);
+
+	// Try and play stow animation
+	GetCurrentWeapon()->Stow();
+}
+
+bool AOctahedronCharacter::InstantDetachWeapon()
+{
+	// Check that the character is valid, and the currently set weapon is this object
+	if (!GetHasWeapon() || GetCurrentWeapon()->IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
+	{
+		return false;
+	}
+	UTP_WeaponComponent* toBeDetached = GetCurrentWeapon();
+	toBeDetached->IsStowing = true;
+	GetCurrentWeapon()->ExitADS(true);
+
+	SetCurrentWeapon(nullptr);
+
+	toBeDetached->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	toBeDetached->WeaponChangeDelegate.Execute(nullptr);
+
+	// Detach the weapon from the First Person Character
+	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
+	toBeDetached->DetachFromComponent(DetachmentRules);
+
+	SetHasWeapon(false);
+
+	RemoveWeaponInputMapping();
+
+	toBeDetached->CanFire = false;
+	toBeDetached->IsStowing = false;
+	toBeDetached->OnStowDelegate.Broadcast(this, toBeDetached);
+	return true;
+}
+
+void AOctahedronCharacter::RemoveWeaponInputMapping()
+{
+	APlayerController* PCRef = Cast<APlayerController>(GetController());
+	if (PCRef != nullptr)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
+		{
+			Subsystem->RemoveMappingContext(FireMappingContext);
+		}
+
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			EnhancedInputComponent->ClearActionBindings();
+		}
+	}
+}
+
+void AOctahedronCharacter::PressedFire()
+{
+	GetCurrentWeapon()->IsPlayerHoldingShootButton = true;
+	if (GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsEquipping || GetCurrentWeapon()->IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
+	{
+		return;
+	}
+	if (!CanAct())
+	{
+		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->InstantSprintBlendOutTime);
+		ForceStopSprint();
+	}
+	if (GetFPAnimInstance()->Montage_IsPlaying(GetCurrentWeapon()->ReloadAnimation))
+	{
+		GetFPAnimInstance()->Montage_Stop(0.f, GetCurrentWeapon()->ReloadAnimation);
+	}
+	if (GetCurrentWeapon()->CurrentMagazineCount <= 0)
+	{
+		GetCurrentWeapon()->StopFire();
+		GetCurrentWeapon()->IsPlayerHoldingShootButton = false;
+		if (IsValid(GetCurrentWeapon()->DryFireSound))
+		{
+			UGameplayStatics::SpawnSoundAttached(
+				GetCurrentWeapon()->DryFireSound,
+				GetCurrentWeapon()
+			);
+		}
+
+		if (GetRemainingAmmo(GetCurrentWeapon()->AmmoType) > 0)
+		{
+			GetCurrentWeapon()->Reload();
+			return;
+		}
+		return;
+	}
+
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(GetCurrentWeapon()->FireRateDelayTimerHandle);
+	GetCurrentWeapon()->FireRateDelayTimerHandle.Invalidate();
+	GetCurrentWeapon()->RecoilStart();
+	switch (GetCurrentWeapon()->FireMode)
+	{
+	case EFireMode::Single:
+		//Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, false, 0.f);
+		GetCurrentWeapon()->SingleFire();
+		GetWorldTimerManager().SetTimer(GetCurrentWeapon()->FireRateDelayTimerHandle, GetCurrentWeapon()->FireDelay, false);
+		break;
+	case EFireMode::Burst:
+		GetWorldTimerManager().SetTimer(GetCurrentWeapon()->FireRateDelayTimerHandle, GetCurrentWeapon(), &UTP_WeaponComponent::BurstFire, GetCurrentWeapon()->FireDelay, true, 0.f);
+		break;
+	case EFireMode::Auto:
+		GetWorldTimerManager().SetTimer(GetCurrentWeapon()->FireRateDelayTimerHandle, GetCurrentWeapon(), &UTP_WeaponComponent::FullAutoFire, GetCurrentWeapon()->FireDelay, true, 0.f);
+		break;
+	default:
+		break;
+	}
+}
+
+void AOctahedronCharacter::ReleasedFire()
+{
+	GetCurrentWeapon()->IsPlayerHoldingShootButton = false;
+}
+
+void AOctahedronCharacter::PressedReload()
+{
+	if (!CanAct())
+	{
+		ForceStopSprint();
+	}
+
+	GetCurrentWeapon()->Reload();
+}
+
+void AOctahedronCharacter::PressedSwitchFireMode()
+{
+	if (!GetCurrentWeapon()->CanSwitchFireMode)
+	{
+		return;
+	}
+
+	GetCurrentWeapon()->SwitchFireMode();
+}
+
+void AOctahedronCharacter::PressedADS()
+{
+	GetCurrentWeapon()->ADS_Held = true;
+
+	GetCurrentWeapon()->EnterADS();
+}
+
+void AOctahedronCharacter::ReleasedADS()
+{
+	GetCurrentWeapon()->ADS_Held = false;
+	GetCurrentWeapon()->ADSTL->Reverse();
 }
 
 int32 AOctahedronCharacter::GetRemainingAmmo(EAmmoType AmmoType)

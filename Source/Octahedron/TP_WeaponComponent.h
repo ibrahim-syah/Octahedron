@@ -130,18 +130,6 @@ public:
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	FVector ADS_Offset;*/
 
-	/** MappingContext */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	class UInputMappingContext* FireMappingContext = nullptr;
-
-	/** Fire Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	class UInputAction* FireAction = nullptr;
-
-	/** ADS Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ADSAction = nullptr;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UTimelineComponent* ADSTL = nullptr;
 
@@ -153,25 +141,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void ADSTLCallback(float val);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SwitchFireModeAction = nullptr;
-
-	/** Reload Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ReloadAction = nullptr;
-
 	/** Sets default values for this component's properties */
 	UTP_WeaponComponent();
-
-	/** Attaches the actor to a FirstPersonCharacter */
-	UFUNCTION(BlueprintCallable, Category="Weapon")
-	void AttachWeapon(AOctahedronCharacter* TargetCharacter);
-
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void DetachWeapon();
-
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	bool InstantDetachWeapon();
 
 	/** Make the weapon Fire a Projectile */
 	UFUNCTION(BlueprintCallable, Category="Weapon")
@@ -223,16 +194,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void CancelReload(float BlendTime);
 
-	/** Aim down sight */
-	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void PressedADS();
-
 	UFUNCTION(BlueprintCallable, Category = "ADS")
 	void EnterADS();
-
-	/** Release Aim down sight */
-	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void ReleasedADS();
 
 	/** force Exit Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
@@ -363,6 +326,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	AOctahedronCharacter* GetOwningCharacter() { return Character; }
+	void SetOwningCharacter(AOctahedronCharacter* character) { Character = character; }
 
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
@@ -374,42 +338,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Cosmetics)
 	float WeaponSwaySpeed{ 10.f }; // determine how heavy the weapon is for weapon sway speed, larger means faster. clamped at [6, 80]
 
-protected:
-	/** Ends gameplay for this component. */
-	UFUNCTION()
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	virtual void BeginPlay();
-
-	void PressedFire();
-	void ReleasedFire();
-
-	void PressedReload();
-
-	void PressedSwitchFireMode();
-
-private:
-	/** The Character holding this weapon*/
-	AOctahedronCharacter* Character = nullptr;
-	APlayerController* PCRef = nullptr;
+	void SetIsEquippingFalse();
+	void SetIsStowingFalse();
 
 	bool IsEquipping;
 	bool IsStowing;
-
-	UFUNCTION()
-	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
-	FTimerHandle EquipDelayTimerHandle;
-	void SetIsEquippingFalse();
-	void SetIsStowingFalse();
-	FOnWeaponChange WeaponChangeDelegate;
-
 	bool IsReloading;
-	/*UFUNCTION()
-	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);*/
-	FTimerHandle ReloadDelayTimerHandle;
+	bool IsPlayerHoldingShootButton;
+
 
 	FTimerHandle FireRateDelayTimerHandle;
-	bool IsPlayerHoldingShootButton;
+
+	FOnWeaponChange WeaponChangeDelegate;
 
 	UFUNCTION()
 	void SingleFire();
@@ -419,6 +359,26 @@ private:
 
 	UFUNCTION()
 	void FullAutoFire();
+
+protected:
+	/** Ends gameplay for this component. */
+	UFUNCTION()
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	virtual void BeginPlay();
+
+private:
+	/** The Character holding this weapon*/
+	AOctahedronCharacter* Character = nullptr;
+	APlayerController* PCRef = nullptr;
+
+	UFUNCTION()
+	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+	FTimerHandle EquipDelayTimerHandle;
+
+	/*UFUNCTION()
+	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);*/
+	FTimerHandle ReloadDelayTimerHandle;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)

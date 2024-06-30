@@ -67,93 +67,6 @@ void UTP_WeaponComponent::BeginPlay()
 	CurrentMagazineCount = MaxMagazineCount;
 }
 
-void UTP_WeaponComponent::PressedFire()
-{
-	IsPlayerHoldingShootButton = true;
-	if (Character == nullptr || PCRef == nullptr || IsReloading || IsEquipping || IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
-	{
-		return;
-	}
-	if (!Character->CanAct())
-	{
-		Character->GetFPAnimInstance()->SetSprintBlendOutTime(Character->GetFPAnimInstance()->InstantSprintBlendOutTime);
-		Character->ForceStopSprint();
-	}
-	if (Character->GetFPAnimInstance()->Montage_IsPlaying(ReloadAnimation))
-	{
-		Character->GetFPAnimInstance()->Montage_Stop(0.f, ReloadAnimation);
-	}
-	if (CurrentMagazineCount <= 0)
-	{
-		StopFire();
-		IsPlayerHoldingShootButton = false;
-		if (IsValid(DryFireSound))
-		{
-			UGameplayStatics::SpawnSoundAttached(
-				DryFireSound,
-				this
-			);
-		}
-
-		if (Character->GetRemainingAmmo(AmmoType) > 0)
-		{
-			Reload();
-			return;
-		}
-		return;
-	}
-
-	// Ensure the timer is cleared by using the timer handle
-	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
-	FireRateDelayTimerHandle.Invalidate();
-	RecoilStart();
-	switch (FireMode)
-	{
-	case EFireMode::Single:
-		//Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, false, 0.f);
-		SingleFire();
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
-		break;
-	case EFireMode::Burst:
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::BurstFire, FireDelay, true, 0.f);
-		break;
-	case EFireMode::Auto:
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::FullAutoFire, FireDelay, true, 0.f);
-		break;
-	default:
-		break;
-	}
-}
-
-void UTP_WeaponComponent::ReleasedFire()
-{
-	IsPlayerHoldingShootButton = false;
-}
-
-void UTP_WeaponComponent::PressedReload()
-{
-	if (Character == nullptr || PCRef == nullptr)
-	{
-		return;
-	}
-	if (!Character->CanAct())
-	{
-		Character->ForceStopSprint();
-	}
-	
-	Reload();
-}
-
-void UTP_WeaponComponent::PressedSwitchFireMode()
-{
-	if (!CanSwitchFireMode || Character == nullptr || PCRef == nullptr)
-	{
-		return;
-	}
-
-	SwitchFireMode();
-}
-
 void UTP_WeaponComponent::SwitchFireMode()
 {
 	switch (FireMode)
@@ -441,22 +354,9 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 
 	Character->SetHasWeapon(false);
 
-	PCRef = Cast<APlayerController>(Character->GetController());
-	if (PCRef != nullptr)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
-		{
-			Subsystem->RemoveMappingContext(FireMappingContext);
-		}
+	Character->RemoveWeaponInputMapping();
 
-		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
-		{
-			EnhancedInputComponent->ClearActionBindings();
-		}
-
-		CanFire = false;
-	}
-
+	CanFire = false;
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(EquipDelayTimerHandle);
 	EquipDelayTimerHandle.Invalidate();
@@ -517,13 +417,6 @@ void UTP_WeaponComponent::CancelReload(float BlendTime)
 	}
 }
 
-void UTP_WeaponComponent::PressedADS()
-{
-	ADS_Held = true;
-
-	EnterADS();
-}
-
 void UTP_WeaponComponent::EnterADS()
 {
 	if (IsReloading || IsEquipping || IsStowing)
@@ -541,12 +434,6 @@ void UTP_WeaponComponent::EnterADS()
 	Character->GetFPAnimInstance()->SetSprintBlendOutTime(0.25f);
 	Character->ForceStopSprint();
 	ADSTL->Play();
-}
-
-void UTP_WeaponComponent::ReleasedADS()
-{
-	ADS_Held = false;
-	ADSTL->Reverse();
 }
 
 void UTP_WeaponComponent::ExitADS(bool IsFast)
@@ -583,136 +470,6 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 
 	float newSpeedMultiplier = FMath::Clamp(ADSAlphaLerp, 0.5f, 1);
 	Character->GetCharacterMovement()->MaxWalkSpeed = Character->GetBaseWalkSpeed() * newSpeedMultiplier;
-}
-
-void UTP_WeaponComponent::AttachWeapon(AOctahedronCharacter* TargetCharacter)
-{
-	Character = TargetCharacter;
-
-	// Check that the character is valid, and has no weapon yet
-	if (Character == nullptr || Character->GetCurrentWeapon() == this)
-	{
-		return;
-	}
-	SetIsEquippingFalse();
-	IsEquipping = true;
-
-	// Attach the weapon to the First Person Character
-	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
-	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
-
-	if (FP_Material != nullptr)
-	{
-		SetMaterial(0, FP_Material);
-	}
-
-	if (ScopeSightMesh != nullptr)
-	{
-		if (ScopeSightMesh->FP_Material_Holo != nullptr)
-		{
-			ScopeSightMesh->SetMaterial(0, ScopeSightMesh->FP_Material_Holo);
-		}
-		if (ScopeSightMesh->FP_Material_Mesh != nullptr)
-		{
-			ScopeSightMesh->SetMaterial(1, ScopeSightMesh->FP_Material_Mesh);
-		}
-	}
-
-	// ensure current weapon for Character Actor is set to the new one before calling SetCurrentWeapon in anim bp
-	Character->SetCurrentWeapon(this);
-	// Try and play equip animation if specified
-	Equip();
-
-	OnEquipDelegate.Broadcast(Character, this);
-
-	// switch bHasWeapon so the animation blueprint can switch to current weapon idle anim
-	Character->SetHasWeapon(true);
-
-	PCRef = Cast<APlayerController>(Character->GetController());
-	// Set up action bindings
-	if (PCRef != nullptr)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
-		{
-			// Set the priority of the mapping to 1, so that it overrides the Jump action with the Fire action when using touch input
-			Subsystem->AddMappingContext(FireMappingContext, 1);
-		}
-
-		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
-		{
-			// Fire
-			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &UTP_WeaponComponent::PressedFire);
-			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedFire);
-
-			// Reload
-			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedReload);
-
-			// Switch Fire Mode
-			EnhancedInputComponent->BindAction(SwitchFireModeAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedSwitchFireMode);
-
-			// ADS
-			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &UTP_WeaponComponent::PressedADS);
-			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &UTP_WeaponComponent::ReleasedADS);
-		}
-
-		CanFire = true;
-	}
-}
-
-void UTP_WeaponComponent::DetachWeapon()
-{
-	// Check that the character is valid, and the currently set weapon is this object
-	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || IsStowing || IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
-	{
-		return;
-	}
-	IsStowing = true;
-	ExitADS(true);
-
-	// Try and play stow animation
-	Stow();
-}
-
-bool UTP_WeaponComponent::InstantDetachWeapon()
-{
-	// Check that the character is valid, and the currently set weapon is this object
-	if (Character == nullptr || !Character->GetHasWeapon() || Character->GetCurrentWeapon() != this || IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(FireRateDelayTimerHandle) > 0)
-	{
-		return false;
-	}
-	IsStowing = true;
-	ExitADS(true);
-
-	Character->SetCurrentWeapon(nullptr);
-
-	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
-	WeaponChangeDelegate.Execute(this);
-
-	// Detach the weapon from the First Person Character
-	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
-	DetachFromComponent(DetachmentRules);
-
-	Character->SetHasWeapon(false);
-
-	PCRef = Cast<APlayerController>(Character->GetController());
-	if (PCRef != nullptr)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
-		{
-			Subsystem->RemoveMappingContext(FireMappingContext);
-		}
-
-		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
-		{
-			EnhancedInputComponent->ClearActionBindings();
-		}
-
-		CanFire = false;
-	}
-
-	IsStowing = false;
-	OnStowDelegate.Broadcast(Character, this);
-	return true;
 }
 
 //Call this function when the firing begins, the recoil starts here
@@ -832,13 +589,7 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		return;
 	}
 
-	if (PCRef != nullptr)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
-		{
-			Subsystem->RemoveMappingContext(FireMappingContext);
-		}
-	}
+	Character->RemoveWeaponInputMapping();
 }
 
 void UTP_WeaponComponent::SetIsReloadingFalse()

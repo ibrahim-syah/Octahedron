@@ -169,6 +169,52 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 public:
+
+	/** MappingContext */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputMappingContext* FireMappingContext = nullptr;
+
+	/** Fire Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* FireAction = nullptr;
+
+	/** ADS Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ADSAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchFireModeAction = nullptr;
+
+	/** Reload Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ReloadAction = nullptr;
+
+	/** Aim down sight */
+	UFUNCTION(BlueprintCallable, Category = "ADS")
+	void PressedADS();
+
+	/** Release Aim down sight */
+	UFUNCTION(BlueprintCallable, Category = "ADS")
+	void ReleasedADS();
+
+	void PressedFire();
+	void ReleasedFire();
+
+	void PressedReload();
+
+	void PressedSwitchFireMode();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void AttachWeapon(UTP_WeaponComponent* Weapon);
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void DetachWeapon();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	bool InstantDetachWeapon();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void RemoveWeaponInputMapping();
 		
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
