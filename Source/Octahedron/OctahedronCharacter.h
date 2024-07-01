@@ -7,6 +7,8 @@
 #include "Logging/LogMacros.h"
 #include "ECustomMovementMode.h"
 #include "Public/EAmmoType.h"
+#include "Public/FPAnimInstance.h"
+#include "Camera/CameraComponent.h"
 #include "Weapon/WeaponWielderInterface.h"
 #include "OctahedronCharacter.generated.h"
 
@@ -194,6 +196,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ADS")
 	void PressedADS();
 
+	UFUNCTION(BlueprintCallable, Category = "ADS")
+	void EnterADS();
+
 	/** Release Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
 	void ReleasedADS();
@@ -213,6 +218,38 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	bool InstantDetachWeapon_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	FVector GetTraceStart_Implementation() override { return GetFirstPersonCameraComponent()->GetComponentLocation(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	FVector GetTraceForward_Implementation() override { return GetFirstPersonCameraComponent()->GetForwardVector(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	FRotator GetWielderControlRotation_Implementation() override { return GetController()->GetControlRotation(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetWielderControlRotation_Implementation(FRotator &newRotator) override { GetController()->SetControlRotation(newRotator); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnWeaponFired_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnWeaponReload_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnWeaponStopReloadAnimation_Implementation(float blendTime) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnSetIsReloadingFalse_Implementation() override { GetFPAnimInstance()->IsLeftHandIKActive = true; }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnADSTLUpdate_Implementation(float TLValue) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnEndPlay_Implementation() override { RemoveWeaponInputMapping(); }
+
+
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void RemoveWeaponInputMapping();
@@ -446,16 +483,16 @@ public:
 	//FVector GetADSOffset() { return ADS_Offset; }
 	ECustomMovementMode GetMoveMode() { return MoveMode; }
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
-	int32 GetRemainingAmmo(EAmmoType AmmoType);
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int32 GetRemainingAmmo_Implementation(EAmmoType AmmoType) override;
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
-	int32 SetRemainingAmmo(EAmmoType AmmoType, int32 NewValue);
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int32 SetRemainingAmmo_Implementation(EAmmoType AmmoType, int32 NewValue) override;
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	int32 GetSpecialAmmoRemaining() { return SpecialAmmoRemaining; }
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	int32 GetHeavyAmmoRemaining() { return HeavyAmmoRemaining; }
 };
 

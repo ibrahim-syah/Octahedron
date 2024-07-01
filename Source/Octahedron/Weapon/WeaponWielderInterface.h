@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "../TP_WeaponComponent.h"
+#include "../Public/EAmmoType.h"
 #include "WeaponWielderInterface.generated.h"
 
 // This class does not need to be modified.
@@ -31,4 +32,40 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	bool InstantDetachWeapon();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	int32 GetRemainingAmmo(EAmmoType AmmoType);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	int32 SetRemainingAmmo(EAmmoType AmmoType, int32 newValue);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	FVector GetTraceStart();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	FVector GetTraceForward();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	FRotator GetWielderControlRotation();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void SetWielderControlRotation(FRotator &newRotator);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnWeaponFired();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnWeaponReload();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnWeaponStopReloadAnimation(float blendTime);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnSetIsReloadingFalse();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnADSTLUpdate(float TLValue);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnEndPlay();
 };

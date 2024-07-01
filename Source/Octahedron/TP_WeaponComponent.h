@@ -8,7 +8,6 @@
 #include "Public/EAmmoType.h"
 #include "TP_WeaponComponent.generated.h"
 
-class AOctahedronCharacter;
 class UTimelineComponent;
 class USightMeshComponent;
 class UUserWidget;
@@ -25,8 +24,8 @@ DECLARE_DELEGATE(FOnReloadSuccessDelegate);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHitScanFireSignature, TArray<FHitResult>, HitResults);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStowSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AActor*, WeaponWielder, UTP_WeaponComponent*, Weapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStowSignature, AActor*, WeaponWielder, UTP_WeaponComponent*, Weapon);
 
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -183,9 +182,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void CancelReload(float BlendTime);
 
-	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void EnterADS();
-
 	/** force Exit Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
 	void ExitADS(bool IsFast);
@@ -284,8 +280,9 @@ public:
 	UStaticMesh* ShellEjectMesh = nullptr;
 
 	UFUNCTION(BlueprintCallable)
-	AOctahedronCharacter* GetOwningCharacter() { return Character; }
-	void SetOwningCharacter(AOctahedronCharacter* character) { Character = character; }
+	AActor* GetOwningWeaponWielder() { return WeaponWielder; }
+
+	void SetOwningWeaponWielder(AActor* newWeaponWielder);
 
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
@@ -319,6 +316,9 @@ public:
 	UFUNCTION()
 	void FullAutoFire();
 
+	UFUNCTION()
+	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()
@@ -327,12 +327,10 @@ protected:
 	virtual void BeginPlay();
 
 private:
-	/** The Character holding this weapon*/
-	AOctahedronCharacter* Character = nullptr;
-	APlayerController* PCRef = nullptr;
+	// The Actor holding this weapon
+	// The actor needs to implement the WeaponWielderInterface
+	AActor* WeaponWielder = nullptr;
 
-	UFUNCTION()
-	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle EquipDelayTimerHandle;
 
 	FTimerHandle ReloadDelayTimerHandle;

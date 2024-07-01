@@ -17,10 +17,6 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "SightMeshComponent.h"
-#include "WeaponFX.h"
-#include "WeaponDecals.h"
-#include "WeaponImpacts.h"
-#include "WeaponSounds.h"
 #include "DefaultCameraShakeBase.h"
 #include "Curves/CurveVector.h"
 #include "Public/FPAnimInstance.h"
@@ -64,6 +60,14 @@ void UTP_WeaponComponent::BeginPlay()
 	CurrentMagazineCount = MaxMagazineCount;
 }
 
+void UTP_WeaponComponent::SetOwningWeaponWielder(AActor* newWeaponWielder)
+{
+	if (newWeaponWielder && newWeaponWielder->GetClass()->ImplementsInterface(UWeaponWielderInterface::StaticClass()))
+	{
+		WeaponWielder = newWeaponWielder;
+	}
+}
+
 void UTP_WeaponComponent::SwitchFireMode()
 {
 	switch (FireMode)
@@ -99,8 +103,7 @@ void UTP_WeaponComponent::BurstFire()
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
 
-
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
+		GetWorld()->GetTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
 		BurstFireCurrent = 0;
 		StopFire();
 	}
@@ -114,7 +117,7 @@ void UTP_WeaponComponent::FullAutoFire()
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
 
-		Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
+		GetWorld()->GetTimerManager().SetTimer(FireRateDelayTimerHandle, FireDelay, false);
 		StopFire();
 	}
 }
@@ -138,7 +141,7 @@ void UTP_WeaponComponent::Fire()
 			);
 		}
 
-		if (Character->GetRemainingAmmo(AmmoType) > 0)
+		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType) > 0)
 		{
 			Reload();
 			return;
@@ -152,10 +155,8 @@ void UTP_WeaponComponent::Fire()
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
 		{
-			// Trace from center screen to max weapon range
-			UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
-			FVector StartVector = Camera->GetComponentLocation();
-			FVector ForwardVector = Camera->GetForwardVector();
+			FVector StartVector = IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder);
+			FVector ForwardVector = IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder);
 			float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
 			FHitResult MuzzleTraceResult;
 
@@ -163,12 +164,12 @@ void UTP_WeaponComponent::Fire()
 			FVector ResultingVector = RandomDirection * Range;
 			FVector EndVector = StartVector + ResultingVector;
 
-			FHitResult CameraTraceResult{};
+			FHitResult WielderTraceResult{};
 			FCollisionQueryParams Params = FCollisionQueryParams();
 			Params.AddIgnoredActor(GetOwner());
-			Params.AddIgnoredActor(Character);
+			Params.AddIgnoredActor(WeaponWielder);
 			bool isHit = GetWorld()->LineTraceSingleByChannel(
-				CameraTraceResult,
+				WielderTraceResult,
 				StartVector,
 				EndVector,
 				ECollisionChannel::ECC_GameTraceChannel2,
@@ -181,11 +182,11 @@ void UTP_WeaponComponent::Fire()
 			if (isHit)
 			{
 				FVector ScaledDirection = RandomDirection * 10.f;
-				EndTrace = CameraTraceResult.Location + ScaledDirection;
+				EndTrace = WielderTraceResult.Location + ScaledDirection;
 			}
 			else
 			{
-				EndTrace = CameraTraceResult.TraceEnd;
+				EndTrace = WielderTraceResult.TraceEnd;
 			}
 
 			Params.bReturnPhysicalMaterial = true;
@@ -204,9 +205,8 @@ void UTP_WeaponComponent::Fire()
 	else // hitscan weapon
 	{
 		// Trace from center screen to max weapon range
-		UCameraComponent* Camera = Character->GetFirstPersonCameraComponent();
-		FVector StartVector = Camera->GetComponentLocation();
-		FVector ForwardVector = Camera->GetForwardVector();
+		FVector StartVector = IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder);
+		FVector ForwardVector = IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder);
 		float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
 		TArray<FHitResult> MuzzleTraceResults;
 		for (int32 i = 0; i < Pellets; i++) // bruh idk if this is a good idea, but whatever man
@@ -215,12 +215,12 @@ void UTP_WeaponComponent::Fire()
 			FVector ResultingVector = RandomDirection * Range;
 			FVector EndVector = StartVector + ResultingVector;
 
-			FHitResult CameraTraceResult{};
+			FHitResult WielderTraceResult{};
 			FCollisionQueryParams Params = FCollisionQueryParams();
 			Params.AddIgnoredActor(GetOwner());
-			Params.AddIgnoredActor(Character);
+			Params.AddIgnoredActor(WeaponWielder);
 			bool isHit = GetWorld()->LineTraceSingleByChannel(
-				CameraTraceResult,
+				WielderTraceResult,
 				StartVector,
 				EndVector,
 				ECollisionChannel::ECC_GameTraceChannel2,
@@ -233,11 +233,11 @@ void UTP_WeaponComponent::Fire()
 			if (isHit)
 			{
 				FVector ScaledDirection = RandomDirection * 10.f;
-				EndTrace = CameraTraceResult.Location + ScaledDirection;
+				EndTrace = WielderTraceResult.Location + ScaledDirection;
 			}
 			else
 			{
-				EndTrace = CameraTraceResult.TraceEnd;
+				EndTrace = WielderTraceResult.TraceEnd;
 			}
 
 			Params.bReturnPhysicalMaterial = true;
@@ -256,20 +256,7 @@ void UTP_WeaponComponent::Fire()
 		OnWeaponHitScanFireDelegate.Broadcast(MuzzleTraceResults);
 	}
 
-	WeaponFireAnimateDelegate.ExecuteIfBound();
-
-	if (IsValid(FireCamShake))
-	{
-		Character->GetLocalViewingPlayerController()->ClientStartCameraShake(FireCamShake);
-	}
-
-	// Try and play a firing animation if specified
-	if (WeaponFireAnimation != nullptr)
-	{
-		PlayAnimation(WeaponFireAnimation, false);
-	}
-
-	Character->MakeNoise(1.f, Character, GetComponentLocation());
+	IWeaponWielderInterface::Execute_OnWeaponFired(WeaponWielder);
 }
 
 void UTP_WeaponComponent::StopFire()
@@ -284,11 +271,6 @@ void UTP_WeaponComponent::ForceStopFire()
 
 void UTP_WeaponComponent::Stow()
 {
-	Character->SetHasWeapon(false);
-	Character->SetCurrentWeapon(nullptr);
-
-	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
-	WeaponChangeDelegate.Execute(this);
 
 	if (IsValid(EquipSound))
 	{
@@ -297,15 +279,11 @@ void UTP_WeaponComponent::Stow()
 			this
 		);
 	}
-	Character->GetWorldTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsStowingFalse, EquipTime, false);
+	GetWorld()->GetTimerManager().SetTimer(EquipDelayTimerHandle, this, &UTP_WeaponComponent::SetIsStowingFalse, EquipTime, false);
 }
 
 void UTP_WeaponComponent::Equip()
 {
-	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
-	WeaponChangeDelegate.Execute(this);
-
-	WeaponFireAnimateDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("Fire"));
 
 	if (IsValid(EquipSound))
 	{
@@ -313,17 +291,6 @@ void UTP_WeaponComponent::Equip()
 			EquipSound,
 			this
 		);
-	}
-	if (Character != nullptr && ReloadAnimation != nullptr)
-	{
-		if (Character->GetFPAnimInstance())
-		{
-			Character->GetFPAnimInstance()->Montage_Play(EquipAnimation, 1.f);
-
-			FOnMontageBlendingOutStarted BlendOutDelegate;
-			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::EquipAnimationBlendOut);
-			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, EquipAnimation);
-		}
 	}
 }
 
@@ -346,7 +313,6 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 	// Detach the weapon from the First Person Character
 	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
 	DetachFromComponent(DetachmentRules);
-	Character->RemoveWeaponInputMapping();
 
 	CanFire = false;
 	// Ensure the timer is cleared by using the timer handle
@@ -354,14 +320,14 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 	EquipDelayTimerHandle.Invalidate();
 
 	IsStowing = false;
-	OnStowDelegate.Broadcast(Character, this);
+	OnStowDelegate.Broadcast(WeaponWielder, this);
 }
 
 void UTP_WeaponComponent::OnReloaded()
 {
-	int toBeLoaded = FMath::Min(Character->GetRemainingAmmo(AmmoType), MaxMagazineCount);
-	int newValue = FMath::Max(Character->GetRemainingAmmo(AmmoType) - toBeLoaded, 0);
-	Character->SetRemainingAmmo(AmmoType, newValue);
+	int toBeLoaded = FMath::Min(IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType), MaxMagazineCount);
+	int newValue = FMath::Max(IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType) - toBeLoaded, 0);
+	IWeaponWielderInterface::Execute_SetRemainingAmmo(WeaponWielder, AmmoType, newValue);
 	CurrentMagazineCount = FMath::Clamp(toBeLoaded, 0, MaxMagazineCount);
 }
 
@@ -371,61 +337,20 @@ void UTP_WeaponComponent::Reload()
 	{
 		return;
 	}
-	if (Character->GetRemainingAmmo(AmmoType) <= 0 || CurrentMagazineCount >= MaxMagazineCount)
+	if (IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType) <= 0 || CurrentMagazineCount >= MaxMagazineCount)
 	{
 		return;
 	}
 	IsReloading = true;
 
 	ExitADS(false);
-
-	if (Character != nullptr && ReloadAnimation != nullptr)
-	{
-		if (Character->GetFPAnimInstance())
-		{
-			Character->GetFPAnimInstance()->IsLeftHandIKActive = false;
-			Character->GetFPAnimInstance()->Montage_Play(ReloadAnimation, 1.f);
-
-			// remove this blend out logic and just call OnReloaded from the anim notify whatever
-			/*FOnMontageBlendingOutStarted BlendOutDelegate;
-			BlendOutDelegate.BindUObject(this, &UTP_WeaponComponent::ReloadAnimationBlendOut);
-			Character->GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, ReloadAnimation);*/
-		}
-	}
+	IWeaponWielderInterface::Execute_OnWeaponReload(WeaponWielder);
 }
 
 void UTP_WeaponComponent::CancelReload(float BlendTime)
 {
 	SetIsReloadingFalse();
-	if (Character != nullptr && ReloadAnimation != nullptr)
-	{
-		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			AnimInstance->Montage_Stop(BlendTime, ReloadAnimation);
-
-			Stop();
-		}
-	}
-}
-
-void UTP_WeaponComponent::EnterADS()
-{
-	if (IsReloading || IsEquipping || IsStowing)
-	{
-		return;
-	}
-	if (Character->GetFPAnimInstance()->Montage_IsPlaying(ReloadAnimation))
-	{
-		Character->GetFPAnimInstance()->Montage_Stop(0.f, ReloadAnimation);
-		Stop();
-	}
-	
-	ADSTL->SetPlayRate(FMath::Clamp(ADS_Speed, 0.1f, 10.f));
-
-	Character->GetFPAnimInstance()->SetSprintBlendOutTime(0.25f);
-	Character->ForceStopSprint();
-	ADSTL->Play();
+	IWeaponWielderInterface::Execute_OnWeaponStopReloadAnimation(WeaponWielder, BlendTime);
 }
 
 void UTP_WeaponComponent::ExitADS(bool IsFast)
@@ -439,29 +364,7 @@ void UTP_WeaponComponent::ExitADS(bool IsFast)
 
 void UTP_WeaponComponent::ADSTLCallback(float val)
 {
-	if (Character == nullptr && MPC_FP == nullptr)
-	{
-		return;
-	}
-	
-	ADSAlpha = val;
-	ADSAlphaLerp = FMath::Lerp(0.2f, 1.f, (1.f - ADSAlpha));
-	Character->ADSAlpha = ADSAlpha;
-	float lerpedFOV = FMath::Lerp(FOV_Base, FOV_ADS, ADSAlpha);
-	UCameraComponent* camera = Character->GetFirstPersonCameraComponent();
-	camera->SetFieldOfView(lerpedFOV);
-	float lerpedIntensity = FMath::Lerp(0.4f, 0.7f, ADSAlpha);
-	camera->PostProcessSettings.VignetteIntensity = lerpedIntensity;
-	float lerpedFlatFov = FMath::Lerp(90.f, 25.f, ADSAlpha);
-	MPC_FP_Instance->SetScalarParameterValue(FName("FOV"), lerpedFlatFov);
-	FLinearColor OutColor;
-	MPC_FP_Instance->GetVectorParameterValue(FName("Offset"), OutColor);
-	float lerpedB = FMath::Lerp(0.f, 30.f, ADSAlpha);
-	FLinearColor newColor = FLinearColor(OutColor.R, OutColor.G, lerpedB, OutColor.A);
-	MPC_FP_Instance->SetVectorParameterValue(FName("Offset"), newColor);
-
-	float newSpeedMultiplier = FMath::Clamp(ADSAlphaLerp, 0.5f, 1);
-	Character->GetCharacterMovement()->MaxWalkSpeed = Character->GetBaseWalkSpeed() * newSpeedMultiplier;
+	IWeaponWielderInterface::Execute_OnADSTLUpdate(WeaponWielder, val);
 }
 
 //Call this function when the firing begins, the recoil starts here
@@ -475,7 +378,7 @@ void UTP_WeaponComponent::RecoilStart()
 		PlayerDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		RecoilDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		Del = FRotator(0.0f, 0.0f, 0.0f);
-		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(PCRef->GetControlRotation(), FRotator{0.f, 0.f, 0.f}); // in certain angles, the recovery can just cancel itself if we don't delta this with 0
+		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder), FRotator{0.f, 0.f, 0.f}); // in certain angles, the recovery can just cancel itself if we don't delta this with 0
 
 		IsShouldRecoil = true;
 
@@ -508,8 +411,9 @@ void UTP_WeaponComponent::RecoilTimerCallback()
 	Del.Roll = 0;
 	Del.Pitch = (RecoilVec.Y);
 	Del.Yaw = (RecoilVec.Z);
-	PlayerDeltaRot = PCRef->GetControlRotation() - RecoilStartRot - RecoilDeltaRot;
-	PCRef->SetControlRotation(RecoilStartRot + PlayerDeltaRot + Del);
+	PlayerDeltaRot = IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder) - RecoilStartRot - RecoilDeltaRot;
+	FRotator newRotator = RecoilStartRot + PlayerDeltaRot + Del;
+	IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, newRotator);
 	RecoilDeltaRot = Del;
 
 	//Conditionally start resetting the recoil
@@ -531,7 +435,7 @@ void UTP_WeaponComponent::RecoilTimerCallback()
 //This function is automatically called, no need to call this. It is inside the Tick function
 void UTP_WeaponComponent::RecoveryStart()
 {
-	if (PCRef->GetControlRotation().Pitch > RecoilStartRot.Pitch)
+	if (IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder).Pitch > RecoilStartRot.Pitch)
 	{
 		GetWorld()->GetTimerManager().SetTimer(StopRecoveryTimer, this, &UTP_WeaponComponent::StopRecoveryTimerFunction, RecoveryTime, false);
 		GetWorld()->GetTimerManager().SetTimer(RecoilRecoveryTimer, this, &UTP_WeaponComponent::RecoilRecoveryTimerCallback, (1.f / 60.f), true);
@@ -553,16 +457,18 @@ void UTP_WeaponComponent::RecoilRecoveryTimerCallback()
 	FVector RecoilVec;
 
 	//Recoil resetting
-	FRotator tmprot = PCRef->GetControlRotation();
+	FRotator originalRotator = IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder);
+	FRotator tmprot = originalRotator;
 	float deltaPitch = UKismetMathLibrary::NormalizedDeltaRotator(tmprot, RecoilStartRot).Pitch;
 	if (deltaPitch > 0)
 	{
-		FRotator TargetRot = PCRef->GetControlRotation() - RecoilDeltaRot;
+		FRotator TargetRot = originalRotator - RecoilDeltaRot;
 		float InterpSpeed = UKismetMathLibrary::MapRangeClamped(deltaPitch, 0.f, MaxRecoilPitch, 3.f, 10.f);
 		//UE_LOG(LogTemp, Display, TEXT("interpspeed: %f"), InterpSpeed);
 		
-		PCRef->SetControlRotation(UKismetMathLibrary::RInterpTo(PCRef->GetControlRotation(), TargetRot, GetWorld()->DeltaTimeSeconds, InterpSpeed));
-		RecoilDeltaRot = RecoilDeltaRot + (PCRef->GetControlRotation() - tmprot);
+		FRotator newRotation = UKismetMathLibrary::RInterpTo(originalRotator, TargetRot, GetWorld()->DeltaTimeSeconds, InterpSpeed);
+		IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, newRotation);
+		RecoilDeltaRot = RecoilDeltaRot + (originalRotator - tmprot);
 	}
 	else
 	{
@@ -576,18 +482,16 @@ void UTP_WeaponComponent::RecoilRecoveryTimerCallback()
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (Character == nullptr)
+	if (IsValid(WeaponWielder))
 	{
-		return;
+		IWeaponWielderInterface::Execute_OnEndPlay(WeaponWielder);
 	}
-
-	Character->RemoveWeaponInputMapping();
 }
 
 void UTP_WeaponComponent::SetIsReloadingFalse()
 {
 	IsReloading = false;
-	Character->GetFPAnimInstance()->IsLeftHandIKActive = true;
+	IWeaponWielderInterface::Execute_OnSetIsReloadingFalse(WeaponWielder);
 
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(ReloadDelayTimerHandle);

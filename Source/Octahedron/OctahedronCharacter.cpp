@@ -12,6 +12,7 @@
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
 #include "Components/TimelineComponent.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -715,7 +716,7 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 
 void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weapon)
 {
-	Weapon->SetOwningCharacter(this);
+	Weapon->SetOwningWeaponWielder(this);
 	if (GetCurrentWeapon() == Weapon)
 	{
 		return;
@@ -746,8 +747,21 @@ void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weap
 
 	// ensure current weapon for Character Actor is set to the new one before calling SetCurrentWeapon in anim bp
 	SetCurrentWeapon(Weapon);
+
 	// Try and play equip animation if specified
+	GetCurrentWeapon()->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
+	GetCurrentWeapon()->WeaponChangeDelegate.Execute(GetCurrentWeapon());
+
+	GetCurrentWeapon()->WeaponFireAnimateDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("Fire"));
 	Weapon->Equip();
+	if (GetFPAnimInstance())
+	{
+		GetFPAnimInstance()->Montage_Play(GetCurrentWeapon()->EquipAnimation, 1.f);
+
+		FOnMontageBlendingOutStarted BlendOutDelegate;
+		BlendOutDelegate.BindUObject(GetCurrentWeapon(), &UTP_WeaponComponent::EquipAnimationBlendOut);
+		GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, GetCurrentWeapon()->EquipAnimation);
+	}
 
 	Weapon->OnEquipDelegate.Broadcast(this, Weapon);
 
@@ -792,10 +806,16 @@ void AOctahedronCharacter::DetachWeapon_Implementation()
 	{
 		return;
 	}
+	RemoveWeaponInputMapping();
 	GetCurrentWeapon()->IsStowing = true;
 	GetCurrentWeapon()->ExitADS(true);
 
 	// Try and play stow animation
+	SetHasWeapon(false);
+	SetCurrentWeapon(nullptr);
+
+	GetCurrentWeapon()->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	GetCurrentWeapon()->WeaponChangeDelegate.Execute(nullptr);
 	GetCurrentWeapon()->Stow();
 }
 
@@ -806,6 +826,7 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 	{
 		return false;
 	}
+	RemoveWeaponInputMapping();
 	UTP_WeaponComponent* toBeDetached = GetCurrentWeapon();
 	toBeDetached->IsStowing = true;
 	GetCurrentWeapon()->ExitADS(true);
@@ -820,14 +841,81 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
 	toBeDetached->DetachFromComponent(DetachmentRules);
 
-	
-
-	RemoveWeaponInputMapping();
-
 	toBeDetached->CanFire = false;
 	toBeDetached->IsStowing = false;
 	toBeDetached->OnStowDelegate.Broadcast(this, toBeDetached);
 	return true;
+}
+
+void AOctahedronCharacter::OnWeaponFired_Implementation()
+{
+	// play FP Anim bp Fire() function for weapon recoil kick
+	CurrentWeapon->WeaponFireAnimateDelegate.ExecuteIfBound();
+
+	if (IsValid(CurrentWeapon->FireCamShake))
+	{
+		GetLocalViewingPlayerController()->ClientStartCameraShake(CurrentWeapon->FireCamShake);
+	}
+
+	// Try and play a firing animation for the weapon mesh if specified
+	if (CurrentWeapon->WeaponFireAnimation != nullptr)
+	{
+		CurrentWeapon->PlayAnimation(CurrentWeapon->WeaponFireAnimation, false);
+	}
+
+	// report noise for AI detection
+	MakeNoise(1.f, this, CurrentWeapon->GetComponentLocation());
+}
+
+void AOctahedronCharacter::OnWeaponReload_Implementation()
+{
+	if (CurrentWeapon->ReloadAnimation != nullptr)
+	{
+		if (GetFPAnimInstance())
+		{
+			GetFPAnimInstance()->IsLeftHandIKActive = false;
+			GetFPAnimInstance()->Montage_Play(CurrentWeapon->ReloadAnimation, 1.f);
+		}
+	}
+}
+
+void AOctahedronCharacter::OnWeaponStopReloadAnimation_Implementation(float blendTime)
+{
+	if (CurrentWeapon->ReloadAnimation != nullptr)
+	{
+		if (GetFPAnimInstance())
+		{
+			GetFPAnimInstance()->Montage_Stop(blendTime, CurrentWeapon->ReloadAnimation);
+			CurrentWeapon->Stop();
+		}
+	}
+}
+
+void AOctahedronCharacter::OnADSTLUpdate_Implementation(float TLValue)
+{
+	if (CurrentWeapon->MPC_FP == nullptr)
+	{
+		return;
+	}
+
+	CurrentWeapon->ADSAlpha = TLValue;
+	CurrentWeapon->ADSAlphaLerp = FMath::Lerp(0.2f, 1.f, (1.f - CurrentWeapon->ADSAlpha));
+	ADSAlpha = CurrentWeapon->ADSAlpha;
+	float lerpedFOV = FMath::Lerp(CurrentWeapon->FOV_Base, CurrentWeapon->FOV_ADS, CurrentWeapon->ADSAlpha);
+	UCameraComponent* camera = GetFirstPersonCameraComponent();
+	camera->SetFieldOfView(lerpedFOV);
+	float lerpedIntensity = FMath::Lerp(0.4f, 0.7f, CurrentWeapon->ADSAlpha);
+	camera->PostProcessSettings.VignetteIntensity = lerpedIntensity;
+	float lerpedFlatFov = FMath::Lerp(90.f, 25.f, CurrentWeapon->ADSAlpha);
+	CurrentWeapon->MPC_FP_Instance->SetScalarParameterValue(FName("FOV"), lerpedFlatFov);
+	FLinearColor OutColor;
+	CurrentWeapon->MPC_FP_Instance->GetVectorParameterValue(FName("Offset"), OutColor);
+	float lerpedB = FMath::Lerp(0.f, 30.f, CurrentWeapon->ADSAlpha);
+	FLinearColor newColor = FLinearColor(OutColor.R, OutColor.G, lerpedB, OutColor.A);
+	CurrentWeapon->MPC_FP_Instance->SetVectorParameterValue(FName("Offset"), newColor);
+
+	float newSpeedMultiplier = FMath::Clamp(CurrentWeapon->ADSAlphaLerp, 0.5f, 1);
+	GetCharacterMovement()->MaxWalkSpeed = GetBaseWalkSpeed() * newSpeedMultiplier;
 }
 
 void AOctahedronCharacter::RemoveWeaponInputMapping()
@@ -875,7 +963,7 @@ void AOctahedronCharacter::PressedFire()
 			);
 		}
 
-		if (GetRemainingAmmo(GetCurrentWeapon()->AmmoType) > 0)
+		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(this, GetCurrentWeapon()->AmmoType) > 0)
 		{
 			GetCurrentWeapon()->Reload();
 			return;
@@ -934,7 +1022,22 @@ void AOctahedronCharacter::PressedADS()
 {
 	GetCurrentWeapon()->ADS_Held = true;
 
-	GetCurrentWeapon()->EnterADS();
+	EnterADS();
+}
+
+void AOctahedronCharacter::EnterADS()
+{
+	if (!IsValid(GetCurrentWeapon()) || GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsStowing || GetCurrentWeapon()->IsEquipping)
+	{
+		return;
+	}
+	IWeaponWielderInterface::Execute_OnWeaponStopReloadAnimation(this, 0.f);
+
+	GetCurrentWeapon()->ADSTL->SetPlayRate(FMath::Clamp(GetCurrentWeapon()->ADS_Speed, 0.1f, 10.f));
+
+	GetFPAnimInstance()->SetSprintBlendOutTime(0.25f);
+	ForceStopSprint();
+	GetCurrentWeapon()->ADSTL->Play();
 }
 
 void AOctahedronCharacter::ReleasedADS()
@@ -943,7 +1046,7 @@ void AOctahedronCharacter::ReleasedADS()
 	GetCurrentWeapon()->ADSTL->Reverse();
 }
 
-int32 AOctahedronCharacter::GetRemainingAmmo(EAmmoType AmmoType)
+int32 AOctahedronCharacter::GetRemainingAmmo_Implementation(EAmmoType AmmoType)
 {
 	switch (AmmoType)
 	{
@@ -961,7 +1064,7 @@ int32 AOctahedronCharacter::GetRemainingAmmo(EAmmoType AmmoType)
 	}
 }
 
-int32 AOctahedronCharacter::SetRemainingAmmo(EAmmoType AmmoType, int32 NewValue)
+int32 AOctahedronCharacter::SetRemainingAmmo_Implementation(EAmmoType AmmoType, int32 NewValue)
 {
 	switch (AmmoType)
 	{
@@ -1085,7 +1188,7 @@ void AOctahedronCharacter::StopSprint()
 		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 		if (CurrentWeapon != nullptr && CurrentWeapon->ADS_Held)
 		{
-			CurrentWeapon->EnterADS();
+			EnterADS();
 		}
 
 		break;
