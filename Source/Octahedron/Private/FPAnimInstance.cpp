@@ -113,26 +113,11 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 	}
 }
 
-void UFPAnimInstance::StowCurrentWeapon(UTP_WeaponComponent* Weapon)
+void UFPAnimInstance::StowCurrentWeapon()
 {
-	if (IsValid(Weapon))
-	{
-		CurrentWeapon = nullptr;
-		//CurrentWeaponIdlePose = nullptr;
-		IsLeftHandIKActive = false;
-		//EquipTime = CurrentWeapon->EquipTime;
-		IsHasWeapon = false;
-
-		/*RecoilLocMin = CurrentWeapon->RecoilLocMin;
-		RecoilLocMax = CurrentWeapon->RecoilLocMin;
-		RecoilRotMin = CurrentWeapon->RecoilRotMin;
-		RecoilRotMax = CurrentWeapon->RecoilRotMax;
-
-		RecoilLocMinADS = CurrentWeapon->RecoilLocMinADS;
-		RecoilLocMaxADS = CurrentWeapon->RecoilLocMinADS;
-		RecoilRotMinADS = CurrentWeapon->RecoilRotMinADS;
-		RecoilRotMaxADS = CurrentWeapon->RecoilRotMaxADS;*/
-	}
+	CurrentWeapon = nullptr;
+	IsLeftHandIKActive = false;
+	IsHasWeapon = false;
 }
 
 void UFPAnimInstance::SetSightTransform()

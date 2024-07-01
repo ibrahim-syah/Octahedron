@@ -21,6 +21,7 @@ class ACustomProjectile;
 
 DECLARE_DELEGATE(FOnFireAnimationDelegate);
 DECLARE_DELEGATE(FOnReloadSuccessDelegate);
+DECLARE_DELEGATE(FOnWeaponStow);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHitScanFireSignature, TArray<FHitResult>, HitResults);
@@ -307,6 +308,8 @@ public:
 	FTimerHandle FireRateDelayTimerHandle;
 
 	FOnWeaponChange WeaponChangeDelegate;
+	FOnWeaponStow WeaponStowDelegate;
+
 
 	UFUNCTION()
 	void SingleFire();

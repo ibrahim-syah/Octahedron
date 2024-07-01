@@ -807,16 +807,19 @@ void AOctahedronCharacter::DetachWeapon_Implementation()
 		return;
 	}
 	RemoveWeaponInputMapping();
-	GetCurrentWeapon()->IsStowing = true;
-	GetCurrentWeapon()->ExitADS(true);
+	UTP_WeaponComponent* toBeDetached = GetCurrentWeapon();
+	toBeDetached->IsStowing = true;
+	//toBeDetached->ExitADS(true);
+	toBeDetached->ADSTL->SetNewTime(0.f);
+	toBeDetached->ADSTL->Stop();
 
 	// Try and play stow animation
 	SetHasWeapon(false);
 	SetCurrentWeapon(nullptr);
 
-	GetCurrentWeapon()->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
-	GetCurrentWeapon()->WeaponChangeDelegate.Execute(nullptr);
-	GetCurrentWeapon()->Stow();
+	toBeDetached->WeaponStowDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	toBeDetached->WeaponStowDelegate.Execute();
+	toBeDetached->Stow();
 }
 
 bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
@@ -829,13 +832,13 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 	RemoveWeaponInputMapping();
 	UTP_WeaponComponent* toBeDetached = GetCurrentWeapon();
 	toBeDetached->IsStowing = true;
-	GetCurrentWeapon()->ExitADS(true);
+	toBeDetached->ExitADS(true);
 
 	SetHasWeapon(false);
 	SetCurrentWeapon(nullptr);
 
-	toBeDetached->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
-	toBeDetached->WeaponChangeDelegate.Execute(nullptr);
+	toBeDetached->WeaponStowDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	toBeDetached->WeaponStowDelegate.Execute();
 
 	// Detach the weapon from the First Person Character
 	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
@@ -888,7 +891,7 @@ void AOctahedronCharacter::OnWeaponStopReloadAnimation_Implementation(float blen
 
 void AOctahedronCharacter::OnADSTLUpdate_Implementation(float TLValue)
 {
-	if (CurrentWeapon->MPC_FP == nullptr)
+	if (!IsValid(CurrentWeapon) || CurrentWeapon->MPC_FP == nullptr)
 	{
 		return;
 	}
