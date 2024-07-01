@@ -29,10 +29,7 @@
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
-
-	// Default offset from the character location for projectiles to spawn
-	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
-	BoundsScale = 2.f;
+	//BoundsScale = 2.f;
 
 	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
 	ADSTL->SetTimelineLength(1.f);
@@ -89,9 +86,6 @@ void UTP_WeaponComponent::SingleFire()
 {
 	Fire();
 
-	//// Ensure the timer is cleared by using the timer handle
-	//GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
-	//FireRateDelayTimerHandle.Invalidate();
 	StopFire();
 }
 

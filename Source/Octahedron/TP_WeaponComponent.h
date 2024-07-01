@@ -14,10 +14,6 @@ class USightMeshComponent;
 class UUserWidget;
 class UCurveVector;
 class UNiagaraSystem;
-//class AWeaponFX;
-//class AWeaponDecals;
-//class AWeaponImpacts;
-//class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
 class UDefaultCameraShakeBase;
@@ -60,10 +56,6 @@ public:
 	/** AnimMontage to play when equipping the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* EquipAnimation = nullptr;
-
-	/** Gun muzzle's offset from the characters location */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	FVector MuzzleOffset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FName MuzzleSocketName{"Muzzle"};
@@ -126,9 +118,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float ADS_Speed{ 0.35f };
-
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
-	FVector ADS_Offset;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UTimelineComponent* ADSTL = nullptr;
@@ -229,36 +218,29 @@ public:
 	FTimerHandle RecoilRecoveryTimer;
 
 	FTimerHandle FireTimer;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FTimerHandle StopRecoveryTimer;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void FireTimerFunction();
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilStartRot;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilDeltaRot;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator PlayerDeltaRot;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilStart();
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilStop();
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoveryStart();
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator Del;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void StopRecoveryTimerFunction();
+
 	UPROPERTY(BlueprintReadWrite)
 	float RecoilToStableTime = 10.0f;
+
 	UPROPERTY(BlueprintReadWrite)
 	float RecoveryTime = 1.0f;
+
 	UPROPERTY(BlueprintReadWrite)
 	float RecoverySpeed = 10.0f;
+
 	UPROPERTY(BlueprintReadWrite)
 	float MaxRecoilPitch = 10.0f;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	void RecoilTick(float DeltaTime);
+
 	void RecoilTimerCallback();
 	void RecoilRecoveryTimerCallback();
 	bool IsShouldRecoil = false;
@@ -288,11 +270,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilRecoveryInterpSpeedScale = 36.f;
 
-
-
-
-
-
 	// Effects
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* MuzzleFlash_FX = nullptr;
@@ -306,24 +283,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UStaticMesh* ShellEjectMesh = nullptr;
 
-	//AWeaponFX* WeaponFX = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* ImpactDecals_FX = nullptr;
-
-	//AWeaponDecals* WeaponDecals = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* ConcreteImpact_FX = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* GlassImpact_FX = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* CharacterSparksImpact_FX = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* DamageNumber_FX = nullptr;
-
-	//AWeaponImpacts* WeaponImpacts = nullptr;
-
 	UFUNCTION(BlueprintCallable)
 	AOctahedronCharacter* GetOwningCharacter() { return Character; }
 	void SetOwningCharacter(AOctahedronCharacter* character) { Character = character; }
@@ -331,7 +290,7 @@ public:
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
 	UMetaSoundSource* FireSound = nullptr;
-	//AWeaponSounds* WeaponSounds = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
 	float FireSoundDelayScale{ 0.5f };
 
@@ -376,8 +335,6 @@ private:
 	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle EquipDelayTimerHandle;
 
-	/*UFUNCTION()
-	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);*/
 	FTimerHandle ReloadDelayTimerHandle;
 
 public:
@@ -389,9 +346,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	int32 CurrentMagazineCount = 0;
-
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-	int32 RemainingAmmo = 26;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USoundBase* DryFireSound = nullptr;
