@@ -932,7 +932,7 @@ void AOctahedronCharacter::RemoveWeaponInputMapping()
 
 void AOctahedronCharacter::PressedFire()
 {
-	GetCurrentWeapon()->IsPlayerHoldingShootButton = true;
+	GetCurrentWeapon()->IsWielderHoldingShootButton = true;
 	if (GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsEquipping || GetCurrentWeapon()->IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
 	{
 		return;
@@ -949,7 +949,7 @@ void AOctahedronCharacter::PressedFire()
 	if (GetCurrentWeapon()->CurrentMagazineCount <= 0)
 	{
 		GetCurrentWeapon()->StopFire();
-		GetCurrentWeapon()->IsPlayerHoldingShootButton = false;
+		GetCurrentWeapon()->IsWielderHoldingShootButton = false;
 		if (IsValid(GetCurrentWeapon()->DryFireSound))
 		{
 			UGameplayStatics::SpawnSoundAttached(
@@ -990,7 +990,7 @@ void AOctahedronCharacter::PressedFire()
 
 void AOctahedronCharacter::ReleasedFire()
 {
-	GetCurrentWeapon()->IsPlayerHoldingShootButton = false;
+	GetCurrentWeapon()->IsWielderHoldingShootButton = false;
 }
 
 void AOctahedronCharacter::PressedReload()

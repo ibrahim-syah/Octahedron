@@ -113,7 +113,7 @@ void UTP_WeaponComponent::BurstFire()
 void UTP_WeaponComponent::FullAutoFire()
 {
 	Fire();
-	if (!IsPlayerHoldingShootButton)
+	if (!IsWielderHoldingShootButton)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
 		FireRateDelayTimerHandle.Invalidate();
@@ -133,7 +133,7 @@ void UTP_WeaponComponent::Fire()
 	if (CurrentMagazineCount <= 0)
 	{
 		StopFire();
-		IsPlayerHoldingShootButton = false;
+		IsWielderHoldingShootButton = false;
 		if (IsValid(DryFireSound))
 		{
 			UGameplayStatics::SpawnSoundAttached(
@@ -383,7 +383,7 @@ void UTP_WeaponComponent::RecoilStart()
 
 		//Setting all rotators to default values
 
-		PlayerDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
+		WielderDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		RecoilDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
 		Del = FRotator(0.0f, 0.0f, 0.0f);
 		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder), FRotator{0.f, 0.f, 0.f}); // in certain angles, the recovery can just cancel itself if we don't delta this with 0
@@ -419,8 +419,8 @@ void UTP_WeaponComponent::RecoilTimerCallback()
 	Del.Roll = 0;
 	Del.Pitch = (RecoilVec.Y);
 	Del.Yaw = (RecoilVec.Z);
-	PlayerDeltaRot = IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder) - RecoilStartRot - RecoilDeltaRot;
-	FRotator newRotator = RecoilStartRot + PlayerDeltaRot + Del;
+	WielderDeltaRot = IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder) - RecoilStartRot - RecoilDeltaRot;
+	FRotator newRotator = RecoilStartRot + WielderDeltaRot + Del;
 	IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, newRotator);
 	RecoilDeltaRot = Del;
 

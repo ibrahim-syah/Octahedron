@@ -219,7 +219,7 @@ public:
 	void FireTimerFunction();
 	FRotator RecoilStartRot;
 	FRotator RecoilDeltaRot;
-	FRotator PlayerDeltaRot;
+	FRotator WielderDeltaRot;
 	void RecoilStart();
 	void RecoilStop();
 	void RecoveryStart();
@@ -301,7 +301,7 @@ public:
 	bool IsEquipping;
 	bool IsStowing;
 	bool IsReloading;
-	bool IsPlayerHoldingShootButton;
+	bool IsWielderHoldingShootButton;
 
 
 	FTimerHandle FireRateDelayTimerHandle;
