@@ -64,6 +64,9 @@ public:
 	void OnWeaponReload();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnReloadSuccess();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	void OnWeaponStopReloadAnimation(float blendTime);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
