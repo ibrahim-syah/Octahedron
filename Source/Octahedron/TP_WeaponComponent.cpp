@@ -31,6 +31,7 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 
 	FireDelay = 60.f / FireRate;
 	CurrentMagazineCount = MaxMagazineCount;
+	DefaultAnimationMode = GetAnimationMode();
 }
 
 void UTP_WeaponComponent::BeginPlay()
@@ -254,6 +255,13 @@ void UTP_WeaponComponent::Fire()
 
 		CurrentMagazineCount = FMath::Max(CurrentMagazineCount - 1, 0);
 		OnWeaponHitScanFireDelegate.Broadcast(MuzzleTraceResults);
+	}
+
+	// Try and play a firing animation for the weapon mesh if specified
+	if (WeaponFireAnimation != nullptr)
+	{
+		SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		PlayAnimation(WeaponFireAnimation, false);
 	}
 
 	IWeaponWielderInterface::Execute_OnWeaponFired(WeaponWielder);

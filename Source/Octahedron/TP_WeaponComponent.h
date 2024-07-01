@@ -47,6 +47,7 @@ public:
 	/** AnimMontage to play each time we fire on Weapon*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimSequence* WeaponFireAnimation = nullptr;
+	TEnumAsByte<EAnimationMode::Type> DefaultAnimationMode;
 
 	/** AnimMontage to play when reloading the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)

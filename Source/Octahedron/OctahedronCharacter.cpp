@@ -857,12 +857,6 @@ void AOctahedronCharacter::OnWeaponFired_Implementation()
 		GetLocalViewingPlayerController()->ClientStartCameraShake(CurrentWeapon->FireCamShake);
 	}
 
-	// Try and play a firing animation for the weapon mesh if specified
-	if (CurrentWeapon->WeaponFireAnimation != nullptr)
-	{
-		CurrentWeapon->PlayAnimation(CurrentWeapon->WeaponFireAnimation, false);
-	}
-
 	// report noise for AI detection
 	MakeNoise(1.f, this, CurrentWeapon->GetComponentLocation());
 }
@@ -886,7 +880,8 @@ void AOctahedronCharacter::OnWeaponStopReloadAnimation_Implementation(float blen
 		if (GetFPAnimInstance())
 		{
 			GetFPAnimInstance()->Montage_Stop(blendTime, CurrentWeapon->ReloadAnimation);
-			//CurrentWeapon->Stop();
+			CurrentWeapon->Stop();
+			CurrentWeapon->SetAnimationMode(CurrentWeapon->DefaultAnimationMode);
 		}
 	}
 }
