@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "ECustomMovementMode.h"
 #include "Public/EAmmoType.h"
+#include "Weapon/WeaponWielderInterface.h"
 #include "OctahedronCharacter.generated.h"
 
 
@@ -25,7 +26,7 @@ class UPawnNoiseEmitterComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class AOctahedronCharacter : public ACharacter
+class AOctahedronCharacter : public ACharacter, public IWeaponWielderInterface
 {
 	GENERATED_BODY()
 
@@ -205,13 +206,13 @@ public:
 	void PressedSwitchFireMode();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void AttachWeapon(UTP_WeaponComponent* Weapon);
+	void AttachWeapon_Implementation(UTP_WeaponComponent* Weapon) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void DetachWeapon();
+	void DetachWeapon_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	bool InstantDetachWeapon();
+	bool InstantDetachWeapon_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void RemoveWeaponInputMapping();

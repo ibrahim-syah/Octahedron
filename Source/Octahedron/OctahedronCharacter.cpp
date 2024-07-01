@@ -713,7 +713,7 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 	CamAnimAlphaArg = CamAnimAlpha;
 }
 
-void AOctahedronCharacter::AttachWeapon(UTP_WeaponComponent* Weapon)
+void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weapon)
 {
 	Weapon->SetOwningCharacter(this);
 	if (GetCurrentWeapon() == Weapon)
@@ -785,7 +785,7 @@ void AOctahedronCharacter::AttachWeapon(UTP_WeaponComponent* Weapon)
 	}
 }
 
-void AOctahedronCharacter::DetachWeapon()
+void AOctahedronCharacter::DetachWeapon_Implementation()
 {
 	// Check that the character is valid, and the currently set weapon is this object
 	if (!GetHasWeapon() || GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsStowing || GetCurrentWeapon()->IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
@@ -799,7 +799,7 @@ void AOctahedronCharacter::DetachWeapon()
 	GetCurrentWeapon()->Stow();
 }
 
-bool AOctahedronCharacter::InstantDetachWeapon()
+bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 {
 	// Check that the character is valid, and the currently set weapon is this object
 	if (!GetHasWeapon() || GetCurrentWeapon()->IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
