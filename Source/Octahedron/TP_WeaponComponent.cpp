@@ -2,7 +2,7 @@
 
 
 #include "TP_WeaponComponent.h"
-#include "OctahedronCharacter.h"
+#include "Weapon/WeaponWielderInterface.h"
 #include "OctahedronProjectile.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
@@ -39,10 +39,6 @@ void UTP_WeaponComponent::BeginPlay()
 		FOnTimelineFloat onADSTLCallback;
 		onADSTLCallback.BindUFunction(this, FName{ TEXT("ADSTLCallback") });
 		ADSTL->AddInterpFloat(ADSAlphaCurve, onADSTLCallback);
-	}
-	else
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to find ads curve for this weapon"));
 	}
 
 	if (ScopeSightMesh != nullptr)

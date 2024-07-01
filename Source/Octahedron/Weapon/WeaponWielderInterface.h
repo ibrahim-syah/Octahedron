@@ -34,6 +34,12 @@ public:
 	bool InstantDetachWeapon();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnEquip();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnStow();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	int32 GetRemainingAmmo(EAmmoType AmmoType);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
