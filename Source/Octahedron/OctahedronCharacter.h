@@ -247,7 +247,7 @@ public:
 	void OnADSTLUpdate_Implementation(float TLValue) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void OnEndPlay_Implementation() override { RemoveWeaponInputMapping(); }
+	void OnFinishPlay_Implementation() override { RemoveWeaponInputMapping(); }
 
 
 

@@ -67,5 +67,5 @@ public:
 	void OnADSTLUpdate(float TLValue);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
-	void OnEndPlay();
+	void OnFinishPlay();
 };

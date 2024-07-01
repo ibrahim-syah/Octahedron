@@ -492,7 +492,7 @@ void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (IsValid(WeaponWielder))
 	{
-		IWeaponWielderInterface::Execute_OnEndPlay(WeaponWielder);
+		IWeaponWielderInterface::Execute_OnFinishPlay(WeaponWielder);
 	}
 }
 
