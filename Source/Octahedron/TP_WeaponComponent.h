@@ -42,20 +42,30 @@ public:
 	UMaterialInstance* FP_Material = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	FTransform TPTransform{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimSequence* IdlePose = nullptr;
 
-	/** AnimMontage to play each time we fire on Weapon*/
+	/** AnimSequence for the gun mesh to play each time we fire on Weapon*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimSequence* WeaponFireAnimation = nullptr;
 	TEnumAsByte<EAnimationMode::Type> DefaultAnimationMode;
 
 	/** AnimMontage to play when reloading the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* ReloadAnimation = nullptr;
+	UAnimMontage* FPReloadAnimation = nullptr;
 
 	/** AnimMontage to play when equipping the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* EquipAnimation = nullptr;
+	UAnimMontage* TPEquipAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* TPReloadAnimation = nullptr;
+
+	/** AnimMontage to play when equipping the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPEquipAnimation = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FName MuzzleSocketName{"Muzzle"};

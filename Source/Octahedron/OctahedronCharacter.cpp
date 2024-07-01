@@ -756,11 +756,11 @@ void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weap
 	Weapon->Equip();
 	if (GetFPAnimInstance())
 	{
-		GetFPAnimInstance()->Montage_Play(GetCurrentWeapon()->EquipAnimation, 1.f);
+		GetFPAnimInstance()->Montage_Play(GetCurrentWeapon()->FPEquipAnimation, 1.f);
 
 		FOnMontageBlendingOutStarted BlendOutDelegate;
 		BlendOutDelegate.BindUObject(GetCurrentWeapon(), &UTP_WeaponComponent::EquipAnimationBlendOut);
-		GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, GetCurrentWeapon()->EquipAnimation);
+		GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, GetCurrentWeapon()->FPEquipAnimation);
 	}
 
 	Weapon->OnEquipDelegate.Broadcast(this, Weapon);
@@ -866,23 +866,23 @@ void AOctahedronCharacter::OnWeaponFired_Implementation()
 
 void AOctahedronCharacter::OnWeaponReload_Implementation()
 {
-	if (CurrentWeapon->ReloadAnimation != nullptr)
+	if (CurrentWeapon->FPReloadAnimation != nullptr)
 	{
 		if (GetFPAnimInstance())
 		{
 			GetFPAnimInstance()->IsLeftHandIKActive = false;
-			GetFPAnimInstance()->Montage_Play(CurrentWeapon->ReloadAnimation, 1.f);
+			GetFPAnimInstance()->Montage_Play(CurrentWeapon->FPReloadAnimation, 1.f);
 		}
 	}
 }
 
 void AOctahedronCharacter::OnWeaponStopReloadAnimation_Implementation(float blendTime)
 {
-	if (CurrentWeapon->ReloadAnimation != nullptr)
+	if (CurrentWeapon->FPReloadAnimation != nullptr)
 	{
 		if (GetFPAnimInstance())
 		{
-			GetFPAnimInstance()->Montage_Stop(blendTime, CurrentWeapon->ReloadAnimation);
+			GetFPAnimInstance()->Montage_Stop(blendTime, CurrentWeapon->FPReloadAnimation);
 			CurrentWeapon->Stop();
 			CurrentWeapon->SetAnimationMode(CurrentWeapon->DefaultAnimationMode);
 		}
@@ -945,9 +945,9 @@ void AOctahedronCharacter::PressedFire()
 		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->InstantSprintBlendOutTime);
 		ForceStopSprint();
 	}
-	if (GetFPAnimInstance()->Montage_IsPlaying(GetCurrentWeapon()->ReloadAnimation))
+	if (GetFPAnimInstance()->Montage_IsPlaying(GetCurrentWeapon()->FPReloadAnimation))
 	{
-		GetFPAnimInstance()->Montage_Stop(0.f, GetCurrentWeapon()->ReloadAnimation);
+		GetFPAnimInstance()->Montage_Stop(0.f, GetCurrentWeapon()->FPReloadAnimation);
 	}
 	if (GetCurrentWeapon()->CurrentMagazineCount <= 0)
 	{
