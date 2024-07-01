@@ -25,11 +25,12 @@
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
-	//BoundsScale = 2.f;
-
 	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
 	ADSTL->SetTimelineLength(1.f);
 	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+	FireDelay = 60.f / FireRate;
+	CurrentMagazineCount = MaxMagazineCount;
 }
 
 void UTP_WeaponComponent::BeginPlay()
@@ -53,11 +54,10 @@ void UTP_WeaponComponent::BeginPlay()
 		ScopeSightMesh->AttachToComponent(this, AttachmentRules, FName(TEXT("Sight")));
 	}
 
-	MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
-
-	FireDelay = 60.f / FireRate;
-
-	CurrentMagazineCount = MaxMagazineCount;
+	if (IsValid(MPC_FP))
+	{
+		MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
+	}
 }
 
 void UTP_WeaponComponent::SetOwningWeaponWielder(AActor* newWeaponWielder)

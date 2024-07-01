@@ -886,7 +886,7 @@ void AOctahedronCharacter::OnWeaponStopReloadAnimation_Implementation(float blen
 		if (GetFPAnimInstance())
 		{
 			GetFPAnimInstance()->Montage_Stop(blendTime, CurrentWeapon->ReloadAnimation);
-			CurrentWeapon->Stop();
+			//CurrentWeapon->Stop();
 		}
 	}
 }
