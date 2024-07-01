@@ -19,7 +19,6 @@ class UDefaultCameraShakeBase;
 class UCameraShakeBase;
 class ACustomProjectile;
 
-DECLARE_DELEGATE(FOnFireAnimationDelegate);
 DECLARE_DELEGATE(FOnReloadSuccessDelegate);
 DECLARE_DELEGATE(FOnWeaponStow);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
@@ -67,6 +66,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FString WeaponName{"Weapon Base"};
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	bool CanFire{ false };
 
 	bool FireNextShot{ false };
@@ -152,8 +152,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void ForceStopFire();
 
-	FOnFireAnimationDelegate WeaponFireAnimateDelegate;
-
 	/** Stow the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Stow();
@@ -168,10 +166,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	USoundBase* EquipSound = nullptr;
 
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnEquipSignature OnEquipDelegate;
 
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnStowSignature OnStowDelegate;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -284,6 +282,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	AActor* GetOwningWeaponWielder() { return WeaponWielder; }
 
+	UFUNCTION(BlueprintCallable)
 	void SetOwningWeaponWielder(AActor* newWeaponWielder);
 
 	// SFX
@@ -296,31 +295,41 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Cosmetics)
 	float WeaponSwaySpeed{ 10.f }; // determine how heavy the weapon is for weapon sway speed, larger means faster. clamped at [6, 80]
 
+	UFUNCTION(BlueprintCallable)
 	void SetIsEquippingFalse();
+
+	UFUNCTION(BlueprintCallable)
 	void SetIsStowingFalse();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsEquipping;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsStowing;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsReloading;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsWielderHoldingShootButton;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTimerHandle FireRateDelayTimerHandle;
 
+	//UPROPERTY(BlueprintAssignable)
 	FOnWeaponChange WeaponChangeDelegate;
+
+	//UPROPERTY(BlueprintAssignable)
 	FOnWeaponStow WeaponStowDelegate;
 
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void SingleFire();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void BurstFire();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void FullAutoFire();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 
 protected:

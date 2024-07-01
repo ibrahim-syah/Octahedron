@@ -749,10 +749,10 @@ void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weap
 	SetCurrentWeapon(Weapon);
 
 	// Try and play equip animation if specified
+	//GetCurrentWeapon()->WeaponChangeDelegate.AddUnique()
 	GetCurrentWeapon()->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
 	GetCurrentWeapon()->WeaponChangeDelegate.Execute(GetCurrentWeapon());
 
-	GetCurrentWeapon()->WeaponFireAnimateDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("Fire"));
 	Weapon->Equip();
 	if (GetFPAnimInstance())
 	{
@@ -853,7 +853,7 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 void AOctahedronCharacter::OnWeaponFired_Implementation()
 {
 	// play FP Anim bp Fire() function for weapon recoil kick
-	CurrentWeapon->WeaponFireAnimateDelegate.ExecuteIfBound();
+	GetFPAnimInstance()->Fire();
 
 	if (IsValid(CurrentWeapon->FireCamShake))
 	{
