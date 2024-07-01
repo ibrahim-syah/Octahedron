@@ -810,6 +810,7 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 	toBeDetached->IsStowing = true;
 	GetCurrentWeapon()->ExitADS(true);
 
+	SetHasWeapon(false);
 	SetCurrentWeapon(nullptr);
 
 	toBeDetached->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
@@ -819,7 +820,7 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
 	toBeDetached->DetachFromComponent(DetachmentRules);
 
-	SetHasWeapon(false);
+	
 
 	RemoveWeaponInputMapping();
 

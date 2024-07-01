@@ -284,6 +284,7 @@ void UTP_WeaponComponent::ForceStopFire()
 
 void UTP_WeaponComponent::Stow()
 {
+	Character->SetHasWeapon(false);
 	Character->SetCurrentWeapon(nullptr);
 
 	WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(Character->GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
@@ -345,9 +346,6 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 	// Detach the weapon from the First Person Character
 	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
 	DetachFromComponent(DetachmentRules);
-
-	Character->SetHasWeapon(false);
-
 	Character->RemoveWeaponInputMapping();
 
 	CanFire = false;
