@@ -28,10 +28,6 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
 	ADSTL->SetTimelineLength(1.f);
 	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-
-	FireDelay = 60.f / FireRate;
-	CurrentMagazineCount = MaxMagazineCount;
-	DefaultAnimationMode = GetAnimationMode();
 }
 
 void UTP_WeaponComponent::BeginPlay()
@@ -59,6 +55,10 @@ void UTP_WeaponComponent::BeginPlay()
 	{
 		MPC_FP_Instance = GetWorld()->GetParameterCollectionInstance(MPC_FP);
 	}
+
+	FireDelay = 60.f / FireRate;
+	CurrentMagazineCount = MaxMagazineCount;
+	DefaultAnimationMode = GetAnimationMode();
 }
 
 void UTP_WeaponComponent::SetOwningWeaponWielder(AActor* newWeaponWielder)
