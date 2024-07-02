@@ -48,6 +48,9 @@ public:
 	UAnimSequence* WeaponMeshFireAnimation = nullptr;
 	TEnumAsByte<EAnimationMode::Type> DefaultAnimationMode;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	TSubclassOf<UAnimInstance> TPWeaponAnimLinkLayer;
+
 	/** AnimMontage to play when equipping the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* TPEquipAnimation = nullptr;
