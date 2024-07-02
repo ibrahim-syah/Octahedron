@@ -492,10 +492,10 @@ void UTP_WeaponComponent::RecoilRecoveryTimerCallback()
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (IsValid(WeaponWielder))
+	/*if (IsValid(WeaponWielder))
 	{
 		IWeaponWielderInterface::Execute_OnFinishPlay(WeaponWielder);
-	}
+	}*/
 }
 
 void UTP_WeaponComponent::SetIsReloadingFalse()
