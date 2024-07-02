@@ -61,6 +61,9 @@ public:
 	void OnWeaponFired();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void OnStopFiring();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	void OnWeaponReload();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")

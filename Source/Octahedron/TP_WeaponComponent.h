@@ -19,7 +19,6 @@ class UDefaultCameraShakeBase;
 class UCameraShakeBase;
 class ACustomProjectile;
 
-DECLARE_DELEGATE(FOnReloadSuccessDelegate);
 DECLARE_DELEGATE(FOnWeaponStow);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);

@@ -268,6 +268,7 @@ void UTP_WeaponComponent::Fire()
 void UTP_WeaponComponent::StopFire()
 {
 	RecoilStop();
+	IWeaponWielderInterface::Execute_OnStopFiring(WeaponWielder);
 }
 
 void UTP_WeaponComponent::ForceStopFire()
