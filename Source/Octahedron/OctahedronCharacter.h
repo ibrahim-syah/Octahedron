@@ -70,6 +70,10 @@ class AOctahedronCharacter : public ACharacter, public IWeaponWielderInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* JumpAction = nullptr;
 
+	/** Jump Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* QuickMeleeAction = nullptr;
+
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* MoveAction = nullptr;
@@ -91,6 +95,9 @@ class AOctahedronCharacter : public ACharacter, public IWeaponWielderInterface
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SwitchToNextWeaponAction = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	void PressedQuickMelee();
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void PressedSprint();
@@ -261,6 +268,12 @@ public:
 	/** Bool for AnimBP to switch to another animation set */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	bool bHasWeapon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Action)
+	UAnimMontage* DefaultFPMeleeAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Action)
+	UAnimMontage* DefaultTPMeleeAnimation = nullptr;
 
 	/** Setter to set the bool */
 	UFUNCTION(BlueprintCallable, Category = Weapon)
