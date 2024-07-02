@@ -241,6 +241,8 @@ public:
 	FRotator RecoilStartRot;
 	FRotator RecoilDeltaRot;
 	FRotator WielderDeltaRot;
+
+	UFUNCTION(BlueprintCallable)
 	void RecoilStart();
 	void RecoilStop();
 	void RecoveryStart();
@@ -301,11 +303,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UStaticMesh* ShellEjectMesh = nullptr;
 
-	UFUNCTION(BlueprintCallable)
-	AActor* GetOwningWeaponWielder() { return WeaponWielder; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	APawn* GetOwningWeaponWielder() { return WeaponWielder; }
 
 	UFUNCTION(BlueprintCallable)
-	void SetOwningWeaponWielder(AActor* newWeaponWielder);
+	void SetOwningWeaponWielder(APawn* newWeaponWielder);
 
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
@@ -362,9 +364,9 @@ protected:
 	virtual void BeginPlay();
 
 private:
-	// The Actor holding this weapon
-	// The actor needs to implement the WeaponWielderInterface
-	AActor* WeaponWielder = nullptr;
+	// The Pawn holding this weapon
+	// The pawn needs to implement the WeaponWielderInterface
+	APawn* WeaponWielder = nullptr;
 
 	FTimerHandle EquipDelayTimerHandle;
 

@@ -260,6 +260,9 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// sprint
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AOctahedronCharacter::PressedSprint);
+
+
+		EnhancedInputComponent->BindAction(QuickMeleeAction, ETriggerEvent::Started, this, &AOctahedronCharacter::PressedQuickMelee);
 	}
 	else
 	{
@@ -961,7 +964,7 @@ void AOctahedronCharacter::PressedFire()
 			);
 		}
 
-		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(this, GetCurrentWeapon()->AmmoType) > 0)
+		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(this) > 0)
 		{
 			GetCurrentWeapon()->Reload();
 			return;
@@ -1047,9 +1050,10 @@ void AOctahedronCharacter::ReleasedADS()
 	GetCurrentWeapon()->ADSTL->Reverse();
 }
 
-int32 AOctahedronCharacter::GetRemainingAmmo_Implementation(EAmmoType AmmoType)
+int32 AOctahedronCharacter::GetRemainingAmmo_Implementation()
 {
-	switch (AmmoType)
+	EAmmoType ammoType = CurrentWeapon->AmmoType;
+	switch (ammoType)
 	{
 	case EAmmoType::Primary:
 		return 999;
@@ -1065,9 +1069,10 @@ int32 AOctahedronCharacter::GetRemainingAmmo_Implementation(EAmmoType AmmoType)
 	}
 }
 
-int32 AOctahedronCharacter::SetRemainingAmmo_Implementation(EAmmoType AmmoType, int32 NewValue)
+int32 AOctahedronCharacter::SetRemainingAmmo_Implementation(int32 NewValue)
 {
-	switch (AmmoType)
+	EAmmoType ammoType = CurrentWeapon->AmmoType;
+	switch (ammoType)
 	{
 	case EAmmoType::Primary:
 		return 999;
@@ -1082,6 +1087,25 @@ int32 AOctahedronCharacter::SetRemainingAmmo_Implementation(EAmmoType AmmoType, 
 		break;
 	default:
 		return 0;
+	}
+}
+
+void AOctahedronCharacter::PressedQuickMelee()
+{
+	if (!CanAct())
+	{
+		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->InstantSprintBlendOutTime);
+		ForceStopSprint();
+	}
+	if (bHasWeapon)
+	{
+		CurrentWeapon->ForceStopFire();
+		CurrentWeapon->CancelReload(0.25f);
+		GetFPAnimInstance()->Montage_Play(CurrentWeapon->FPMeleeAnimation);
+	}
+	else
+	{
+		GetFPAnimInstance()->Montage_Play(DefaultFPMeleeAnimation);
 	}
 }
 

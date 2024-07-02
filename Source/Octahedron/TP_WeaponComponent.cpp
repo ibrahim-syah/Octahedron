@@ -59,7 +59,7 @@ void UTP_WeaponComponent::BeginPlay()
 	DefaultAnimationMode = GetAnimationMode();
 }
 
-void UTP_WeaponComponent::SetOwningWeaponWielder(AActor* newWeaponWielder)
+void UTP_WeaponComponent::SetOwningWeaponWielder(APawn* newWeaponWielder)
 {
 	if (newWeaponWielder && newWeaponWielder->GetClass()->ImplementsInterface(UWeaponWielderInterface::StaticClass()))
 	{
@@ -140,7 +140,7 @@ void UTP_WeaponComponent::Fire()
 			);
 		}
 
-		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType) > 0)
+		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder) > 0)
 		{
 			Reload();
 			return;
@@ -331,9 +331,9 @@ void UTP_WeaponComponent::SetIsStowingFalse()
 
 void UTP_WeaponComponent::OnReloaded()
 {
-	int toBeLoaded = FMath::Min(IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType), MaxMagazineCount);
-	int newValue = FMath::Max(IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType) - toBeLoaded, 0);
-	IWeaponWielderInterface::Execute_SetRemainingAmmo(WeaponWielder, AmmoType, newValue);
+	int toBeLoaded = FMath::Min(IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder), MaxMagazineCount);
+	int newValue = FMath::Max(IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder) - toBeLoaded, 0);
+	IWeaponWielderInterface::Execute_SetRemainingAmmo(WeaponWielder, newValue);
 	CurrentMagazineCount = FMath::Clamp(toBeLoaded, 0, MaxMagazineCount);
 }
 
@@ -343,7 +343,7 @@ void UTP_WeaponComponent::Reload()
 	{
 		return;
 	}
-	if (IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder, AmmoType) <= 0 || CurrentMagazineCount >= MaxMagazineCount)
+	if (IWeaponWielderInterface::Execute_GetRemainingAmmo(WeaponWielder) <= 0 || CurrentMagazineCount >= MaxMagazineCount)
 	{
 		return;
 	}

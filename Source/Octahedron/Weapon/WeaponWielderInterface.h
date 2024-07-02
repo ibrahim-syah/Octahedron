@@ -40,10 +40,10 @@ public:
 	void OnStow();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
-	int32 GetRemainingAmmo(EAmmoType AmmoType);
+	int32 GetRemainingAmmo();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
-	int32 SetRemainingAmmo(EAmmoType AmmoType, int32 newValue);
+	int32 SetRemainingAmmo(int32 newValue);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	FVector GetTraceStart();
@@ -55,7 +55,7 @@ public:
 	FRotator GetWielderControlRotation();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
-	void SetWielderControlRotation(FRotator &newRotator);
+	void SetWielderControlRotation(FRotator newRotator);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	void OnWeaponFired();

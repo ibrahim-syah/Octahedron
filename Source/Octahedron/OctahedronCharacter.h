@@ -236,7 +236,7 @@ public:
 	FRotator GetWielderControlRotation_Implementation() override { return GetController()->GetControlRotation(); }
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void SetWielderControlRotation_Implementation(FRotator &newRotator) override { GetController()->SetControlRotation(newRotator); }
+	void SetWielderControlRotation_Implementation(FRotator newRotator) override { GetController()->SetControlRotation(newRotator); }
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void OnWeaponFired_Implementation() override;
@@ -497,10 +497,10 @@ public:
 	ECustomMovementMode GetMoveMode() { return MoveMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	int32 GetRemainingAmmo_Implementation(EAmmoType AmmoType) override;
+	int32 GetRemainingAmmo_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	int32 SetRemainingAmmo_Implementation(EAmmoType AmmoType, int32 NewValue) override;
+	int32 SetRemainingAmmo_Implementation(int32 NewValue) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	int32 GetSpecialAmmoRemaining() { return SpecialAmmoRemaining; }
