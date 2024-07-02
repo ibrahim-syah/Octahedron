@@ -273,6 +273,9 @@ void UTP_WeaponComponent::StopFire()
 
 void UTP_WeaponComponent::ForceStopFire()
 {
+	GetWorld()->GetTimerManager().ClearTimer(FireRateDelayTimerHandle);
+	FireRateDelayTimerHandle.Invalidate();
+	IsWielderHoldingShootButton = false; // force ai controller to stop firing full auto, idk if it's a good solution, but def the quickest
 	StopFire();
 }
 
