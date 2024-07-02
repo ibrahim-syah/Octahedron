@@ -720,7 +720,7 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weapon)
 {
 	Weapon->SetOwningWeaponWielder(this);
-	if (GetCurrentWeapon() == Weapon)
+	if (IWeaponWielderInterface::Execute_GetCurrentWeapon(this) == Weapon)
 	{
 		return;
 	}
@@ -752,18 +752,18 @@ void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weap
 	SetCurrentWeapon(Weapon);
 
 	// Try and play equip animation if specified
-	//GetCurrentWeapon()->WeaponChangeDelegate.AddUnique()
-	GetCurrentWeapon()->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
-	GetCurrentWeapon()->WeaponChangeDelegate.Execute(GetCurrentWeapon());
+	//IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->WeaponChangeDelegate.AddUnique()
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->WeaponChangeDelegate.Execute(IWeaponWielderInterface::Execute_GetCurrentWeapon(this));
 
 	Weapon->Equip();
 	if (GetFPAnimInstance())
 	{
-		GetFPAnimInstance()->Montage_Play(GetCurrentWeapon()->FPEquipAnimation, 1.f);
+		GetFPAnimInstance()->Montage_Play(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPEquipAnimation, 1.f);
 
 		FOnMontageBlendingOutStarted BlendOutDelegate;
-		BlendOutDelegate.BindUObject(GetCurrentWeapon(), &UTP_WeaponComponent::EquipAnimationBlendOut);
-		GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, GetCurrentWeapon()->FPEquipAnimation);
+		BlendOutDelegate.BindUObject(IWeaponWielderInterface::Execute_GetCurrentWeapon(this), &UTP_WeaponComponent::EquipAnimationBlendOut);
+		GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPEquipAnimation);
 	}
 
 	Weapon->OnEquipDelegate.Broadcast(this, Weapon);
@@ -805,12 +805,12 @@ void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weap
 void AOctahedronCharacter::DetachWeapon_Implementation()
 {
 	// Check that the character is valid, and the currently set weapon is this object
-	if (!GetHasWeapon() || GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsStowing || GetCurrentWeapon()->IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
+	if (!GetHasWeapon() || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
 	RemoveWeaponInputMapping();
-	UTP_WeaponComponent* toBeDetached = GetCurrentWeapon();
+	UTP_WeaponComponent* toBeDetached = IWeaponWielderInterface::Execute_GetCurrentWeapon(this);
 	toBeDetached->IsStowing = true;
 	//toBeDetached->ExitADS(true);
 	toBeDetached->ADSTL->SetNewTime(0.f);
@@ -828,12 +828,12 @@ void AOctahedronCharacter::DetachWeapon_Implementation()
 bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 {
 	// Check that the character is valid, and the currently set weapon is this object
-	if (!GetHasWeapon() || GetCurrentWeapon()->IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
+	if (!GetHasWeapon() || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
 	{
 		return false;
 	}
 	RemoveWeaponInputMapping();
-	UTP_WeaponComponent* toBeDetached = GetCurrentWeapon();
+	UTP_WeaponComponent* toBeDetached = IWeaponWielderInterface::Execute_GetCurrentWeapon(this);
 	toBeDetached->IsStowing = true;
 	toBeDetached->ExitADS(true);
 
@@ -938,8 +938,8 @@ void AOctahedronCharacter::RemoveWeaponInputMapping()
 
 void AOctahedronCharacter::PressedFire()
 {
-	GetCurrentWeapon()->IsWielderHoldingShootButton = true;
-	if (GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsEquipping || GetCurrentWeapon()->IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(GetCurrentWeapon()->FireRateDelayTimerHandle) > 0)
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsWielderHoldingShootButton = true;
+	if (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -948,46 +948,46 @@ void AOctahedronCharacter::PressedFire()
 		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->InstantSprintBlendOutTime);
 		ForceStopSprint();
 	}
-	if (GetFPAnimInstance()->Montage_IsPlaying(GetCurrentWeapon()->FPReloadAnimation))
+	if (GetFPAnimInstance()->Montage_IsPlaying(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPReloadAnimation))
 	{
-		GetFPAnimInstance()->Montage_Stop(0.f, GetCurrentWeapon()->FPReloadAnimation);
+		GetFPAnimInstance()->Montage_Stop(0.f, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPReloadAnimation);
 	}
-	if (GetCurrentWeapon()->CurrentMagazineCount <= 0)
+	if (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->CurrentMagazineCount <= 0)
 	{
-		GetCurrentWeapon()->StopFire();
-		GetCurrentWeapon()->IsWielderHoldingShootButton = false;
-		if (IsValid(GetCurrentWeapon()->DryFireSound))
+		IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->StopFire();
+		IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsWielderHoldingShootButton = false;
+		if (IsValid(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->DryFireSound))
 		{
 			UGameplayStatics::SpawnSoundAttached(
-				GetCurrentWeapon()->DryFireSound,
-				GetCurrentWeapon()
+				IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->DryFireSound,
+				IWeaponWielderInterface::Execute_GetCurrentWeapon(this)
 			);
 		}
 
 		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(this) > 0)
 		{
-			GetCurrentWeapon()->Reload();
+			IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->Reload();
 			return;
 		}
 		return;
 	}
 
 	// Ensure the timer is cleared by using the timer handle
-	GetWorld()->GetTimerManager().ClearTimer(GetCurrentWeapon()->FireRateDelayTimerHandle);
-	GetCurrentWeapon()->FireRateDelayTimerHandle.Invalidate();
-	GetCurrentWeapon()->RecoilStart();
-	switch (GetCurrentWeapon()->FireMode)
+	GetWorld()->GetTimerManager().ClearTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle);
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle.Invalidate();
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->RecoilStart();
+	switch (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireMode)
 	{
 	case EFireMode::Single:
 		//Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, false, 0.f);
-		GetCurrentWeapon()->SingleFire();
-		GetWorldTimerManager().SetTimer(GetCurrentWeapon()->FireRateDelayTimerHandle, GetCurrentWeapon()->FireDelay, false);
+		IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->SingleFire();
+		GetWorldTimerManager().SetTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireDelay, false);
 		break;
 	case EFireMode::Burst:
-		GetWorldTimerManager().SetTimer(GetCurrentWeapon()->FireRateDelayTimerHandle, GetCurrentWeapon(), &UTP_WeaponComponent::BurstFire, GetCurrentWeapon()->FireDelay, true, 0.f);
+		GetWorldTimerManager().SetTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle, IWeaponWielderInterface::Execute_GetCurrentWeapon(this), &UTP_WeaponComponent::BurstFire, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireDelay, true, 0.f);
 		break;
 	case EFireMode::Auto:
-		GetWorldTimerManager().SetTimer(GetCurrentWeapon()->FireRateDelayTimerHandle, GetCurrentWeapon(), &UTP_WeaponComponent::FullAutoFire, GetCurrentWeapon()->FireDelay, true, 0.f);
+		GetWorldTimerManager().SetTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle, IWeaponWielderInterface::Execute_GetCurrentWeapon(this), &UTP_WeaponComponent::FullAutoFire, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireDelay, true, 0.f);
 		break;
 	default:
 		break;
@@ -996,7 +996,7 @@ void AOctahedronCharacter::PressedFire()
 
 void AOctahedronCharacter::ReleasedFire()
 {
-	GetCurrentWeapon()->IsWielderHoldingShootButton = false;
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsWielderHoldingShootButton = false;
 }
 
 void AOctahedronCharacter::PressedReload()
@@ -1006,29 +1006,29 @@ void AOctahedronCharacter::PressedReload()
 		ForceStopSprint();
 	}
 
-	GetCurrentWeapon()->Reload();
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->Reload();
 }
 
 void AOctahedronCharacter::PressedSwitchFireMode()
 {
-	if (!GetCurrentWeapon()->CanSwitchFireMode)
+	if (!IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->CanSwitchFireMode)
 	{
 		return;
 	}
 
-	GetCurrentWeapon()->SwitchFireMode();
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->SwitchFireMode();
 }
 
 void AOctahedronCharacter::PressedADS()
 {
-	GetCurrentWeapon()->ADS_Held = true;
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADS_Held = true;
 
 	EnterADS();
 }
 
 void AOctahedronCharacter::EnterADS()
 {
-	if (!IsValid(GetCurrentWeapon()) || GetCurrentWeapon()->IsReloading || GetCurrentWeapon()->IsStowing || GetCurrentWeapon()->IsEquipping)
+	if (!IsValid(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)) || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping)
 	{
 		return;
 	}
@@ -1037,17 +1037,17 @@ void AOctahedronCharacter::EnterADS()
 		IWeaponWielderInterface::Execute_OnWeaponStopReloadAnimation(this, 0.f);
 	}
 
-	GetCurrentWeapon()->ADSTL->SetPlayRate(FMath::Clamp(GetCurrentWeapon()->ADS_Speed, 0.1f, 10.f));
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADSTL->SetPlayRate(FMath::Clamp(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADS_Speed, 0.1f, 10.f));
 
 	GetFPAnimInstance()->SetSprintBlendOutTime(0.25f);
 	ForceStopSprint();
-	GetCurrentWeapon()->ADSTL->Play();
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADSTL->Play();
 }
 
 void AOctahedronCharacter::ReleasedADS()
 {
-	GetCurrentWeapon()->ADS_Held = false;
-	GetCurrentWeapon()->ADSTL->Reverse();
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADS_Held = false;
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADSTL->Reverse();
 }
 
 int32 AOctahedronCharacter::GetRemainingAmmo_Implementation()

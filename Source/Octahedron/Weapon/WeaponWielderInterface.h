@@ -34,6 +34,9 @@ public:
 	bool InstantDetachWeapon();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	UTP_WeaponComponent* GetCurrentWeapon();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	void OnEquip();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")

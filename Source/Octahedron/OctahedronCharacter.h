@@ -227,6 +227,9 @@ public:
 	bool InstantDetachWeapon_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UTP_WeaponComponent* GetCurrentWeapon_Implementation() override { return CurrentWeapon; }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	FVector GetTraceStart_Implementation() override { return GetFirstPersonCameraComponent()->GetComponentLocation(); }
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -290,9 +293,6 @@ public:
 	/** Setter to set the bool */
 	UFUNCTION(Category = Weapon)
 	void SetCurrentWeapon(UTP_WeaponComponent* NewWeapon) { CurrentWeapon = NewWeapon; }
-
-	UFUNCTION(BlueprintPure, Category = Weapon)
-	UTP_WeaponComponent* GetCurrentWeapon() { return CurrentWeapon; }
 
 	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector ADS_Offset;*/
