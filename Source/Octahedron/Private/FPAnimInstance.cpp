@@ -93,7 +93,7 @@ void UFPAnimInstance::SetCurrentWeapon(UTP_WeaponComponent* Weapon)
 	if (IsValid(Weapon))
 	{
 		CurrentWeapon = Weapon;
-		CurrentWeaponIdlePose = CurrentWeapon->IdlePose;
+		CurrentWeaponIdlePose = CurrentWeapon->FPIdlePoseAnimation;
 		IsLeftHandIKActive = true;
 		EquipTime = CurrentWeapon->EquipTime;
 		IsHasWeapon = true;

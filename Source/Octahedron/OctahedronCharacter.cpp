@@ -1029,7 +1029,10 @@ void AOctahedronCharacter::EnterADS()
 	{
 		return;
 	}
-	IWeaponWielderInterface::Execute_OnWeaponStopReloadAnimation(this, 0.f);
+	if (GetFPAnimInstance()->Montage_IsActive(CurrentWeapon->FPReloadAnimation))
+	{
+		IWeaponWielderInterface::Execute_OnWeaponStopReloadAnimation(this, 0.f);
+	}
 
 	GetCurrentWeapon()->ADSTL->SetPlayRate(FMath::Clamp(GetCurrentWeapon()->ADS_Speed, 0.1f, 10.f));
 

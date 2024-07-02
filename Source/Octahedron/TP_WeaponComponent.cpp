@@ -25,6 +25,8 @@
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
+	//BoundsScale = 2.f;
+
 	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
 	ADSTL->SetTimelineLength(1.f);
 	ADSTL->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
@@ -254,10 +256,10 @@ void UTP_WeaponComponent::Fire()
 	}
 
 	// Try and play a firing animation for the weapon mesh if specified
-	if (WeaponFireAnimation != nullptr)
+	if (WeaponMeshFireAnimation != nullptr)
 	{
 		SetAnimationMode(EAnimationMode::AnimationSingleNode);
-		PlayAnimation(WeaponFireAnimation, false);
+		PlayAnimation(WeaponMeshFireAnimation, false);
 	}
 
 	IWeaponWielderInterface::Execute_OnWeaponFired(WeaponWielder);

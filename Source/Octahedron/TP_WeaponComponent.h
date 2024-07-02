@@ -44,17 +44,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FTransform TPTransform{};
 
+	///** AnimSequence for the gun mesh to play each time we fire on Weapon*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimSequence* IdlePose = nullptr;
-
-	/** AnimSequence for the gun mesh to play each time we fire on Weapon*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimSequence* WeaponFireAnimation = nullptr;
+	UAnimSequence* WeaponMeshFireAnimation = nullptr;
 	TEnumAsByte<EAnimationMode::Type> DefaultAnimationMode;
-
-	/** AnimMontage to play when reloading the weapon */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* FPReloadAnimation = nullptr;
 
 	/** AnimMontage to play when equipping the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -63,9 +56,28 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* TPReloadAnimation = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* TPFireAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* TPMeleeAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimSequence* FPIdlePoseAnimation = nullptr;
+
 	/** AnimMontage to play when equipping the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UAnimMontage* FPEquipAnimation = nullptr;
+
+	/** AnimMontage to play when reloading the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPReloadAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPFireAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPMeleeAnimation = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FName MuzzleSocketName{"Muzzle"};
