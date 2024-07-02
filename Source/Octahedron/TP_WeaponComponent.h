@@ -8,29 +8,23 @@
 #include "Public/EAmmoType.h"
 #include "TP_WeaponComponent.generated.h"
 
-class AOctahedronCharacter;
 class UTimelineComponent;
 class USightMeshComponent;
 class UUserWidget;
 class UCurveVector;
 class UNiagaraSystem;
-//class AWeaponFX;
-//class AWeaponDecals;
-//class AWeaponImpacts;
-//class AWeaponSounds;
 struct FInputActionValue;
 class UMetaSoundSource;
 class UDefaultCameraShakeBase;
 class UCameraShakeBase;
 class ACustomProjectile;
 
-DECLARE_DELEGATE(FOnFireAnimationDelegate);
-DECLARE_DELEGATE(FOnReloadSuccessDelegate);
+DECLARE_DELEGATE(FOnWeaponStow);
 DECLARE_DELEGATE_OneParam(FOnWeaponChange, UTP_WeaponComponent*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponProjectileFireSignature, FHitResult, HitResult);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHitScanFireSignature, TArray<FHitResult>, HitResults);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStowSignature, AOctahedronCharacter*, Character, UTP_WeaponComponent*, Weapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquipSignature, AActor*, WeaponWielder, UTP_WeaponComponent*, Weapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStowSignature, AActor*, WeaponWielder, UTP_WeaponComponent*, Weapon);
 
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -47,23 +41,45 @@ public:
 	UMaterialInstance* FP_Material = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimSequence* IdlePose = nullptr;
+	FTransform TPTransform{};
 
-	/** AnimMontage to play each time we fire on Weapon*/
+	///** AnimSequence for the gun mesh to play each time we fire on Weapon*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimSequence* WeaponFireAnimation = nullptr;
+	UAnimSequence* WeaponMeshFireAnimation = nullptr;
+	TEnumAsByte<EAnimationMode::Type> DefaultAnimationMode;
 
-	/** AnimMontage to play when reloading the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* ReloadAnimation = nullptr;
+	TSubclassOf<UAnimInstance> TPWeaponAnimLinkLayer;
 
 	/** AnimMontage to play when equipping the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* EquipAnimation = nullptr;
+	UAnimMontage* TPEquipAnimation = nullptr;
 
-	/** Gun muzzle's offset from the characters location */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	FVector MuzzleOffset;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* TPReloadAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* TPFireAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* TPMeleeAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimSequence* FPIdlePoseAnimation = nullptr;
+
+	/** AnimMontage to play when equipping the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPEquipAnimation = nullptr;
+
+	/** AnimMontage to play when reloading the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPReloadAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPFireAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UAnimMontage* FPMeleeAnimation = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FName MuzzleSocketName{"Muzzle"};
@@ -74,6 +90,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FString WeaponName{"Weapon Base"};
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	bool CanFire{ false };
 
 	bool FireNextShot{ false };
@@ -127,21 +144,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
 	float ADS_Speed{ 0.35f };
 
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ADS)
-	FVector ADS_Offset;*/
-
-	/** MappingContext */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	class UInputMappingContext* FireMappingContext = nullptr;
-
-	/** Fire Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	class UInputAction* FireAction = nullptr;
-
-	/** ADS Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ADSAction = nullptr;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	UTimelineComponent* ADSTL = nullptr;
 
@@ -153,25 +155,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Timeline, meta = (AllowPrivateAccess = "true"))
 	void ADSTLCallback(float val);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SwitchFireModeAction = nullptr;
-
-	/** Reload Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ReloadAction = nullptr;
-
 	/** Sets default values for this component's properties */
 	UTP_WeaponComponent();
-
-	/** Attaches the actor to a FirstPersonCharacter */
-	UFUNCTION(BlueprintCallable, Category="Weapon")
-	void AttachWeapon(AOctahedronCharacter* TargetCharacter);
-
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void DetachWeapon();
-
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	bool InstantDetachWeapon();
 
 	/** Make the weapon Fire a Projectile */
 	UFUNCTION(BlueprintCallable, Category="Weapon")
@@ -191,8 +176,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void ForceStopFire();
 
-	FOnFireAnimationDelegate WeaponFireAnimateDelegate;
-
 	/** Stow the weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Stow();
@@ -207,10 +190,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	USoundBase* EquipSound = nullptr;
 
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnEquipSignature OnEquipDelegate;
 
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnStowSignature OnStowDelegate;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -222,17 +205,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void CancelReload(float BlendTime);
-
-	/** Aim down sight */
-	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void PressedADS();
-
-	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void EnterADS();
-
-	/** Release Aim down sight */
-	UFUNCTION(BlueprintCallable, Category = "ADS")
-	void ReleasedADS();
 
 	/** force Exit Aim down sight */
 	UFUNCTION(BlueprintCallable, Category = "ADS")
@@ -266,36 +238,31 @@ public:
 	FTimerHandle RecoilRecoveryTimer;
 
 	FTimerHandle FireTimer;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FTimerHandle StopRecoveryTimer;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void FireTimerFunction();
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilStartRot;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator RecoilDeltaRot;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	FRotator PlayerDeltaRot;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
+	FRotator WielderDeltaRot;
+
+	UFUNCTION(BlueprintCallable)
 	void RecoilStart();
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoilStop();
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void RecoveryStart();
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	FRotator Del;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	void StopRecoveryTimerFunction();
+
 	UPROPERTY(BlueprintReadWrite)
 	float RecoilToStableTime = 10.0f;
+
 	UPROPERTY(BlueprintReadWrite)
 	float RecoveryTime = 1.0f;
+
 	UPROPERTY(BlueprintReadWrite)
 	float RecoverySpeed = 10.0f;
+
 	UPROPERTY(BlueprintReadWrite)
 	float MaxRecoilPitch = 10.0f;
-	//UFUNCTION(BlueprintCallable, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	void RecoilTick(float DeltaTime);
+
 	void RecoilTimerCallback();
 	void RecoilRecoveryTimerCallback();
 	bool IsShouldRecoil = false;
@@ -325,11 +292,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilRecoveryInterpSpeedScale = 36.f;
 
-
-
-
-
-
 	// Effects
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* MuzzleFlash_FX = nullptr;
@@ -343,36 +305,58 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
 	UStaticMesh* ShellEjectMesh = nullptr;
 
-	//AWeaponFX* WeaponFX = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* ImpactDecals_FX = nullptr;
-
-	//AWeaponDecals* WeaponDecals = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* ConcreteImpact_FX = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* GlassImpact_FX = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* CharacterSparksImpact_FX = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Effects, meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* DamageNumber_FX = nullptr;
-
-	//AWeaponImpacts* WeaponImpacts = nullptr;
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	APawn* GetOwningWeaponWielder() { return WeaponWielder; }
 
 	UFUNCTION(BlueprintCallable)
-	AOctahedronCharacter* GetOwningCharacter() { return Character; }
+	void SetOwningWeaponWielder(APawn* newWeaponWielder);
 
 	// SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX, meta = (AllowPrivateAccess = "true"))
 	UMetaSoundSource* FireSound = nullptr;
-	//AWeaponSounds* WeaponSounds = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SFX)
 	float FireSoundDelayScale{ 0.5f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Cosmetics)
 	float WeaponSwaySpeed{ 10.f }; // determine how heavy the weapon is for weapon sway speed, larger means faster. clamped at [6, 80]
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsEquippingFalse();
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsStowingFalse();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsEquipping;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsStowing;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsReloading;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsWielderHoldingShootButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FTimerHandle FireRateDelayTimerHandle;
+
+	//UPROPERTY(BlueprintAssignable)
+	FOnWeaponChange WeaponChangeDelegate;
+
+	//UPROPERTY(BlueprintAssignable)
+	FOnWeaponStow WeaponStowDelegate;
+
+
+	UFUNCTION(BlueprintCallable)
+	void SingleFire();
+
+	UFUNCTION(BlueprintCallable)
+	void BurstFire();
+
+	UFUNCTION(BlueprintCallable)
+	void FullAutoFire();
+
+	UFUNCTION(BlueprintCallable)
+	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 
 protected:
 	/** Ends gameplay for this component. */
@@ -381,44 +365,14 @@ protected:
 
 	virtual void BeginPlay();
 
-	void PressedFire();
-	void ReleasedFire();
-
-	void PressedReload();
-
-	void PressedSwitchFireMode();
-
 private:
-	/** The Character holding this weapon*/
-	AOctahedronCharacter* Character = nullptr;
-	APlayerController* PCRef = nullptr;
+	// The Pawn holding this weapon
+	// The pawn needs to implement the WeaponWielderInterface
+	APawn* WeaponWielder = nullptr;
 
-	bool IsEquipping;
-	bool IsStowing;
-
-	UFUNCTION()
-	void EquipAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
 	FTimerHandle EquipDelayTimerHandle;
-	void SetIsEquippingFalse();
-	void SetIsStowingFalse();
-	FOnWeaponChange WeaponChangeDelegate;
 
-	bool IsReloading;
-	/*UFUNCTION()
-	void ReloadAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);*/
 	FTimerHandle ReloadDelayTimerHandle;
-
-	FTimerHandle FireRateDelayTimerHandle;
-	bool IsPlayerHoldingShootButton;
-
-	UFUNCTION()
-	void SingleFire();
-
-	UFUNCTION()
-	void BurstFire();
-
-	UFUNCTION()
-	void FullAutoFire();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -429,9 +383,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	int32 CurrentMagazineCount = 0;
-
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-	int32 RemainingAmmo = 26;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USoundBase* DryFireSound = nullptr;

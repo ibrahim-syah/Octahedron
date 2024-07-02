@@ -12,11 +12,13 @@
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
 #include "Components/TimelineComponent.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "TP_WeaponComponent.h"
+#include "SightMeshComponent.h"
 #include "Public/FPAnimInstance.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -258,6 +260,9 @@ void AOctahedronCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// sprint
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AOctahedronCharacter::PressedSprint);
+
+
+		EnhancedInputComponent->BindAction(QuickMeleeAction, ETriggerEvent::Started, this, &AOctahedronCharacter::PressedQuickMelee);
 	}
 	else
 	{
@@ -712,9 +717,343 @@ void AOctahedronCharacter::ProcCamAnim(FVector &CamOffsetArg, float &CamAnimAlph
 	CamAnimAlphaArg = CamAnimAlpha;
 }
 
-int32 AOctahedronCharacter::GetRemainingAmmo(EAmmoType AmmoType)
+void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weapon)
 {
-	switch (AmmoType)
+	Weapon->SetOwningWeaponWielder(this);
+	if (IWeaponWielderInterface::Execute_GetCurrentWeapon(this) == Weapon)
+	{
+		return;
+	}
+	Weapon->SetIsEquippingFalse();
+	Weapon->IsEquipping = true;
+
+	// Attach the weapon to the First Person Character
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+	Weapon->AttachToComponent(GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
+
+	if (Weapon->FP_Material != nullptr)
+	{
+		Weapon->SetMaterial(0, Weapon->FP_Material);
+	}
+
+	if (Weapon->ScopeSightMesh != nullptr)
+	{
+		if (Weapon->ScopeSightMesh->FP_Material_Holo != nullptr)
+		{
+			Weapon->ScopeSightMesh->SetMaterial(0, Weapon->ScopeSightMesh->FP_Material_Holo);
+		}
+		if (Weapon->ScopeSightMesh->FP_Material_Mesh != nullptr)
+		{
+			Weapon->ScopeSightMesh->SetMaterial(1, Weapon->ScopeSightMesh->FP_Material_Mesh);
+		}
+	}
+
+	// ensure current weapon for Character Actor is set to the new one before calling SetCurrentWeapon in anim bp
+	SetCurrentWeapon(Weapon);
+
+	// Try and play equip animation if specified
+	//IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->WeaponChangeDelegate.AddUnique()
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->WeaponChangeDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("SetCurrentWeapon"));
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->WeaponChangeDelegate.Execute(IWeaponWielderInterface::Execute_GetCurrentWeapon(this));
+
+	Weapon->Equip();
+	if (GetFPAnimInstance())
+	{
+		GetFPAnimInstance()->Montage_Play(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPEquipAnimation, 1.f);
+
+		FOnMontageBlendingOutStarted BlendOutDelegate;
+		BlendOutDelegate.BindUObject(IWeaponWielderInterface::Execute_GetCurrentWeapon(this), &UTP_WeaponComponent::EquipAnimationBlendOut);
+		GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPEquipAnimation);
+	}
+
+	Weapon->OnEquipDelegate.Broadcast(this, Weapon);
+
+	// switch bHasWeapon so the animation blueprint can switch to current weapon idle anim
+	SetHasWeapon(true);
+
+	APlayerController* PCRef = Cast<APlayerController>(GetController());
+	// Set up action bindings
+	if (PCRef != nullptr)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
+		{
+			// Set the priority of the mapping to 1, so that it overrides the Jump action with the Fire action when using touch input
+			Subsystem->AddMappingContext(FireMappingContext, 1);
+		}
+
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			// Fire
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &AOctahedronCharacter::PressedFire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::ReleasedFire);
+
+			// Reload
+			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::PressedReload);
+
+			// Switch Fire Mode
+			EnhancedInputComponent->BindAction(SwitchFireModeAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::PressedSwitchFireMode);
+
+			// ADS
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Triggered, this, &AOctahedronCharacter::PressedADS);
+			EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &AOctahedronCharacter::ReleasedADS);
+		}
+
+		Weapon->CanFire = true;
+	}
+}
+
+void AOctahedronCharacter::DetachWeapon_Implementation()
+{
+	// Check that the character is valid, and the currently set weapon is this object
+	if (!GetHasWeapon() || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
+	{
+		return;
+	}
+	RemoveWeaponInputMapping();
+	UTP_WeaponComponent* toBeDetached = IWeaponWielderInterface::Execute_GetCurrentWeapon(this);
+	toBeDetached->IsStowing = true;
+	//toBeDetached->ExitADS(true);
+	toBeDetached->ADSTL->SetNewTime(0.f);
+	toBeDetached->ADSTL->Stop();
+
+	// Try and play stow animation
+	SetHasWeapon(false);
+	SetCurrentWeapon(nullptr);
+
+	toBeDetached->WeaponStowDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	toBeDetached->WeaponStowDelegate.Execute();
+	toBeDetached->Stow();
+}
+
+bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
+{
+	// Check that the character is valid, and the currently set weapon is this object
+	if (!GetHasWeapon() || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
+	{
+		return false;
+	}
+	RemoveWeaponInputMapping();
+	UTP_WeaponComponent* toBeDetached = IWeaponWielderInterface::Execute_GetCurrentWeapon(this);
+	toBeDetached->IsStowing = true;
+	toBeDetached->ExitADS(true);
+
+	SetHasWeapon(false);
+	SetCurrentWeapon(nullptr);
+
+	toBeDetached->WeaponStowDelegate.BindUFunction(Cast<UFPAnimInstance>(GetMesh1P()->GetAnimInstance()), FName("StowCurrentWeapon"));
+	toBeDetached->WeaponStowDelegate.Execute();
+
+	// Detach the weapon from the First Person Character
+	FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepRelative, true);
+	toBeDetached->DetachFromComponent(DetachmentRules);
+
+	toBeDetached->CanFire = false;
+	toBeDetached->IsStowing = false;
+	toBeDetached->OnStowDelegate.Broadcast(this, toBeDetached);
+	return true;
+}
+
+void AOctahedronCharacter::OnWeaponFired_Implementation()
+{
+	// play FP Anim bp Fire() function for weapon recoil kick
+	GetFPAnimInstance()->Fire();
+
+	if (IsValid(CurrentWeapon->FireCamShake))
+	{
+		GetLocalViewingPlayerController()->ClientStartCameraShake(CurrentWeapon->FireCamShake);
+	}
+
+	// report noise for AI detection
+	MakeNoise(1.f, this, CurrentWeapon->GetComponentLocation());
+}
+
+void AOctahedronCharacter::OnWeaponReload_Implementation()
+{
+	if (CurrentWeapon->FPReloadAnimation != nullptr)
+	{
+		if (GetFPAnimInstance())
+		{
+			GetFPAnimInstance()->IsLeftHandIKActive = false;
+			GetFPAnimInstance()->Montage_Play(CurrentWeapon->FPReloadAnimation, 1.f);
+		}
+	}
+}
+
+void AOctahedronCharacter::OnWeaponStopReloadAnimation_Implementation(float blendTime)
+{
+	if (CurrentWeapon->FPReloadAnimation != nullptr)
+	{
+		if (GetFPAnimInstance())
+		{
+			GetFPAnimInstance()->Montage_Stop(blendTime, CurrentWeapon->FPReloadAnimation);
+			CurrentWeapon->Stop();
+			CurrentWeapon->SetAnimationMode(CurrentWeapon->DefaultAnimationMode);
+		}
+	}
+}
+
+void AOctahedronCharacter::OnADSTLUpdate_Implementation(float TLValue)
+{
+	if (!IsValid(CurrentWeapon) || CurrentWeapon->MPC_FP == nullptr)
+	{
+		return;
+	}
+
+	CurrentWeapon->ADSAlpha = TLValue;
+	CurrentWeapon->ADSAlphaLerp = FMath::Lerp(0.2f, 1.f, (1.f - CurrentWeapon->ADSAlpha));
+	ADSAlpha = CurrentWeapon->ADSAlpha;
+	float lerpedFOV = FMath::Lerp(CurrentWeapon->FOV_Base, CurrentWeapon->FOV_ADS, CurrentWeapon->ADSAlpha);
+	UCameraComponent* camera = GetFirstPersonCameraComponent();
+	camera->SetFieldOfView(lerpedFOV);
+	float lerpedIntensity = FMath::Lerp(0.4f, 0.7f, CurrentWeapon->ADSAlpha);
+	camera->PostProcessSettings.VignetteIntensity = lerpedIntensity;
+	float lerpedFlatFov = FMath::Lerp(90.f, 25.f, CurrentWeapon->ADSAlpha);
+	CurrentWeapon->MPC_FP_Instance->SetScalarParameterValue(FName("FOV"), lerpedFlatFov);
+	FLinearColor OutColor;
+	CurrentWeapon->MPC_FP_Instance->GetVectorParameterValue(FName("Offset"), OutColor);
+	float lerpedB = FMath::Lerp(0.f, 30.f, CurrentWeapon->ADSAlpha);
+	FLinearColor newColor = FLinearColor(OutColor.R, OutColor.G, lerpedB, OutColor.A);
+	CurrentWeapon->MPC_FP_Instance->SetVectorParameterValue(FName("Offset"), newColor);
+
+	float newSpeedMultiplier = FMath::Clamp(CurrentWeapon->ADSAlphaLerp, 0.5f, 1);
+	GetCharacterMovement()->MaxWalkSpeed = GetBaseWalkSpeed() * newSpeedMultiplier;
+}
+
+void AOctahedronCharacter::RemoveWeaponInputMapping()
+{
+	APlayerController* PCRef = Cast<APlayerController>(GetController());
+	if (PCRef != nullptr)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PCRef->GetLocalPlayer()))
+		{
+			Subsystem->RemoveMappingContext(FireMappingContext);
+		}
+
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PCRef->InputComponent))
+		{
+			EnhancedInputComponent->ClearActionBindings();
+		}
+	}
+}
+
+void AOctahedronCharacter::PressedFire()
+{
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsWielderHoldingShootButton = true;
+	if (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
+	{
+		return;
+	}
+	if (!CanAct())
+	{
+		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->InstantSprintBlendOutTime);
+		ForceStopSprint();
+	}
+	if (GetFPAnimInstance()->Montage_IsPlaying(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPReloadAnimation))
+	{
+		GetFPAnimInstance()->Montage_Stop(0.f, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FPReloadAnimation);
+	}
+	if (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->CurrentMagazineCount <= 0)
+	{
+		IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->StopFire();
+		IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsWielderHoldingShootButton = false;
+		if (IsValid(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->DryFireSound))
+		{
+			UGameplayStatics::SpawnSoundAttached(
+				IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->DryFireSound,
+				IWeaponWielderInterface::Execute_GetCurrentWeapon(this)
+			);
+		}
+
+		if (IWeaponWielderInterface::Execute_GetRemainingAmmo(this) > 0)
+		{
+			IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->Reload();
+			return;
+		}
+		return;
+	}
+
+	// Ensure the timer is cleared by using the timer handle
+	GetWorld()->GetTimerManager().ClearTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle);
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle.Invalidate();
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->RecoilStart();
+	switch (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireMode)
+	{
+	case EFireMode::Single:
+		//Character->GetWorldTimerManager().SetTimer(FireRateDelayTimerHandle, this, &UTP_WeaponComponent::SingleFire, FireDelay, false, 0.f);
+		IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->SingleFire();
+		GetWorldTimerManager().SetTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireDelay, false);
+		break;
+	case EFireMode::Burst:
+		GetWorldTimerManager().SetTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle, IWeaponWielderInterface::Execute_GetCurrentWeapon(this), &UTP_WeaponComponent::BurstFire, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireDelay, true, 0.f);
+		break;
+	case EFireMode::Auto:
+		GetWorldTimerManager().SetTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle, IWeaponWielderInterface::Execute_GetCurrentWeapon(this), &UTP_WeaponComponent::FullAutoFire, IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireDelay, true, 0.f);
+		break;
+	default:
+		break;
+	}
+}
+
+void AOctahedronCharacter::ReleasedFire()
+{
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsWielderHoldingShootButton = false;
+}
+
+void AOctahedronCharacter::PressedReload()
+{
+	if (!CanAct())
+	{
+		ForceStopSprint();
+	}
+
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->Reload();
+}
+
+void AOctahedronCharacter::PressedSwitchFireMode()
+{
+	if (!IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->CanSwitchFireMode)
+	{
+		return;
+	}
+
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->SwitchFireMode();
+}
+
+void AOctahedronCharacter::PressedADS()
+{
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADS_Held = true;
+
+	EnterADS();
+}
+
+void AOctahedronCharacter::EnterADS()
+{
+	if (!IsValid(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)) || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping)
+	{
+		return;
+	}
+	if (GetFPAnimInstance()->Montage_IsActive(CurrentWeapon->FPReloadAnimation))
+	{
+		IWeaponWielderInterface::Execute_OnWeaponStopReloadAnimation(this, 0.f);
+	}
+
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADSTL->SetPlayRate(FMath::Clamp(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADS_Speed, 0.1f, 10.f));
+
+	GetFPAnimInstance()->SetSprintBlendOutTime(0.25f);
+	ForceStopSprint();
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADSTL->Play();
+}
+
+void AOctahedronCharacter::ReleasedADS()
+{
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADS_Held = false;
+	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->ADSTL->Reverse();
+}
+
+int32 AOctahedronCharacter::GetRemainingAmmo_Implementation()
+{
+	EAmmoType ammoType = CurrentWeapon->AmmoType;
+	switch (ammoType)
 	{
 	case EAmmoType::Primary:
 		return 999;
@@ -730,9 +1069,10 @@ int32 AOctahedronCharacter::GetRemainingAmmo(EAmmoType AmmoType)
 	}
 }
 
-int32 AOctahedronCharacter::SetRemainingAmmo(EAmmoType AmmoType, int32 NewValue)
+int32 AOctahedronCharacter::SetRemainingAmmo_Implementation(int32 NewValue)
 {
-	switch (AmmoType)
+	EAmmoType ammoType = CurrentWeapon->AmmoType;
+	switch (ammoType)
 	{
 	case EAmmoType::Primary:
 		return 999;
@@ -747,6 +1087,25 @@ int32 AOctahedronCharacter::SetRemainingAmmo(EAmmoType AmmoType, int32 NewValue)
 		break;
 	default:
 		return 0;
+	}
+}
+
+void AOctahedronCharacter::PressedQuickMelee()
+{
+	if (!CanAct())
+	{
+		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->InstantSprintBlendOutTime);
+		ForceStopSprint();
+	}
+	if (bHasWeapon)
+	{
+		CurrentWeapon->ForceStopFire();
+		CurrentWeapon->CancelReload(0.25f);
+		GetFPAnimInstance()->Montage_Play(CurrentWeapon->FPMeleeAnimation);
+	}
+	else
+	{
+		GetFPAnimInstance()->Montage_Play(DefaultFPMeleeAnimation);
 	}
 }
 
@@ -854,7 +1213,7 @@ void AOctahedronCharacter::StopSprint()
 		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 		if (CurrentWeapon != nullptr && CurrentWeapon->ADS_Held)
 		{
-			CurrentWeapon->EnterADS();
+			EnterADS();
 		}
 
 		break;

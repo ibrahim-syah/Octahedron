@@ -7,6 +7,9 @@
 #include "Logging/LogMacros.h"
 #include "ECustomMovementMode.h"
 #include "Public/EAmmoType.h"
+#include "Public/FPAnimInstance.h"
+#include "Camera/CameraComponent.h"
+#include "Weapon/WeaponWielderInterface.h"
 #include "OctahedronCharacter.generated.h"
 
 
@@ -25,7 +28,7 @@ class UPawnNoiseEmitterComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class AOctahedronCharacter : public ACharacter
+class AOctahedronCharacter : public ACharacter, public IWeaponWielderInterface
 {
 	GENERATED_BODY()
 
@@ -67,6 +70,10 @@ class AOctahedronCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* JumpAction = nullptr;
 
+	/** Jump Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* QuickMeleeAction = nullptr;
+
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* MoveAction = nullptr;
@@ -88,6 +95,9 @@ class AOctahedronCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SwitchToNextWeaponAction = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	void PressedQuickMelee();
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void PressedSprint();
@@ -169,6 +179,90 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 public:
+
+	/** MappingContext */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputMappingContext* FireMappingContext = nullptr;
+
+	/** Fire Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* FireAction = nullptr;
+
+	/** ADS Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ADSAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchFireModeAction = nullptr;
+
+	/** Reload Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ReloadAction = nullptr;
+
+	/** Aim down sight */
+	UFUNCTION(BlueprintCallable, Category = "ADS")
+	void PressedADS();
+
+	UFUNCTION(BlueprintCallable, Category = "ADS")
+	void EnterADS();
+
+	/** Release Aim down sight */
+	UFUNCTION(BlueprintCallable, Category = "ADS")
+	void ReleasedADS();
+
+	void PressedFire();
+	void ReleasedFire();
+
+	void PressedReload();
+
+	void PressedSwitchFireMode();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void AttachWeapon_Implementation(UTP_WeaponComponent* Weapon) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void DetachWeapon_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	bool InstantDetachWeapon_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	UTP_WeaponComponent* GetCurrentWeapon_Implementation() override { return CurrentWeapon; }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	FVector GetTraceStart_Implementation() override { return GetFirstPersonCameraComponent()->GetComponentLocation(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	FVector GetTraceForward_Implementation() override { return GetFirstPersonCameraComponent()->GetForwardVector(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	FRotator GetWielderControlRotation_Implementation() override { return GetController()->GetControlRotation(); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetWielderControlRotation_Implementation(FRotator newRotator) override { GetController()->SetControlRotation(newRotator); }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnWeaponFired_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnWeaponReload_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnWeaponStopReloadAnimation_Implementation(float blendTime) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnSetIsReloadingFalse_Implementation() override { GetFPAnimInstance()->IsLeftHandIKActive = true; }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnADSTLUpdate_Implementation(float TLValue) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void OnFinishPlay_Implementation() override { RemoveWeaponInputMapping(); }
+
+
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void RemoveWeaponInputMapping();
 		
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -177,6 +271,12 @@ public:
 	/** Bool for AnimBP to switch to another animation set */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	bool bHasWeapon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Action)
+	UAnimMontage* DefaultFPMeleeAnimation = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Action)
+	UAnimMontage* DefaultTPMeleeAnimation = nullptr;
 
 	/** Setter to set the bool */
 	UFUNCTION(BlueprintCallable, Category = Weapon)
@@ -193,9 +293,6 @@ public:
 	/** Setter to set the bool */
 	UFUNCTION(Category = Weapon)
 	void SetCurrentWeapon(UTP_WeaponComponent* NewWeapon) { CurrentWeapon = NewWeapon; }
-
-	UFUNCTION(BlueprintPure, Category = Weapon)
-	UTP_WeaponComponent* GetCurrentWeapon() { return CurrentWeapon; }
 
 	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ExposedProperties)
 	FVector ADS_Offset;*/
@@ -399,16 +496,16 @@ public:
 	//FVector GetADSOffset() { return ADS_Offset; }
 	ECustomMovementMode GetMoveMode() { return MoveMode; }
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
-	int32 GetRemainingAmmo(EAmmoType AmmoType);
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int32 GetRemainingAmmo_Implementation() override;
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
-	int32 SetRemainingAmmo(EAmmoType AmmoType, int32 NewValue);
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	int32 SetRemainingAmmo_Implementation(int32 NewValue) override;
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	int32 GetSpecialAmmoRemaining() { return SpecialAmmoRemaining; }
 
-	UFUNCTION(BlueprintCallable, Category = Weapon)
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	int32 GetHeavyAmmoRemaining() { return HeavyAmmoRemaining; }
 };
 
