@@ -1111,7 +1111,9 @@ void AOctahedronCharacter::PressedQuickMelee()
 	}
 	if (ADSAlpha > 0.f)
 	{
-		CurrentWeapon->ExitADS(true);
+		//CurrentWeapon->ExitADS(true);
+		CurrentWeapon->ADSTL->SetPlayRate(8.f);
+		CurrentWeapon->ADSTL->Reverse();
 	}
 
 	SetIsMeleeing(true);
@@ -1142,9 +1144,16 @@ void AOctahedronCharacter::PressedSprint()
 	{
 		GetFPAnimInstance()->Montage_Stop(0.25f, CurrentWeapon->FPMeleeAnimation);
 	}
-	if (bHasWeapon && CurrentWeapon->GetIsReloading())
+	if (IsValid(CurrentWeapon))
 	{
-		CurrentWeapon->CancelReload(0.25f);
+		if (CurrentWeapon->GetIsReloading())
+		{
+			CurrentWeapon->CancelReload(0.25f);
+		}
+		if (ADSAlpha > 0.f)
+		{
+			CurrentWeapon->ExitADS(true);
+		}
 	}
 
 	SprintToggle = !SprintToggle;
@@ -1197,13 +1206,6 @@ void AOctahedronCharacter::StartSprint()
 		MoveMode = ECustomMovementMode::Sprinting;
 		GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed * SprintSpeedMultiplier;
 
-		// sequence 1
-		if (ADSAlpha > 0.f && CurrentWeapon != nullptr)
-		{
-			CurrentWeapon->ExitADS(true);
-		}
-
-		// sequence 2
 		SprintCharge = 0.f;
 		GetWorldTimerManager().SetTimer(SprintTimerHandle, this, &AOctahedronCharacter::SprintChargeIncrease, 0.1f, true);
 
