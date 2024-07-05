@@ -78,6 +78,9 @@ protected:
 	float CrouchAlpha;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float DeactivateIfCrouchingAlpha;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FVector WalkAnimPos;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
