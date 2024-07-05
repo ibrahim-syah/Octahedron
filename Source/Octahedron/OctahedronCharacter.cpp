@@ -873,7 +873,7 @@ void AOctahedronCharacter::OnWeaponReload_Implementation()
 	{
 		if (GetFPAnimInstance())
 		{
-			GetFPAnimInstance()->IsLeftHandIKActive = false;
+			SetLeftHandIKState(false);
 			GetFPAnimInstance()->Montage_Play(CurrentWeapon->FPReloadAnimation, 1.f);
 		}
 	}
@@ -939,7 +939,7 @@ void AOctahedronCharacter::RemoveWeaponInputMapping()
 void AOctahedronCharacter::PressedFire()
 {
 	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsWielderHoldingShootButton = true;
-	if (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
+	if (GetIsMeleeing() || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || GetWorld()->GetTimerManager().GetTimerRemaining(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle) > 0)
 	{
 		return;
 	}
@@ -1001,6 +1001,10 @@ void AOctahedronCharacter::ReleasedFire()
 
 void AOctahedronCharacter::PressedReload()
 {
+	if (GetIsMeleeing())
+	{
+		return;
+	}
 	if (!CanAct())
 	{
 		ForceStopSprint();
@@ -1028,7 +1032,7 @@ void AOctahedronCharacter::PressedADS()
 
 void AOctahedronCharacter::EnterADS()
 {
-	if (!IsValid(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)) || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping)
+	if (GetIsMeleeing() || !IsValid(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)) || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsReloading || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsStowing || IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->IsEquipping)
 	{
 		return;
 	}
@@ -1092,25 +1096,52 @@ int32 AOctahedronCharacter::SetRemainingAmmo_Implementation(int32 NewValue)
 
 void AOctahedronCharacter::PressedQuickMelee()
 {
+	if (!IsValid(CurrentWeapon) || GetIsMeleeing())
+	{
+		return;
+	}
+	if (bHasWeapon && CurrentWeapon->GetIsReloading())
+	{
+		CurrentWeapon->CancelReload(0.25f);
+	}
 	if (!CanAct())
 	{
 		GetFPAnimInstance()->SetSprintBlendOutTime(GetFPAnimInstance()->InstantSprintBlendOutTime);
 		ForceStopSprint();
 	}
-	if (bHasWeapon)
+	if (ADSAlpha > 0.f)
 	{
-		CurrentWeapon->ForceStopFire();
-		CurrentWeapon->CancelReload(0.25f);
-		GetFPAnimInstance()->Montage_Play(CurrentWeapon->FPMeleeAnimation);
+		CurrentWeapon->ExitADS(true);
 	}
-	else
-	{
-		GetFPAnimInstance()->Montage_Play(DefaultFPMeleeAnimation);
-	}
+
+	SetIsMeleeing(true);
+	SetLeftHandIKState(false);
+
+	CurrentWeapon->ForceStopFire();
+	CurrentWeapon->CancelReload(0.25f);
+	GetFPAnimInstance()->Montage_Play(CurrentWeapon->FPMeleeAnimation);
+	FOnMontageBlendingOutStarted BlendOutDelegate;
+	BlendOutDelegate.BindUObject(this, &AOctahedronCharacter::QuickMeleeAnimationBlendOut);
+	GetFPAnimInstance()->Montage_SetBlendingOutDelegate(BlendOutDelegate, CurrentWeapon->FPMeleeAnimation);
+}
+
+void AOctahedronCharacter::QuickMeleeAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted)
+{
+	StopMeleeing();
+}
+
+void AOctahedronCharacter::StopMeleeing()
+{
+	SetIsMeleeing(false);
+	SetLeftHandIKState(true);
 }
 
 void AOctahedronCharacter::PressedSprint()
 {
+	if (GetIsMeleeing())
+	{
+		GetFPAnimInstance()->Montage_Stop(0.25f, CurrentWeapon->FPMeleeAnimation);
+	}
 	if (bHasWeapon && CurrentWeapon->GetIsReloading())
 	{
 		CurrentWeapon->CancelReload(0.25f);

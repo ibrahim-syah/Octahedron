@@ -251,7 +251,7 @@ public:
 	void OnWeaponStopReloadAnimation_Implementation(float blendTime) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void OnSetIsReloadingFalse_Implementation() override { GetFPAnimInstance()->IsLeftHandIKActive = true; }
+	void OnSetIsReloadingFalse_Implementation() override { SetLeftHandIKState(true); }
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void OnADSTLUpdate_Implementation(float TLValue) override;
@@ -285,6 +285,17 @@ public:
 	/** Getter for the bool */
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	bool GetHasWeapon() { return bHasWeapon; }
+
+	void QuickMeleeAnimationBlendOut(UAnimMontage* animMontage, bool bInterrupted);
+	bool IsMeleeing = false;
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	bool GetIsMeleeing() { return IsMeleeing; }
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	void SetIsMeleeing(bool newState) { IsMeleeing = newState; }
+	void StopMeleeing();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetLeftHandIKState(bool newState) { GetFPAnimInstance()->IsLeftHandIKActive = newState; }
 
 	/** Bool for AnimBP to switch to another animation set */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
