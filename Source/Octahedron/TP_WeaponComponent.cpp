@@ -25,7 +25,7 @@
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
 {
-	//BoundsScale = 2.f;
+	BoundsScale = 2.f;
 
 	ADSTL = CreateDefaultSubobject<UTimelineComponent>(FName("ADSTL"));
 	ADSTL->SetTimelineLength(1.f);
