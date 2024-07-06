@@ -6,6 +6,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "SightMeshComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponADSTLUpdate, float, ADSAlpha);
+
 /**
  * 
  */
@@ -18,11 +20,17 @@ class OCTAHEDRON_API USightMeshComponent : public UStaticMeshComponent
 	USightMeshComponent();
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UMaterialInstance* FP_Material_Mesh = nullptr;
+	UPROPERTY(BlueprintAssignable)
+	FOnWeaponADSTLUpdate OnWeaponADSTLUpdateDelegate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UMaterialInstance* FP_Material_Holo = nullptr;
+	UMaterialInstance* FP_Material_0 = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UMaterialInstance* FP_Material_1 = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	UMaterialInstance* FP_Material_2 = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	bool IsReticleExist = false;

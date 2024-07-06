@@ -738,13 +738,17 @@ void AOctahedronCharacter::AttachWeapon_Implementation(UTP_WeaponComponent* Weap
 
 	if (Weapon->ScopeSightMesh != nullptr)
 	{
-		if (Weapon->ScopeSightMesh->FP_Material_Holo != nullptr)
+		if (Weapon->ScopeSightMesh->FP_Material_0 != nullptr)
 		{
-			Weapon->ScopeSightMesh->SetMaterial(0, Weapon->ScopeSightMesh->FP_Material_Holo);
+			Weapon->ScopeSightMesh->SetMaterial(0, Weapon->ScopeSightMesh->FP_Material_0);
 		}
-		if (Weapon->ScopeSightMesh->FP_Material_Mesh != nullptr)
+		if (Weapon->ScopeSightMesh->FP_Material_1 != nullptr)
 		{
-			Weapon->ScopeSightMesh->SetMaterial(1, Weapon->ScopeSightMesh->FP_Material_Mesh);
+			Weapon->ScopeSightMesh->SetMaterial(1, Weapon->ScopeSightMesh->FP_Material_1);
+		}
+		if (Weapon->ScopeSightMesh->FP_Material_2 != nullptr)
+		{
+			Weapon->ScopeSightMesh->SetMaterial(2, Weapon->ScopeSightMesh->FP_Material_2);
 		}
 	}
 
@@ -917,6 +921,7 @@ void AOctahedronCharacter::OnADSTLUpdate_Implementation(float TLValue)
 
 	float newSpeedMultiplier = FMath::Clamp(CurrentWeapon->ADSAlphaLerp, 0.65f, 1.f);
 	GetCharacterMovement()->MaxWalkSpeed = GetBaseWalkSpeed() * newSpeedMultiplier;
+	CurrentWeapon->ScopeSightMesh->OnWeaponADSTLUpdateDelegate.Broadcast(ADSAlpha); // set opacity of scope if applicable
 }
 
 void AOctahedronCharacter::RemoveWeaponInputMapping()
