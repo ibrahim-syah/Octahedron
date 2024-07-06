@@ -79,7 +79,7 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		IsADSAlpha = 1.f - IsADS;
 		ADS_Alpha = (1.f - Character->GetADSAlpha());
 		ADS_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha);
-		WalkADSModifier_Alpha_Lerp = FMath::Lerp(0.6f, 1.f, ADS_Alpha);
+		WalkADSModifier_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha);
 		CrouchADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha);
 		DipADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha);
 
