@@ -75,13 +75,13 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		float interpSpeed = (1.f / DeltaSeconds) / 10.f;
 		CamOffsetCurrent = UKismetMathLibrary::VInterpTo(CamOffsetCurrent, CamOffset, DeltaSeconds, interpSpeed);
 		//IsADS = Character->GetADSAlpha() > 0.f ? 1.f : 0.f;
-		IsADS = FMath::CeilToFloat(Character->GetADSAlpha());
-		IsADSAlpha = 1.f - IsADS;
-		ADS_Alpha = (1.f - Character->GetADSAlpha());
-		ADS_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha);
-		WalkADSModifier_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha);
-		CrouchADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha);
-		DipADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha);
+		IsADS_Ceiled = FMath::CeilToFloat(Character->GetADSAlpha());
+		IsADS_Inversed = 1.f - IsADS_Ceiled;
+		ADS_Alpha_Inversed = (1.f - Character->GetADSAlpha());
+		ADS_Alpha_Inversed_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha_Inversed);
+		WalkADSModifier_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha_Inversed);
+		CrouchADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha_Inversed);
+		DipADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha_Inversed);
 
 		ModifyForADS();
 
@@ -146,7 +146,7 @@ void UFPAnimInstance::SetRelativeHandTransform()
 
 void UFPAnimInstance::ModifyForADS()
 {
-	CamAnimAlpha = CamAnimAlpha * ADS_Alpha_Lerp;
+	CamAnimAlpha = CamAnimAlpha * ADS_Alpha_Inversed_Lerp;
 	CrouchAlpha = CrouchAlpha * CrouchADSModifier_Alpha_Lerp;
 	WalkAnimAlpha = WalkAnimAlpha * WalkADSModifier_Alpha_Lerp;
 	DipAlpha = DipAlpha * DipADSModifier_Alpha_Lerp;
@@ -161,21 +161,6 @@ void UFPAnimInstance::ModifyForSprint(float DeltaSeconds)
 	FRotator scaledWalkAnimRot = WalkAnimRot * -5.f;
 	SprintAnimRot = UKismetMathLibrary::RInterpTo(SprintAnimRot, scaledWalkAnimRot, DeltaSeconds, interpSpeed);
 }
-
-//void UFPAnimInstance::InterpRecoil(float DeltaSeconds)
-//{
-//	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
-//	//float interpSpeed = 15.f;
-//	RecoilTransform = UKismetMathLibrary::TInterpTo(RecoilTransform, FinalRecoilTransform, DeltaSeconds, interpSpeed);
-//}
-//
-//void UFPAnimInstance::InterpFinalRecoil(float DeltaSeconds)
-//{
-//	float interpSpeed = (1.f / DeltaSeconds) / 6.f;
-//	//float interpSpeed = 5.f;
-//	FinalRecoilTransform = UKismetMathLibrary::TInterpTo(FinalRecoilTransform, FTransform(), DeltaSeconds, interpSpeed);
-//	
-//}
 
 void UFPAnimInstance::InterpRecoilKick(float DeltaSeconds)
 {
@@ -215,10 +200,10 @@ void UFPAnimInstance::SnapLeftHandToWeapon()
 
 void UFPAnimInstance::Fire()
 {
-	FVector locMin = FMath::Lerp(RecoilLocMinADS, RecoilLocMin, ADS_Alpha);
-	FVector locMax = FMath::Lerp(RecoilLocMaxADS, RecoilLocMax, ADS_Alpha);
-	FRotator rotMin = FMath::Lerp(RecoilRotMinADS, RecoilRotMin, ADS_Alpha);
-	FRotator rotMax = FMath::Lerp(RecoilRotMaxADS, RecoilRotMax, ADS_Alpha);
+	FVector locMin = FMath::Lerp(RecoilLocMinADS, RecoilLocMin, ADS_Alpha_Inversed);
+	FVector locMax = FMath::Lerp(RecoilLocMaxADS, RecoilLocMax, ADS_Alpha_Inversed);
+	FRotator rotMin = FMath::Lerp(RecoilRotMinADS, RecoilRotMin, ADS_Alpha_Inversed);
+	FRotator rotMax = FMath::Lerp(RecoilRotMaxADS, RecoilRotMax, ADS_Alpha_Inversed);
 
 	RecoilTransform = FTransform();
 

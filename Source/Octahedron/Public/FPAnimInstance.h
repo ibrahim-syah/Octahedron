@@ -126,16 +126,16 @@ protected:
 	FTransform RelativeHandTransform;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
-	float IsADS;
+	float IsADS_Ceiled;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
-	float IsADSAlpha;
+	float IsADS_Inversed;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
-	float ADS_Alpha;
+	float ADS_Alpha_Inversed;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
-	float ADS_Alpha_Lerp;
+	float ADS_Alpha_Inversed_Lerp;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	float WalkADSModifier_Alpha_Lerp;
