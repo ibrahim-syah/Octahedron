@@ -78,7 +78,10 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		IsADS = FMath::CeilToFloat(Character->GetADSAlpha());
 		IsADSAlpha = 1.f - IsADS;
 		ADS_Alpha = (1.f - Character->GetADSAlpha());
-		ADS_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha);
+		ADS_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha);
+		WalkADSModifier_Alpha_Lerp = FMath::Lerp(0.6f, 1.f, ADS_Alpha);
+		CrouchADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha);
+		DipADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha);
 
 		ModifyForADS();
 
@@ -144,11 +147,9 @@ void UFPAnimInstance::SetRelativeHandTransform()
 void UFPAnimInstance::ModifyForADS()
 {
 	CamAnimAlpha = CamAnimAlpha * ADS_Alpha_Lerp;
-	CrouchAlpha = CrouchAlpha * ADS_Alpha;
-	//WalkAnimAlpha = WalkAnimAlpha * ADS_Alpha;
-	WalkAnimAlpha = WalkAnimAlpha * ADS_Alpha_Lerp;
-	//WalkAnimAlpha = WalkAnimAlpha * IsADSAlpha;
-	DipAlpha = DipAlpha * ADS_Alpha_Lerp;
+	CrouchAlpha = CrouchAlpha * CrouchADSModifier_Alpha_Lerp;
+	WalkAnimAlpha = WalkAnimAlpha * WalkADSModifier_Alpha_Lerp;
+	DipAlpha = DipAlpha * DipADSModifier_Alpha_Lerp;
 }
 
 void UFPAnimInstance::ModifyForSprint(float DeltaSeconds)

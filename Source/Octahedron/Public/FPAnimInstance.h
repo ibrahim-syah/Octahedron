@@ -137,6 +137,15 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	float ADS_Alpha_Lerp;
 
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float WalkADSModifier_Alpha_Lerp;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float DipADSModifier_Alpha_Lerp;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float CrouchADSModifier_Alpha_Lerp;
+
 	/*UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	FVector ADSOffset;*/
 
