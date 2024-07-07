@@ -150,6 +150,7 @@ void UFPAnimInstance::ModifyForADS()
 	CamAnimAlpha = CamAnimAlpha * ADS_Alpha_Inversed_Lerp;
 	CrouchAlpha = CrouchAlpha * CrouchADSModifier_Alpha_Lerp;
 	WalkAnimAlpha = WalkAnimAlpha * WalkADSModifier_Alpha_Lerp;
+	//WalkAnimAlpha = WalkAnimAlpha * ADS_Alpha_Inversed;
 	DipAlpha = DipAlpha * DipADSModifier_Alpha_Lerp;
 }
 
