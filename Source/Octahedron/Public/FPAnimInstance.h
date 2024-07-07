@@ -126,6 +126,9 @@ protected:
 	FTransform RelativeHandTransform;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
+	float ADS_Alpha;
+
+	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)
 	float IsADS_Ceiled;
 
 	UPROPERTY(BlueprintReadOnly, Category = ExposedProperties)

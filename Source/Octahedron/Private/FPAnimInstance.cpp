@@ -75,9 +75,10 @@ void UFPAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		float interpSpeed = (1.f / DeltaSeconds) / 10.f;
 		CamOffsetCurrent = UKismetMathLibrary::VInterpTo(CamOffsetCurrent, CamOffset, DeltaSeconds, interpSpeed);
 		//IsADS = Character->GetADSAlpha() > 0.f ? 1.f : 0.f;
-		IsADS_Ceiled = FMath::CeilToFloat(Character->GetADSAlpha());
+		ADS_Alpha = Character->GetADSAlpha();
+		IsADS_Ceiled = FMath::CeilToFloat(ADS_Alpha);
 		IsADS_Inversed = 1.f - IsADS_Ceiled;
-		ADS_Alpha_Inversed = (1.f - Character->GetADSAlpha());
+		ADS_Alpha_Inversed = (1.f - ADS_Alpha);
 		ADS_Alpha_Inversed_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha_Inversed);
 		WalkADSModifier_Alpha_Lerp = FMath::Lerp(0.2f, 1.f, ADS_Alpha_Inversed);
 		CrouchADSModifier_Alpha_Lerp = FMath::Lerp(0.15f, 1.f, ADS_Alpha_Inversed);
