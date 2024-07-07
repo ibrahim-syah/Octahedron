@@ -919,7 +919,7 @@ void AOctahedronCharacter::OnADSTLUpdate_Implementation(float TLValue)
 	FLinearColor newColor = FLinearColor(OutColor.R, OutColor.G, lerpedB, OutColor.A);
 	CurrentWeapon->MPC_FP_Instance->SetVectorParameterValue(FName("Offset"), newColor);
 
-	float newSpeedMultiplier = FMath::Clamp(CurrentWeapon->ADSAlphaLerp, 0.65f, 1.f);
+	float newSpeedMultiplier = FMath::Clamp(CurrentWeapon->ADSAlphaLerp, 0.55f, 1.f);
 	GetCharacterMovement()->MaxWalkSpeed = GetBaseWalkSpeed() * newSpeedMultiplier;
 	CurrentWeapon->ScopeSightMesh->OnWeaponADSTLUpdateDelegate.Broadcast(ADSAlpha); // set opacity of scope if applicable
 }
