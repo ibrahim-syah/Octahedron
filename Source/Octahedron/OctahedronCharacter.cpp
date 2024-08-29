@@ -980,7 +980,7 @@ void AOctahedronCharacter::PressedFire()
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle);
 	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle.Invalidate();
-	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->RecoilStart();
+	//IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->RecoilStart();
 	switch (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireMode)
 	{
 	case EFireMode::Single:

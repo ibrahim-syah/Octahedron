@@ -19,6 +19,7 @@
 #include "SightMeshComponent.h"
 #include "DefaultCameraShakeBase.h"
 #include "Curves/CurveVector.h"
+#include "Curves/CurveFloat.h"
 #include "Public/FPAnimInstance.h"
 #include "Public/CustomProjectile.h"
 
@@ -263,6 +264,22 @@ void UTP_WeaponComponent::Fire()
 	}
 
 	IWeaponWielderInterface::Execute_OnWeaponFired(WeaponWielder);
+
+	FRotator NormalizedCurrentRotator = UKismetMathLibrary::NormalizedDeltaRotator(IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder), FRotator{ 0.f, 0.f, 0.f }); // in certain angles, the recovery can just cancel itself if we don't delta this with 0
+	FVector randomRecoilVector = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder), RecoilConeHalfAngle);
+	randomRecoilVector.Z = FMath::Abs(randomRecoilVector.Z);
+	//UE_LOG(LogTemp, Display, TEXT("camera location: %s"), *IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder).ToString());
+	//UE_LOG(LogTemp, Display, TEXT("camera forward vector: %s"), *IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder).ToString());
+	UE_LOG(LogTemp, Display, TEXT("randomRecoilVector: %s"), *randomRecoilVector.ToString());
+
+	//FRotator targetRotator = UKismetMathLibrary::FindLookAtRotation(IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder), IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder) + randomRecoilVector);
+	//UE_LOG(LogTemp, Display, TEXT("targetRotator: %s"), *targetRotator.ToString());
+
+	WielderDeltaRot = IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder) - NormalizedCurrentRotator - RecoilDeltaRot;
+	Del = FRotator(randomRecoilVector.Z, randomRecoilVector.X, 0.f);
+	FRotator newRotator = NormalizedCurrentRotator + WielderDeltaRot + Del;
+	IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, newRotator);
+	RecoilDeltaRot = FRotator(0.f, randomRecoilVector.X, 0.f);
 }
 
 void UTP_WeaponComponent::StopFire()

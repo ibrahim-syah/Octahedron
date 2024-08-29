@@ -231,6 +231,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	UCurveVector* RecoilCurve = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	UCurveFloat* RecoilDirectionCurve = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilStat = 85.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilConeHalfAngle = 1.f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	FTimerHandle RecoilTimer;
 
