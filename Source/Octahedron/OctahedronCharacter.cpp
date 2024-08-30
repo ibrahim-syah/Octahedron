@@ -233,7 +233,7 @@ void AOctahedronCharacter::BeginPlay()
 
 void AOctahedronCharacter::Tick(float DeltaTime)
 {
-	
+	Super::Tick(DeltaTime);
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
@@ -429,6 +429,7 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 	if (CurrentWeapon)
 	{
 		LookScaleModifier *= FMath::Lerp(1.f, ADSSensitivityScale, CurrentWeapon->ADSAlpha);
+		CurrentWeapon->bIsRecoilRecoveryActive = false;
 	}
 	FVector2D LookAxisVector = Value.Get<FVector2D>() * LookScaleModifier;
 	UE_LOG(LogTemp, Display, TEXT("LookAxisVector: %s"), *LookAxisVector.ToString());

@@ -149,15 +149,17 @@ void UTP_WeaponComponent::Fire()
 		return;
 	}
 
+	// Trace from center screen to max weapon range
+	FVector StartVector = IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder);
+	FVector ForwardVector = IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder);
+	float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
+
 	// Try and fire a projectile
 	if (IsProjectileWeapon)
 	{
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
 		{
-			FVector StartVector = IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder);
-			FVector ForwardVector = IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder);
-			float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
 			FHitResult MuzzleTraceResult;
 
 			FVector RandomDirection = UKismetMathLibrary::RandomUnitVectorInConeInDegrees(ForwardVector, spread + (1 / PelletSpread));
@@ -204,10 +206,6 @@ void UTP_WeaponComponent::Fire()
 	}
 	else // hitscan weapon
 	{
-		// Trace from center screen to max weapon range
-		FVector StartVector = IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder);
-		FVector ForwardVector = IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder);
-		float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
 		TArray<FHitResult> MuzzleTraceResults;
 		for (int32 i = 0; i < Pellets; i++) // bruh idk if this is a good idea, but whatever man
 		{
@@ -265,12 +263,13 @@ void UTP_WeaponComponent::Fire()
 
 	IWeaponWielderInterface::Execute_OnWeaponFired(WeaponWielder);
 
+	RecoilCheckpoint = WeaponWielder->GetControlRotation();
+	//TargetCheckpointLocation = StartVector + ForwardVector * Range;
 	StartRecoil();
 }
 
 void UTP_WeaponComponent::StopFire()
 {
-	RecoilStop();
 	IWeaponWielderInterface::Execute_OnStopFiring(WeaponWielder);
 }
 
@@ -382,33 +381,38 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	if (bIsRecoilActive)
 	{
 		// Apply the current recoil velocity
-		IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, (RecoilPitchVelocity * GetWorld()->GetDeltaSeconds()) * -1.f, (RecoilYawVelocity * GetWorld()->GetDeltaSeconds()));
+		IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, (RecoilPitchVelocity * DeltaTime) * -1.f, (RecoilYawVelocity * DeltaTime));
 
 		// Decrease the recoil velocity over time
-		RecoilPitchVelocity -= RecoilPitchDamping * GetWorld()->GetDeltaSeconds();
-		RecoilYawVelocity -= RecoilYawDamping * GetWorld()->GetDeltaSeconds();
+		RecoilPitchVelocity -= RecoilPitchDamping * DeltaTime;
+		RecoilYawVelocity -= RecoilYawDamping * DeltaTime;
 
 
 		if (RecoilPitchVelocity <= 0.0f)
 		{
 			bIsRecoilActive = false;
+			StartRecoilRecovery();
 		}
-		/*if (RecoilYawDamping >= 0.f)
+	}
+
+	if (bIsRecoilRecoveryActive)
+	{
+		FRotator currentControlRotator = WeaponWielder->GetControlRotation();
+
+		//FVector currentLocation = WeaponWielder->GetActorLocation();
+		//FRotator targetInterpRot = UKismetMathLibrary::FindLookAtRotation(currentLocation, TargetCheckpointLocation);
+
+		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentControlRotator, RecoilCheckpoint);
+		if (FMath::Abs(deltaRot.Pitch) < 0.1f)
 		{
-			if (RecoilYawVelocity <= 0.f)
-			{
-				bIsRecoilActive = false;
-				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
-			}
+			bIsRecoilRecoveryActive = false;
 		}
 		else
 		{
-			if (RecoilYawVelocity >= 0.f)
-			{
-				bIsRecoilActive = false;
-				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
-			}
-		}*/
+			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 4.f);
+			//FRotator interpRot = FMath::RInterpTo(currentControlRotator, targetInterpRot, DeltaTime, 2.f);
+			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
+		}
 	}
 }
 
@@ -417,88 +421,9 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 	IWeaponWielderInterface::Execute_OnADSTLUpdate(WeaponWielder, val);
 }
 
-//Call this function when the firing begins, the recoil starts here
-void UTP_WeaponComponent::RecoilStart()
-{
-	if (RecoilCurve)
-	{
-
-		//Setting all rotators to default values
-
-		WielderDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
-		RecoilDeltaRot = FRotator(0.0f, 0.0f, 0.0f);
-		Del = FRotator(0.0f, 0.0f, 0.0f);
-		RecoilStartRot = UKismetMathLibrary::NormalizedDeltaRotator(IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder), FRotator{0.f, 0.f, 0.f}); // in certain angles, the recovery can just cancel itself if we don't delta this with 0
-
-		IsShouldRecoil = true;
-
-		//Timer for the recoil: I have set it to 10s but dependeding how long it takes to empty the gun mag, you can increase the time.
-		GetWorld()->GetTimerManager().SetTimer(FireTimer, this, &UTP_WeaponComponent::FireTimerFunction, RecoilToStableTime, false);
-
-		GetWorld()->GetTimerManager().SetTimer(RecoilTimer, this, &UTP_WeaponComponent::RecoilTimerCallback, (1.f / 60.f), true);
-	}
-}
-
 void UTP_WeaponComponent::FireTimerFunction()
 {
 	GetWorld()->GetTimerManager().PauseTimer(FireTimer);
-}
-
-//Called when firing stops
-void UTP_WeaponComponent::RecoilStop()
-{
-	IsShouldRecoil = false;
-}
-
-void UTP_WeaponComponent::RecoilTimerCallback()
-{
-	float recoiltime;
-	FVector RecoilVec;
-
-	//Calculation of control rotation to update 
-	recoiltime = GetWorld()->GetTimerManager().GetTimerElapsed(FireTimer);
-	RecoilVec = RecoilCurve->GetVectorValue(recoiltime);
-	Del.Roll = 0;
-	Del.Pitch = (RecoilVec.Y);
-	Del.Yaw = (RecoilVec.Z);
-	WielderDeltaRot = IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder) - RecoilStartRot - RecoilDeltaRot;
-	FRotator newRotator = RecoilStartRot + WielderDeltaRot + Del;
-	IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, newRotator);
-	RecoilDeltaRot = Del;
-
-	//Conditionally start resetting the recoil
-	if (!IsShouldRecoil)
-	{
-		if (recoiltime > FireDelay)
-		{
-			GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
-			RecoilTimer.Invalidate();
-
-			GetWorld()->GetTimerManager().ClearTimer(FireTimer);
-			FireTimer.Invalidate();
-			RecoveryStart();
-		}
-	}
-	//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
-}
-
-//This function is automatically called, no need to call this. It is inside the Tick function
-void UTP_WeaponComponent::RecoveryStart()
-{
-	if (IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder).Pitch > RecoilStartRot.Pitch)
-	{
-		GetWorld()->GetTimerManager().SetTimer(StopRecoveryTimer, this, &UTP_WeaponComponent::StopRecoveryTimerFunction, RecoveryTime, false);
-		GetWorld()->GetTimerManager().SetTimer(RecoilRecoveryTimer, this, &UTP_WeaponComponent::RecoilRecoveryTimerCallback, (1.f / 60.f), true);
-	}
-}
-
-//This function too is automatically called from the recovery start function.
-void UTP_WeaponComponent::StopRecoveryTimerFunction()
-{
-	GetWorld()->GetTimerManager().ClearTimer(RecoilRecoveryTimer);
-	RecoilRecoveryTimer.Invalidate();
-	GetWorld()->GetTimerManager().ClearTimer(StopRecoveryTimer);
-	StopRecoveryTimer.Invalidate();
 }
 
 void UTP_WeaponComponent::StartRecoil()
@@ -514,71 +439,11 @@ void UTP_WeaponComponent::StartRecoil()
 	RecoilYawDamping = (RecoilYawVelocity >= 0.f ? BaseRecoilYawDamping : BaseRecoilYawDamping * -1.f) / 0.1f;
 
 	bIsRecoilActive = true;
-
-	
 }
 
-void UTP_WeaponComponent::UpdateRecoil()
+void UTP_WeaponComponent::StartRecoilRecovery()
 {
-	if (bIsRecoilActive)
-	{
-		// Apply the current recoil velocity
-		//IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, (RecoilPitchVelocity * GetWorld()->GetDeltaSeconds()) * -1.f, 0.f);
-		IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, 0.f, (RecoilYawVelocity * GetWorld()->GetDeltaSeconds()));
-		//CurrentRecoil += RecoilVelocity * GetWorld()->GetDeltaSeconds();
-
-		// Decrease the recoil velocity over time
-		//RecoilPitchVelocity -= RecoilPitchDamping * GetWorld()->GetDeltaSeconds();
-		RecoilYawVelocity -= RecoilYawDamping * GetWorld()->GetDeltaSeconds();
-
-
-		//if (RecoilPitchVelocity <= 0.0f)
-		if (RecoilYawDamping >= 0.f)
-		{
-			if (RecoilYawVelocity <= 0.f)
-			{
-				bIsRecoilActive = false;
-				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
-			}
-		}
-		else
-		{
-			if (RecoilYawVelocity >= 0.f)
-			{
-				bIsRecoilActive = false;
-				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
-			}
-		}
-	}
-}
-
-void UTP_WeaponComponent::RecoilRecoveryTimerCallback()
-{
-	// servicable for now, but full auto still have a problem where if you move too far from the origin, the recovery is too strong (above the origin) or there won't be any recovery (below origin)
-	FVector RecoilVec;
-
-	//Recoil resetting
-	FRotator originalRotator = IWeaponWielderInterface::Execute_GetWielderControlRotation(WeaponWielder);
-	FRotator tmprot = originalRotator;
-	float deltaPitch = UKismetMathLibrary::NormalizedDeltaRotator(tmprot, RecoilStartRot).Pitch;
-	if (deltaPitch > 0)
-	{
-		FRotator TargetRot = originalRotator - RecoilDeltaRot;
-		float InterpSpeed = UKismetMathLibrary::MapRangeClamped(deltaPitch, 0.f, MaxRecoilPitch, 3.f, 10.f);
-		//UE_LOG(LogTemp, Display, TEXT("interpspeed: %f"), InterpSpeed);
-		
-		FRotator newRotation = UKismetMathLibrary::RInterpTo(originalRotator, TargetRot, GetWorld()->DeltaTimeSeconds, InterpSpeed);
-		IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, newRotation);
-		RecoilDeltaRot = RecoilDeltaRot + (originalRotator - tmprot);
-	}
-	else
-	{
-		GetWorld()->GetTimerManager().ClearTimer(RecoilRecoveryTimer);
-		RecoilRecoveryTimer.Invalidate();
-		GetWorld()->GetTimerManager().ClearTimer(StopRecoveryTimer);
-		StopRecoveryTimer.Invalidate();
-	}
-	//UE_LOG(LogTemp, Display, TEXT("deltapitch: %f"), deltaPitch);
+	bIsRecoilRecoveryActive = true;
 }
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

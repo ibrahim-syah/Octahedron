@@ -231,9 +231,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
 	TSubclassOf<UCameraShakeBase> FireCamShake = nullptr;
 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	UCurveVector* RecoilCurve = nullptr;
+	FTimerHandle FireTimer;
+	void FireTimerFunction();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	UCurveFloat* RecoilDirectionCurve = nullptr;
@@ -241,50 +240,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilStat = 85.f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float BaseRecoilYawInput = 1.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float BaseRecoilPitchInput = 1.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	FTimerHandle RecoilTimer;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	FTimerHandle RecoilRecoveryTimer;
-
-	FTimerHandle FireTimer;
-	FTimerHandle StopRecoveryTimer;
-	void FireTimerFunction();
-	FRotator RecoilStartRot;
-	FRotator RecoilDeltaRot;
-	FRotator WielderDeltaRot;
-
-	UFUNCTION(BlueprintCallable)
-	void RecoilStart();
-	void RecoilStop();
-	void RecoveryStart();
-	FRotator Del;
-	void StopRecoveryTimerFunction();
-
-	UPROPERTY(BlueprintReadWrite)
-	float RecoilToStableTime = 10.0f;
-
-	UPROPERTY(BlueprintReadWrite)
-	float RecoveryTime = 1.0f;
-
-	UPROPERTY(BlueprintReadWrite)
-	float RecoverySpeed = 10.0f;
-
-	UPROPERTY(BlueprintReadWrite)
-	float MaxRecoilPitch = 10.0f;
-
-	void RecoilTimerCallback();
-	void RecoilRecoveryTimerCallback();
-	bool IsShouldRecoil = false;
-
 	void StartRecoil();
-	void UpdateRecoil();
+	bool bIsRecoilActive;
+	void StartRecoilRecovery();
+	bool bIsRecoilRecoveryActive;
+	FRotator RecoilCheckpoint;
+	FVector TargetCheckpointLocation;
 
 	UPROPERTY(EditAnywhere)
 	float BaseRecoilPitchForce = 5.f;
@@ -293,7 +254,7 @@ public:
 	float BaseRecoilPitchDamping = 30.f;
 	float RecoilPitchDamping;
 	float RecoilPitchVelocity;
-
+	float NetRecoilPitch;
 
 	UPROPERTY(EditAnywhere)
 	float BaseRecoilYawForce = 8.f;
@@ -302,8 +263,7 @@ public:
 	float BaseRecoilYawDamping = 40.f;
 	float RecoilYawDamping;
 	float RecoilYawVelocity;
-
-	bool bIsRecoilActive;
+	float NetRecoilYaw;
 
 	// Weapon Mesh Recoil/Kick
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
