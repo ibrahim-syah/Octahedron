@@ -431,6 +431,7 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 		LookScaleModifier *= FMath::Lerp(1.f, ADSSensitivityScale, CurrentWeapon->ADSAlpha);
 	}
 	FVector2D LookAxisVector = Value.Get<FVector2D>() * LookScaleModifier;
+	UE_LOG(LogTemp, Display, TEXT("LookAxisVector: %s"), *LookAxisVector.ToString());
 
 	if (Controller != nullptr)
 	{
@@ -857,15 +858,21 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 	return true;
 }
 
+void AOctahedronCharacter::AddWielderControlRotation_Implementation(float deltaPitch, float deltaYaw)
+{
+	AddControllerPitchInput(deltaPitch);
+	AddControllerYawInput(deltaYaw);
+}
+
 void AOctahedronCharacter::OnWeaponFired_Implementation()
 {
 	// play FP Anim bp Fire() function for weapon recoil kick
 	GetFPAnimInstance()->Fire();
 
-	if (IsValid(CurrentWeapon->FireCamShake))
+	/*if (IsValid(CurrentWeapon->FireCamShake))
 	{
 		GetLocalViewingPlayerController()->ClientStartCameraShake(CurrentWeapon->FireCamShake);
-	}
+	}*/
 
 	// report noise for AI detection
 	MakeNoise(1.f, this, CurrentWeapon->GetComponentLocation());

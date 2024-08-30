@@ -228,5 +228,5 @@ void UFPAnimInstance::Fire()
 
 	IsRecoilKicking = true;
 
-	UE_LOG(LogTemp, Display, TEXT("anim bp Fired and FinalRecoilTransform Updated to: %s"), *FinalRecoilTransform.GetLocation().ToString());
+	//UE_LOG(LogTemp, Display, TEXT("anim bp Fired and FinalRecoilTransform Updated to: %s"), *FinalRecoilTransform.GetLocation().ToString());
 }

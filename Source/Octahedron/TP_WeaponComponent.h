@@ -238,7 +238,10 @@ public:
 	float RecoilStat = 85.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float RecoilConeHalfAngle = 1.f;
+	float BaseRecoilYawInput = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float BaseRecoilPitchInput = 1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
 	FTimerHandle RecoilTimer;
@@ -275,6 +278,22 @@ public:
 	void RecoilTimerCallback();
 	void RecoilRecoveryTimerCallback();
 	bool IsShouldRecoil = false;
+
+	void StartRecoil(float InitialForce, float Damping);
+	void UpdateRecoil();
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilForce = 5.f;
+
+	float InitialRecoilForce;
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilDampping = 8.f;
+
+	float RecoilDamping;
+	float RecoilVelocity;
+	float CurrentRecoil;
+	bool bIsRecoilActive;
 
 	// Weapon Mesh Recoil/Kick
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
