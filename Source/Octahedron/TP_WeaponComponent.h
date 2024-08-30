@@ -32,7 +32,11 @@ class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 public:
+
 	/** projectile class to spawn */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
 	bool IsProjectileWeapon = true;
@@ -279,20 +283,26 @@ public:
 	void RecoilRecoveryTimerCallback();
 	bool IsShouldRecoil = false;
 
-	void StartRecoil(float InitialForce, float Damping);
+	void StartRecoil();
 	void UpdateRecoil();
 
 	UPROPERTY(EditAnywhere)
-	float BaseRecoilForce = 5.f;
+	float BaseRecoilPitchForce = 5.f;
+	float InitialRecoilPitchForce;
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilPitchDamping = 30.f;
+	float RecoilPitchDamping;
+	float RecoilPitchVelocity;
 
-	float InitialRecoilForce;
 
 	UPROPERTY(EditAnywhere)
-	float BaseRecoilDampping = 8.f;
+	float BaseRecoilYawForce = 8.f;
+	float InitialRecoilYawForce;
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilYawDamping = 40.f;
+	float RecoilYawDamping;
+	float RecoilYawVelocity;
 
-	float RecoilDamping;
-	float RecoilVelocity;
-	float CurrentRecoil;
 	bool bIsRecoilActive;
 
 	// Weapon Mesh Recoil/Kick

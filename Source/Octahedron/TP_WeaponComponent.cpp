@@ -265,10 +265,7 @@ void UTP_WeaponComponent::Fire()
 
 	IWeaponWielderInterface::Execute_OnWeaponFired(WeaponWielder);
 
-	//IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, BaseRecoilPitchAngle, FMath::RandRange(-1.f * BaseRecoilYawInput, BaseRecoilYawInput));
-	//IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, BaseRecoilPitchInput * -1.f, FMath::RandRange(-1.f * BaseRecoilYawInput, BaseRecoilYawInput));
-	//RecoilDeltaRot = Del;
-	StartRecoil(BaseRecoilForce, BaseRecoilDampping);
+	StartRecoil();
 }
 
 void UTP_WeaponComponent::StopFire()
@@ -378,6 +375,43 @@ void UTP_WeaponComponent::ExitADS(bool IsFast)
 	ADSTL->Reverse();
 }
 
+void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (bIsRecoilActive)
+	{
+		// Apply the current recoil velocity
+		IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, (RecoilPitchVelocity * GetWorld()->GetDeltaSeconds()) * -1.f, (RecoilYawVelocity * GetWorld()->GetDeltaSeconds()));
+
+		// Decrease the recoil velocity over time
+		RecoilPitchVelocity -= RecoilPitchDamping * GetWorld()->GetDeltaSeconds();
+		RecoilYawVelocity -= RecoilYawDamping * GetWorld()->GetDeltaSeconds();
+
+
+		if (RecoilPitchVelocity <= 0.0f)
+		{
+			bIsRecoilActive = false;
+		}
+		/*if (RecoilYawDamping >= 0.f)
+		{
+			if (RecoilYawVelocity <= 0.f)
+			{
+				bIsRecoilActive = false;
+				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
+			}
+		}
+		else
+		{
+			if (RecoilYawVelocity >= 0.f)
+			{
+				bIsRecoilActive = false;
+				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
+			}
+		}*/
+	}
+}
+
 void UTP_WeaponComponent::ADSTLCallback(float val)
 {
 	IWeaponWielderInterface::Execute_OnADSTLUpdate(WeaponWielder, val);
@@ -467,16 +501,21 @@ void UTP_WeaponComponent::StopRecoveryTimerFunction()
 	StopRecoveryTimer.Invalidate();
 }
 
-void UTP_WeaponComponent::StartRecoil(float InitialForce, float Damping)
+void UTP_WeaponComponent::StartRecoil()
 {
-	InitialRecoilForce = InitialForce;
-	RecoilDamping = Damping;
-	RecoilVelocity = InitialRecoilForce;
-	CurrentRecoil = 0.0f;
+	// may want to add skill or stat modifier here to constrict or enlarge the recoil,
+	// but we need to figure out how to proportionally scale the damping to keep the frametime consiste
+	InitialRecoilPitchForce = BaseRecoilPitchForce;
+	RecoilPitchVelocity = InitialRecoilPitchForce;
+	RecoilPitchDamping = RecoilPitchVelocity / 0.1f;
+
+	InitialRecoilYawForce = BaseRecoilYawForce;
+	RecoilYawVelocity = FMath::RandRange(InitialRecoilYawForce * -1.f, InitialRecoilYawForce);
+	RecoilYawDamping = (RecoilYawVelocity >= 0.f ? BaseRecoilYawDamping : BaseRecoilYawDamping * -1.f) / 0.1f;
+
 	bIsRecoilActive = true;
 
-	// Start the timer for handling recoil over time
-	GetWorld()->GetTimerManager().SetTimer(RecoilTimer, this, &ThisClass::UpdateRecoil, 1.f/60.f, true);
+	
 }
 
 void UTP_WeaponComponent::UpdateRecoil()
@@ -484,16 +523,31 @@ void UTP_WeaponComponent::UpdateRecoil()
 	if (bIsRecoilActive)
 	{
 		// Apply the current recoil velocity
-		IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, (RecoilVelocity * GetWorld()->GetDeltaSeconds()) * -1.f, 0.f);
+		//IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, (RecoilPitchVelocity * GetWorld()->GetDeltaSeconds()) * -1.f, 0.f);
+		IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, 0.f, (RecoilYawVelocity * GetWorld()->GetDeltaSeconds()));
 		//CurrentRecoil += RecoilVelocity * GetWorld()->GetDeltaSeconds();
 
 		// Decrease the recoil velocity over time
-		RecoilVelocity -= RecoilDamping * GetWorld()->GetDeltaSeconds();
+		//RecoilPitchVelocity -= RecoilPitchDamping * GetWorld()->GetDeltaSeconds();
+		RecoilYawVelocity -= RecoilYawDamping * GetWorld()->GetDeltaSeconds();
 
-		if (RecoilVelocity <= 0.0f)
+
+		//if (RecoilPitchVelocity <= 0.0f)
+		if (RecoilYawDamping >= 0.f)
 		{
-			bIsRecoilActive = false;
-			GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
+			if (RecoilYawVelocity <= 0.f)
+			{
+				bIsRecoilActive = false;
+				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
+			}
+		}
+		else
+		{
+			if (RecoilYawVelocity >= 0.f)
+			{
+				bIsRecoilActive = false;
+				GetWorld()->GetTimerManager().ClearTimer(RecoilTimer);
+			}
 		}
 	}
 }
