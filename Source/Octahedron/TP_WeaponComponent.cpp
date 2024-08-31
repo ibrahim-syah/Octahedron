@@ -415,15 +415,20 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		//FRotator targetInterpRot = UKismetMathLibrary::FindLookAtRotation(currentLocation, TargetCheckpointLocation);
 
 		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentControlRotator, RecoilCheckpoint);
-		if (FMath::Abs(deltaRot.Pitch) < 0.5f)
+		if (FMath::Abs(deltaRot.Pitch) < 0.1f)
 		{
 			bIsRecoilRecoveryActive = false;
+			bIsRecoilYawRecoveryActive = false;
 			bIsRecoilNeutral = true;
 		}
 		else
 		{
 			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 2.f);
-			//FRotator interpRot = FMath::RInterpTo(currentControlRotator, targetInterpRot, DeltaTime, 2.f);
+			if (!bIsRecoilYawRecoveryActive)
+			{
+				interpRot.Yaw = currentControlRotator.Yaw;
+			}
+
 			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
 		}
 	}
@@ -457,6 +462,7 @@ void UTP_WeaponComponent::StartRecoil()
 void UTP_WeaponComponent::StartRecoilRecovery()
 {
 	bIsRecoilRecoveryActive = true;
+	bIsRecoilYawRecoveryActive = true;
 }
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

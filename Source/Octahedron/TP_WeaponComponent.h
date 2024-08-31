@@ -244,6 +244,7 @@ public:
 	bool bIsRecoilActive;
 	void StartRecoilRecovery();
 	bool bIsRecoilRecoveryActive;
+	bool bIsRecoilYawRecoveryActive;
 	bool bIsRecoilNeutral = true;
 	bool bUpdateRecoilPitchCheckpointInNextShot = false;
 	bool bUpdateRecoilYawCheckpointInNextShot = false;

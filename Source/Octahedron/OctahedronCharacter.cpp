@@ -429,7 +429,7 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 	if (CurrentWeapon)
 	{
 		LookScaleModifier *= FMath::Lerp(1.f, ADSSensitivityScale, CurrentWeapon->ADSAlpha);
-		CurrentWeapon->bIsRecoilRecoveryActive = false;
+		//CurrentWeapon->bIsRecoilRecoveryActive = false;
 	}
 	FVector2D LookAxisVector = Value.Get<FVector2D>() * LookScaleModifier;
 	UE_LOG(LogTemp, Display, TEXT("LookAxisVector: %s"), *LookAxisVector.ToString());
@@ -448,12 +448,12 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 
 		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentRotation, checkpointRotation);
 
-		/*if (CurrentWeapon->bIsRecoilRecoveryActive && LookAxisVector.Y < 0.f)
+		if (CurrentWeapon->bIsRecoilRecoveryActive && LookAxisVector.Y < 0.f)
 		{
 			CurrentWeapon->bIsRecoilRecoveryActive = false;
 			CurrentWeapon->bIsRecoilNeutral = true;
 			return;
-		}*/
+		}
 
 		if (LookAxisVector.Y < 0.f || deltaRot.Pitch < 0.f)
 		{
@@ -462,6 +462,10 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 
 		if (LookAxisVector.X != 0.f)
 		{
+			if (CurrentWeapon->bIsRecoilYawRecoveryActive)
+			{
+				CurrentWeapon->bIsRecoilYawRecoveryActive = false;
+			}
 			CurrentWeapon->bUpdateRecoilYawCheckpointInNextShot = true;
 		}
 	}
