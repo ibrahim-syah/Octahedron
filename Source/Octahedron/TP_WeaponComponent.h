@@ -244,8 +244,10 @@ public:
 	bool bIsRecoilActive;
 	void StartRecoilRecovery();
 	bool bIsRecoilRecoveryActive;
+	bool bIsRecoilNeutral = true;
+	bool bUpdateRecoilPitchCheckpointInNextShot = false;
+	bool bUpdateRecoilYawCheckpointInNextShot = false;
 	FRotator RecoilCheckpoint;
-	FVector TargetCheckpointLocation;
 
 	UPROPERTY(EditAnywhere)
 	float BaseRecoilPitchForce = 5.f;
@@ -254,7 +256,6 @@ public:
 	float BaseRecoilPitchDamping = 30.f;
 	float RecoilPitchDamping;
 	float RecoilPitchVelocity;
-	float NetRecoilPitch;
 
 	UPROPERTY(EditAnywhere)
 	float BaseRecoilYawForce = 8.f;
@@ -263,7 +264,6 @@ public:
 	float BaseRecoilYawDamping = 40.f;
 	float RecoilYawDamping;
 	float RecoilYawVelocity;
-	float NetRecoilYaw;
 
 	// Weapon Mesh Recoil/Kick
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)

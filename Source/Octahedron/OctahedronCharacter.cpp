@@ -440,6 +440,31 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+
+	if (CurrentWeapon && !CurrentWeapon->bIsRecoilNeutral)
+	{
+		FRotator currentRotation = GetControlRotation();
+		FRotator checkpointRotation = CurrentWeapon->RecoilCheckpoint;
+
+		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentRotation, checkpointRotation);
+
+		/*if (CurrentWeapon->bIsRecoilRecoveryActive && LookAxisVector.Y < 0.f)
+		{
+			CurrentWeapon->bIsRecoilRecoveryActive = false;
+			CurrentWeapon->bIsRecoilNeutral = true;
+			return;
+		}*/
+
+		if (LookAxisVector.Y < 0.f || deltaRot.Pitch < 0.f)
+		{
+			CurrentWeapon->bUpdateRecoilPitchCheckpointInNextShot = true;
+		}
+
+		if (LookAxisVector.X != 0.f)
+		{
+			CurrentWeapon->bUpdateRecoilYawCheckpointInNextShot = true;
+		}
+	}
 }
 
 void AOctahedronCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)

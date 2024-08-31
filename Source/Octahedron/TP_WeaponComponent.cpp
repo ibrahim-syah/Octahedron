@@ -263,8 +263,21 @@ void UTP_WeaponComponent::Fire()
 
 	IWeaponWielderInterface::Execute_OnWeaponFired(WeaponWielder);
 
-	RecoilCheckpoint = WeaponWielder->GetControlRotation();
-	//TargetCheckpointLocation = StartVector + ForwardVector * Range;
+	if (bIsRecoilNeutral)
+	{
+		RecoilCheckpoint = WeaponWielder->GetControlRotation();
+		bIsRecoilNeutral = false;
+	}
+	if (bUpdateRecoilPitchCheckpointInNextShot)
+	{
+		RecoilCheckpoint = FRotator(WeaponWielder->GetControlRotation().Pitch, RecoilCheckpoint.Yaw, RecoilCheckpoint.Roll);
+		bUpdateRecoilPitchCheckpointInNextShot = false;
+	}
+	if (bUpdateRecoilYawCheckpointInNextShot)
+	{
+		RecoilCheckpoint = FRotator(RecoilCheckpoint.Pitch, WeaponWielder->GetControlRotation().Yaw, RecoilCheckpoint.Roll);
+		bUpdateRecoilYawCheckpointInNextShot = false;
+	}
 	StartRecoil();
 }
 
@@ -394,8 +407,7 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 			StartRecoilRecovery();
 		}
 	}
-
-	if (bIsRecoilRecoveryActive)
+	else if (bIsRecoilRecoveryActive)
 	{
 		FRotator currentControlRotator = WeaponWielder->GetControlRotation();
 
@@ -403,13 +415,14 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		//FRotator targetInterpRot = UKismetMathLibrary::FindLookAtRotation(currentLocation, TargetCheckpointLocation);
 
 		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentControlRotator, RecoilCheckpoint);
-		if (FMath::Abs(deltaRot.Pitch) < 0.1f)
+		if (FMath::Abs(deltaRot.Pitch) < 0.5f)
 		{
 			bIsRecoilRecoveryActive = false;
+			bIsRecoilNeutral = true;
 		}
 		else
 		{
-			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 4.f);
+			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 2.f);
 			//FRotator interpRot = FMath::RInterpTo(currentControlRotator, targetInterpRot, DeltaTime, 2.f);
 			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
 		}
