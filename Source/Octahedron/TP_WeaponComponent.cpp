@@ -411,10 +411,8 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	{
 		FRotator currentControlRotator = WeaponWielder->GetControlRotation();
 
-		//FVector currentLocation = WeaponWielder->GetActorLocation();
-		//FRotator targetInterpRot = UKismetMathLibrary::FindLookAtRotation(currentLocation, TargetCheckpointLocation);
-
-		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentControlRotator, RecoilCheckpoint);
+		FRotator deltaRot = currentControlRotator - RecoilCheckpoint;
+		deltaRot.Normalize();
 		if (FMath::Abs(deltaRot.Pitch) < 0.1f)
 		{
 			bIsRecoilRecoveryActive = false;
