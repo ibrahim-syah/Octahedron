@@ -414,9 +414,11 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		FRotator deltaRot = currentControlRotator - RecoilCheckpoint;
 		deltaRot.Normalize();
 
-		if (FMath::Abs(deltaRot.Pitch) > 1.f)
+		if (FMath::Abs(deltaRot.Pitch) > 1.f) // constant recovery
 		{
 			FRotator interpRot = FMath::RInterpConstantTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 15.f);
+			float interpSpeed = (1.f / DeltaTime) / 10.f;
+			interpRot.Yaw = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed).Yaw;
 			if (!bIsRecoilYawRecoveryActive)
 			{
 				interpRot.Yaw = currentControlRotator.Yaw;
@@ -424,7 +426,7 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
 		}
-		else if (FMath::Abs(deltaRot.Pitch) > 0.1f)
+		else if (FMath::Abs(deltaRot.Pitch) > 0.1f) // smooth, but quick ease-out
 		{
 			float interpSpeed = (1.f / DeltaTime) / 10.f;
 			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed);
@@ -435,7 +437,7 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
 		}
-		else
+		else // recoil completes
 		{
 			bIsRecoilRecoveryActive = false;
 			bIsRecoilYawRecoveryActive = false;
