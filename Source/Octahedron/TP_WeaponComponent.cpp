@@ -413,21 +413,33 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 		FRotator deltaRot = currentControlRotator - RecoilCheckpoint;
 		deltaRot.Normalize();
-		if (FMath::Abs(deltaRot.Pitch) < 0.1f)
+
+		if (FMath::Abs(deltaRot.Pitch) > 1.f)
 		{
-			bIsRecoilRecoveryActive = false;
-			bIsRecoilYawRecoveryActive = false;
-			bIsRecoilNeutral = true;
-		}
-		else
-		{
-			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 2.f);
+			FRotator interpRot = FMath::RInterpConstantTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 15.f);
 			if (!bIsRecoilYawRecoveryActive)
 			{
 				interpRot.Yaw = currentControlRotator.Yaw;
 			}
 
 			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
+		}
+		else if (FMath::Abs(deltaRot.Pitch) > 0.1f)
+		{
+			float interpSpeed = (1.f / DeltaTime) / 10.f;
+			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed);
+			if (!bIsRecoilYawRecoveryActive)
+			{
+				interpRot.Yaw = currentControlRotator.Yaw;
+			}
+
+			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
+		}
+		else
+		{
+			bIsRecoilRecoveryActive = false;
+			bIsRecoilYawRecoveryActive = false;
+			bIsRecoilNeutral = true;
 		}
 	}
 }
@@ -452,7 +464,7 @@ void UTP_WeaponComponent::StartRecoil()
 
 	InitialRecoilYawForce = BaseRecoilYawForce;
 	RecoilYawVelocity = FMath::RandRange(InitialRecoilYawForce * -1.f, InitialRecoilYawForce);
-	RecoilYawDamping = (RecoilYawVelocity >= 0.f ? BaseRecoilYawDamping : BaseRecoilYawDamping * -1.f) / 0.1f;
+	RecoilYawDamping = (RecoilYawVelocity * -1.f) / 0.1f;
 
 	bIsRecoilActive = true;
 }

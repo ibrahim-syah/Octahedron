@@ -253,16 +253,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	float BaseRecoilPitchForce = 5.f;
 	float InitialRecoilPitchForce;
-	UPROPERTY(EditAnywhere)
-	float BaseRecoilPitchDamping = 30.f;
 	float RecoilPitchDamping;
 	float RecoilPitchVelocity;
 
 	UPROPERTY(EditAnywhere)
 	float BaseRecoilYawForce = 8.f;
 	float InitialRecoilYawForce;
-	UPROPERTY(EditAnywhere)
-	float BaseRecoilYawDamping = 40.f;
 	float RecoilYawDamping;
 	float RecoilYawVelocity;
 
