@@ -385,6 +385,7 @@ void UTP_WeaponComponent::ExitADS(bool IsFast)
 		ADSTL->SetPlayRate(2.f);
 	}
 	ADSTL->Reverse();
+	CurrentADSHeat = 0.f; // reset ADS heat
 }
 
 void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -428,7 +429,7 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		}
 		else if (FMath::Abs(deltaRot.Pitch) > 0.1f) // smooth, but quick ease-out
 		{
-			float interpSpeed = (1.f / DeltaTime) / 10.f;
+			float interpSpeed = (1.f / DeltaTime) / 6.f;
 			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed);
 			if (!bIsRecoilYawRecoveryActive)
 			{
@@ -458,13 +459,23 @@ void UTP_WeaponComponent::FireTimerFunction()
 
 void UTP_WeaponComponent::StartRecoil()
 {
-	// may want to add skill or stat modifier here to constrict or enlarge the recoil,
-	// but we need to figure out how to proportionally scale the damping to keep the frametime consiste
+	// may want to add skill or stat modifier here to constrict or enlarge the recoil, or when ads-ing
+	// or even have different scale for mouse n keyboard and controller like destiny (mouse has lower recoil)
 	InitialRecoilPitchForce = BaseRecoilPitchForce;
+	InitialRecoilYawForce = BaseRecoilYawForce;
+
+	if (FireMode == EFireMode::Auto)
+	{
+		CurrentRound += 1;
+
+		CurrentADSHeat = ADSAlpha > 0.f ? CurrentADSHeat + 1.f: 0.f; // will reset heat value if not ads
+		float ADSHeatModifier = FMath::Clamp(CurrentADSHeat / MaxADSHeat, 0.f, ADSHeatModifierMax);
+		InitialRecoilPitchForce *= 1.f - ADSHeatModifier;
+		InitialRecoilYawForce *= 1.f - ADSHeatModifier;
+	}
 	RecoilPitchVelocity = InitialRecoilPitchForce;
 	RecoilPitchDamping = RecoilPitchVelocity / 0.1f;
 
-	InitialRecoilYawForce = BaseRecoilYawForce;
 	RecoilYawVelocity = FMath::RandRange(InitialRecoilYawForce * -1.f, InitialRecoilYawForce);
 	RecoilYawDamping = (RecoilYawVelocity * -1.f) / 0.1f;
 

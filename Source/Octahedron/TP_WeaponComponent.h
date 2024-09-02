@@ -106,10 +106,10 @@ public:
 	float Range{ 10000.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float MinSpread{ 0.08f };
+	float MinSpread{ 0.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float MaxSpread{ 2.f };
+	float MaxSpread{ 0.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	bool CanSwitchFireMode{ false };
@@ -127,7 +127,7 @@ public:
 	int32 Pellets{ 1 }; // more than 1 means it's a pellet gun (shotgun)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float PelletSpread{ 10.f }; // spread of each individual pellet is originalspread + (n/PelletSpread)
+	float PelletSpread{ 1.f }; // spread of each individual pellet is originalspread + (n/PelletSpread)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	EFireMode FireMode{ EFireMode::Single };
@@ -237,8 +237,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	UCurveFloat* RecoilDirectionCurve = nullptr;
 
+	// affects camera recoil and bloom
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilStat = 85.f;
+
+	// to track bloom in full auto weapons
+	int64 CurrentRound = 0.f;
+
+	// how much rounds until the recoil stabilizes.
+	// when ADS, full auto weapon will have a normal recoil at first but will
+	// stabilize over time
+	// generally 1/3 of the base magazine?
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float MaxADSHeat = 10.f;
+	float CurrentADSHeat = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float ADSHeatModifierMax = 0.6f;
 
 	void StartRecoil();
 	bool bIsRecoilActive;
