@@ -242,7 +242,15 @@ public:
 	float RecoilStat = 85.f;
 
 	// to track bloom in full auto weapons
-	int64 CurrentRound = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float MaxBloom = 5.f;
+	float CurrentBloom = 0.f;
+	float BloomStep = 0.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float ADSBloomModifier = 0.2f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float BloomRecoveryInterpSpeed = 20.f;
+
 
 	// how much rounds until the recoil stabilizes.
 	// when ADS, full auto weapon will have a normal recoil at first but will

@@ -431,7 +431,7 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 		LookScaleModifier *= FMath::Lerp(1.f, ADSSensitivityScale, CurrentWeapon->ADSAlpha);
 	}
 	FVector2D LookAxisVector = Value.Get<FVector2D>() * LookScaleModifier;
-	UE_LOG(LogTemp, Display, TEXT("LookAxisVector: %s"), *LookAxisVector.ToString());
+	//UE_LOG(LogTemp, Display, TEXT("LookAxisVector: %s"), *LookAxisVector.ToString());
 
 	if (Controller != nullptr)
 	{

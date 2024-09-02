@@ -152,7 +152,15 @@ void UTP_WeaponComponent::Fire()
 	// Trace from center screen to max weapon range
 	FVector StartVector = IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder);
 	FVector ForwardVector = IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder);
-	float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
+	//float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
+	UE_LOG(LogTemp, Display, TEXT("initial bloom: %f"), CurrentBloom);
+	CurrentBloom = FMath::Clamp(CurrentBloom + BloomStep, 0.f, MaxBloom);
+	UE_LOG(LogTemp, Display, TEXT("after bloom: %f"), CurrentBloom);
+	float spread = CurrentBloom;
+	float bloomModifier = FMath::Lerp(1.f, ADSBloomModifier, ADSAlpha);
+	//UE_LOG(LogTemp, Display, TEXT("current bloomModifier: %f"), bloomModifier);
+	spread = spread * bloomModifier;
+	UE_LOG(LogTemp, Display, TEXT("current spread: %f"), spread);
 
 	// Try and fire a projectile
 	if (IsProjectileWeapon)
@@ -445,6 +453,13 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 			bIsRecoilNeutral = true;
 		}
 	}
+
+	if (CurrentBloom > 0.f)
+	{
+		float interpSpeed = (1.f / DeltaTime) / BloomRecoveryInterpSpeed;
+		CurrentBloom = FMath::FInterpConstantTo(CurrentBloom, 0.f, DeltaTime, interpSpeed);
+	}
+	//UE_LOG(LogTemp, Display, TEXT("CurrentBloom: %f"), CurrentBloom);
 }
 
 void UTP_WeaponComponent::ADSTLCallback(float val)
@@ -466,8 +481,6 @@ void UTP_WeaponComponent::StartRecoil()
 
 	if (FireMode == EFireMode::Auto)
 	{
-		CurrentRound += 1;
-
 		CurrentADSHeat = ADSAlpha > 0.f ? CurrentADSHeat + 1.f: 0.f; // will reset heat value if not ads
 		float ADSHeatModifier = FMath::Clamp(CurrentADSHeat / MaxADSHeat, 0.f, ADSHeatModifierMax);
 		InitialRecoilPitchForce *= 1.f - ADSHeatModifier;
