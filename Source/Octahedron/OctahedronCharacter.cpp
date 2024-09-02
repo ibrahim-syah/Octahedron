@@ -429,7 +429,6 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 	if (CurrentWeapon)
 	{
 		LookScaleModifier *= FMath::Lerp(1.f, ADSSensitivityScale, CurrentWeapon->ADSAlpha);
-		//CurrentWeapon->bIsRecoilRecoveryActive = false;
 	}
 	FVector2D LookAxisVector = Value.Get<FVector2D>() * LookScaleModifier;
 	UE_LOG(LogTemp, Display, TEXT("LookAxisVector: %s"), *LookAxisVector.ToString());
@@ -441,7 +440,7 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 
-	if (CurrentWeapon && !CurrentWeapon->bIsRecoilNeutral)
+	if (CurrentWeapon && CurrentWeapon->bIsRecoilRecoveryActive)
 	{
 		FRotator currentRotation = GetControlRotation();
 		FRotator checkpointRotation = CurrentWeapon->RecoilCheckpoint;
