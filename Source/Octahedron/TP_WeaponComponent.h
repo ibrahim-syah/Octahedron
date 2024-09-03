@@ -237,7 +237,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	UCurveFloat* RecoilDirectionCurve = nullptr;
 
-	// affects camera recoil and bloom
+	// affects recoil camera direction and randomness.
+	// check out how destiny does this stat
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
 	float RecoilStat = 85.f;
 

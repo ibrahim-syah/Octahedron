@@ -22,6 +22,7 @@
 #include "Curves/CurveFloat.h"
 #include "Public/FPAnimInstance.h"
 #include "Public/CustomProjectile.h"
+#include <random>
 
 // Sets default values for this component's properties
 UTP_WeaponComponent::UTP_WeaponComponent()
@@ -489,7 +490,14 @@ void UTP_WeaponComponent::StartRecoil()
 	RecoilPitchVelocity = InitialRecoilPitchForce;
 	RecoilPitchDamping = RecoilPitchVelocity / 0.1f;
 
-	RecoilYawVelocity = FMath::RandRange(InitialRecoilYawForce * -1.f, InitialRecoilYawForce);
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	float directionStat = RecoilDirectionCurve->GetFloatValue(RecoilStat);
+	float directionScaleModifier = directionStat / 100.f; // yield between -1 and 1
+	float stddev = InitialRecoilYawForce * (1.f - RecoilStat / 100.f);
+	std::normal_distribution<float> d(InitialRecoilYawForce * directionScaleModifier, stddev);
+	RecoilYawVelocity = d(gen);
+	//RecoilYawVelocity = FMath::RandRange(InitialRecoilYawForce * -1.f, InitialRecoilYawForce);
 	RecoilYawDamping = (RecoilYawVelocity * -1.f) / 0.1f;
 
 	bIsRecoilActive = true;
