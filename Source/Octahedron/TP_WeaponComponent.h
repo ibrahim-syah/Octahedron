@@ -243,8 +243,10 @@ public:
 	float RecoilStat = 85.f;
 
 	// to track bloom in full auto weapons
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
 	float MaxBloom = 5.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = Recoil)
 	float CurrentBloom = 0.f;
 	float BloomStep = 0.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
