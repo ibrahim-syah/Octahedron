@@ -426,8 +426,9 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 		if (FMath::Abs(deltaRot.Pitch) > 1.f) // constant recovery
 		{
-			FRotator interpRot = FMath::RInterpConstantTo(currentControlRotator, RecoilCheckpoint, DeltaTime, 15.f);
-			float interpSpeed = (1.f / DeltaTime) / 10.f;
+			float interpSpeed = (1.f / DeltaTime) / 4.f;
+			FRotator interpRot = FMath::RInterpConstantTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed);
+			interpSpeed = (1.f / DeltaTime) / 10.f;
 			interpRot.Yaw = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed).Yaw;
 			if (!bIsRecoilYawRecoveryActive)
 			{
