@@ -32,7 +32,57 @@ class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	UCurveFloat* RecoilDirectionCurve = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilStat = 85.f;
+
+	void StartRecoil();
+	bool bIsRecoilActive;
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilPitchForce = 5.f;
+	float InitialRecoilPitchForce;
+	float RecoilPitchDamping;
+	float RecoilPitchVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilYawForce = 8.f;
+	float InitialRecoilYawForce;
+	float RecoilYawDamping;
+	float RecoilYawVelocity;
+
+	void StartRecoilRecovery();
+	bool bIsRecoilRecoveryActive;
+	bool bIsRecoilNeutral = true;
+	FRotator RecoilCheckpoint;
+
+	bool bUpdateRecoilPitchCheckpointInNextShot = false;
+
+	bool bIsRecoilYawRecoveryActive;
+	bool bUpdateRecoilYawCheckpointInNextShot = false;
+
+	float BloomStep = 0.5f;
+	UPROPERTY(BlueprintReadOnly, Category = Recoil)
+	float CurrentBloom = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float ADSBloomModifier = 0.2f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float BloomRecoveryInterpSpeed = 20.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float MaxBloom = 10.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float MaxADSHeat = 10.f;
+	float CurrentADSHeat = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float ADSHeatModifierMax = 0.6;
 
 	/** projectile class to spawn */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
