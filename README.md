@@ -16,8 +16,6 @@ and aren't comfortable with your work being distributed here, feel free to let m
 - [UntitledProjectX](https://www.youtube.com/watch?v=pmIRS8C_tFU) Hit Marker and Kill Marker
 - [Jonatan Isaksson](https://www.youtube.com/watch?v=8sP71Y0K6uU&t=623s) Dynamic Healthbar
 - [SneakyKittyGameDev](https://www.youtube.com/playlist?list=PLnHeglBaPYu--A7jTjNrgWdmYkR_kpZYu) Procedural ADS, Procedural Gun Mesh Recoil, LeftHandIK, Reflex Sight Asset
-- [CyberLOD](https://www.youtube.com/playlist?list=PLfCrVJxHeD5Yjegzox9g_9oFK5OH6YRRo) Recoil System
-- [Gamium Dev](https://youtu.be/S_c1T6x_doo) Smooth Recoil Recovery
 - [Kakky](https://www.unrealengine.com/marketplace/en-US/product/a36bac8b05004e999dd4b1d332501f49) Lightning VFX
 - [Infinity Blade: Effects](https://www.unrealengine.com/marketplace/en-US/product/infinity-blade-effects) Projectile VFX
 - [Paragon: Gideon](https://www.unrealengine.com/marketplace/en-US/product/paragon-gideon) Projectile and Impact VFX
