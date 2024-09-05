@@ -61,6 +61,9 @@ public:
 	void SetWielderControlRotation(FRotator newRotator);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
+	void AddWielderControlRotation(float deltaPitch, float deltaYaw);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")
 	void OnWeaponFired();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Weapon")

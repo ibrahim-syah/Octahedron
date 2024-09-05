@@ -233,7 +233,7 @@ void AOctahedronCharacter::BeginPlay()
 
 void AOctahedronCharacter::Tick(float DeltaTime)
 {
-	
+	Super::Tick(DeltaTime);
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
@@ -431,12 +431,44 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 		LookScaleModifier *= FMath::Lerp(1.f, ADSSensitivityScale, CurrentWeapon->ADSAlpha);
 	}
 	FVector2D LookAxisVector = Value.Get<FVector2D>() * LookScaleModifier;
+	//UE_LOG(LogTemp, Display, TEXT("LookAxisVector: %s"), *LookAxisVector.ToString());
 
 	if (Controller != nullptr)
 	{
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+
+	if (CurrentWeapon && CurrentWeapon->bIsRecoilRecoveryActive)
+	{
+		FRotator currentRotation = GetControlRotation();
+		FRotator checkpointRotation = CurrentWeapon->RecoilCheckpoint;
+
+		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentRotation, checkpointRotation);
+
+		if (LookAxisVector.Y < 0.f)
+		{
+			CurrentWeapon->bIsRecoilRecoveryActive = false;
+			CurrentWeapon->bIsRecoilNeutral = true;
+			return;
+		}
+
+		if (deltaRot.Pitch < 0.f)
+		{
+			CurrentWeapon->bUpdateRecoilPitchCheckpointInNextShot = true;
+		}
+
+		if (LookAxisVector.X != 0.f)
+		{
+			if (CurrentWeapon->bIsRecoilYawRecoveryActive)
+			{
+				CurrentWeapon->bIsRecoilYawRecoveryActive = false;
+			}
+
+			CurrentWeapon->bUpdateRecoilYawCheckpointInNextShot = true;
+		}
+
 	}
 }
 
@@ -857,15 +889,21 @@ bool AOctahedronCharacter::InstantDetachWeapon_Implementation()
 	return true;
 }
 
+void AOctahedronCharacter::AddWielderControlRotation_Implementation(float deltaPitch, float deltaYaw)
+{
+	AddControllerPitchInput(deltaPitch);
+	AddControllerYawInput(deltaYaw);
+}
+
 void AOctahedronCharacter::OnWeaponFired_Implementation()
 {
 	// play FP Anim bp Fire() function for weapon recoil kick
 	GetFPAnimInstance()->Fire();
 
-	if (IsValid(CurrentWeapon->FireCamShake))
+	/*if (IsValid(CurrentWeapon->FireCamShake))
 	{
 		GetLocalViewingPlayerController()->ClientStartCameraShake(CurrentWeapon->FireCamShake);
-	}
+	}*/
 
 	// report noise for AI detection
 	MakeNoise(1.f, this, CurrentWeapon->GetComponentLocation());
@@ -980,7 +1018,7 @@ void AOctahedronCharacter::PressedFire()
 	// Ensure the timer is cleared by using the timer handle
 	GetWorld()->GetTimerManager().ClearTimer(IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle);
 	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireRateDelayTimerHandle.Invalidate();
-	IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->RecoilStart();
+	//IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->RecoilStart();
 	switch (IWeaponWielderInterface::Execute_GetCurrentWeapon(this)->FireMode)
 	{
 	case EFireMode::Single:

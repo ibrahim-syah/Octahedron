@@ -32,7 +32,58 @@ class OCTAHEDRON_API UTP_WeaponComponent : public USkeletalMeshComponent
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	UCurveFloat* RecoilDirectionCurve = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilStat = 85.f;
+
+	void StartRecoil();
+	bool bIsRecoilActive;
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilPitchForce = 5.f;
+	float InitialRecoilPitchForce;
+	float RecoilPitchDamping;
+	float RecoilPitchVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilYawForce = 8.f;
+	float InitialRecoilYawForce;
+	float RecoilYawDamping;
+	float RecoilYawVelocity;
+
+	void StartRecoilRecovery();
+	bool bIsRecoilRecoveryActive;
+	bool bIsRecoilNeutral = true;
+	FRotator RecoilCheckpoint;
+
+	bool bUpdateRecoilPitchCheckpointInNextShot = false;
+
+	bool bIsRecoilYawRecoveryActive;
+	bool bUpdateRecoilYawCheckpointInNextShot = false;
+
+	float BloomStep = 0.5f;
+	UPROPERTY(BlueprintReadOnly, Category = Recoil)
+	float CurrentBloom = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float ADSBloomModifier = 0.2f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float BloomRecoveryInterpSpeed = 20.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float MaxBloom = 10.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float MaxADSHeat = 10.f;
+	float CurrentADSHeat = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float ADSHeatModifierMax = 0.6;
+
 	/** projectile class to spawn */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
 	bool IsProjectileWeapon = true;
@@ -102,12 +153,6 @@ public:
 	float Range{ 10000.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float MinSpread{ 0.08f };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float MaxSpread{ 2.f };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	bool CanSwitchFireMode{ false };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -123,7 +168,7 @@ public:
 	int32 Pellets{ 1 }; // more than 1 means it's a pellet gun (shotgun)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float PelletSpread{ 10.f }; // spread of each individual pellet is originalspread + (n/PelletSpread)
+	float PelletSpread{ 1.f }; // spread of each individual pellet is originalspread + (n/PelletSpread)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	EFireMode FireMode{ EFireMode::Single };
@@ -227,45 +272,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
 	TSubclassOf<UCameraShakeBase> FireCamShake = nullptr;
 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	UCurveVector* RecoilCurve = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	FTimerHandle RecoilTimer;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil, meta = (AllowPrivateAccess = "true"))
-	FTimerHandle RecoilRecoveryTimer;
-
 	FTimerHandle FireTimer;
-	FTimerHandle StopRecoveryTimer;
 	void FireTimerFunction();
-	FRotator RecoilStartRot;
-	FRotator RecoilDeltaRot;
-	FRotator WielderDeltaRot;
-
-	UFUNCTION(BlueprintCallable)
-	void RecoilStart();
-	void RecoilStop();
-	void RecoveryStart();
-	FRotator Del;
-	void StopRecoveryTimerFunction();
-
-	UPROPERTY(BlueprintReadWrite)
-	float RecoilToStableTime = 10.0f;
-
-	UPROPERTY(BlueprintReadWrite)
-	float RecoveryTime = 1.0f;
-
-	UPROPERTY(BlueprintReadWrite)
-	float RecoverySpeed = 10.0f;
-
-	UPROPERTY(BlueprintReadWrite)
-	float MaxRecoilPitch = 10.0f;
-
-	void RecoilTimerCallback();
-	void RecoilRecoveryTimerCallback();
-	bool IsShouldRecoil = false;
 
 	// Weapon Mesh Recoil/Kick
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)

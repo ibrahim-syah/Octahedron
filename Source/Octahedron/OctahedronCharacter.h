@@ -242,6 +242,9 @@ public:
 	void SetWielderControlRotation_Implementation(FRotator newRotator) override { GetController()->SetControlRotation(newRotator); }
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void AddWielderControlRotation_Implementation(float deltaPitch, float deltaYaw) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void OnWeaponFired_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
