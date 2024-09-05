@@ -447,14 +447,14 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 
 		FRotator deltaRot = UKismetMathLibrary::NormalizedDeltaRotator(currentRotation, checkpointRotation);
 
-		if (CurrentWeapon->bIsRecoilRecoveryActive && LookAxisVector.Y < 0.f)
+		if (LookAxisVector.Y < 0.f)
 		{
 			CurrentWeapon->bIsRecoilRecoveryActive = false;
 			CurrentWeapon->bIsRecoilNeutral = true;
 			return;
 		}
 
-		if (LookAxisVector.Y < 0.f || deltaRot.Pitch < 0.f)
+		if (deltaRot.Pitch < 0.f)
 		{
 			CurrentWeapon->bUpdateRecoilPitchCheckpointInNextShot = true;
 		}
@@ -465,8 +465,10 @@ void AOctahedronCharacter::Look(const FInputActionValue& Value)
 			{
 				CurrentWeapon->bIsRecoilYawRecoveryActive = false;
 			}
+
 			CurrentWeapon->bUpdateRecoilYawCheckpointInNextShot = true;
 		}
+
 	}
 }
 

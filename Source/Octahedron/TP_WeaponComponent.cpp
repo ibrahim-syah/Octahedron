@@ -153,15 +153,10 @@ void UTP_WeaponComponent::Fire()
 	// Trace from center screen to max weapon range
 	FVector StartVector = IWeaponWielderInterface::Execute_GetTraceStart(WeaponWielder);
 	FVector ForwardVector = IWeaponWielderInterface::Execute_GetTraceForward(WeaponWielder);
-	//float spread = UKismetMathLibrary::MapRangeClamped(ADSAlpha, 0.f, 1.f, MaxSpread, MinSpread);
-	UE_LOG(LogTemp, Display, TEXT("initial bloom: %f"), CurrentBloom);
 	CurrentBloom = FMath::Clamp(CurrentBloom + BloomStep, 0.f, MaxBloom);
-	UE_LOG(LogTemp, Display, TEXT("after bloom: %f"), CurrentBloom);
 	float spread = CurrentBloom;
 	float bloomModifier = FMath::Lerp(1.f, ADSBloomModifier, ADSAlpha);
-	//UE_LOG(LogTemp, Display, TEXT("current bloomModifier: %f"), bloomModifier);
 	spread = spread * bloomModifier;
-	UE_LOG(LogTemp, Display, TEXT("current spread: %f"), spread);
 
 	// Try and fire a projectile
 	if (IsProjectileWeapon)
@@ -394,7 +389,7 @@ void UTP_WeaponComponent::ExitADS(bool IsFast)
 		ADSTL->SetPlayRate(2.f);
 	}
 	ADSTL->Reverse();
-	CurrentADSHeat = 0.f; // reset ADS heat
+	CurrentADSHeat = 0.f;
 }
 
 void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -403,13 +398,10 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	if (bIsRecoilActive)
 	{
-		// Apply the current recoil velocity
 		IWeaponWielderInterface::Execute_AddWielderControlRotation(WeaponWielder, (RecoilPitchVelocity * DeltaTime) * -1.f, (RecoilYawVelocity * DeltaTime));
 
-		// Decrease the recoil velocity over time
 		RecoilPitchVelocity -= RecoilPitchDamping * DeltaTime;
 		RecoilYawVelocity -= RecoilYawDamping * DeltaTime;
-
 
 		if (RecoilPitchVelocity <= 0.0f)
 		{
@@ -419,36 +411,35 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	}
 	else if (bIsRecoilRecoveryActive)
 	{
-		FRotator currentControlRotator = WeaponWielder->GetControlRotation();
+		FRotator currentControlRotation = WeaponWielder->GetControlRotation();
 
-		FRotator deltaRot = currentControlRotator - RecoilCheckpoint;
+		FRotator deltaRot = currentControlRotation - RecoilCheckpoint;
 		deltaRot.Normalize();
 
-		if (FMath::Abs(deltaRot.Pitch) > 1.f) // constant recovery
+		if (FMath::Abs(deltaRot.Pitch) > 1.f)
 		{
 			float interpSpeed = (1.f / DeltaTime) / 4.f;
-			FRotator interpRot = FMath::RInterpConstantTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed);
+			FRotator interpRot = FMath::RInterpConstantTo(currentControlRotation, RecoilCheckpoint, DeltaTime, interpSpeed);
 			interpSpeed = (1.f / DeltaTime) / 10.f;
-			interpRot.Yaw = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed).Yaw;
+			interpRot.Yaw = FMath::RInterpTo(currentControlRotation, RecoilCheckpoint, DeltaTime, interpSpeed).Yaw;
 			if (!bIsRecoilYawRecoveryActive)
 			{
-				interpRot.Yaw = currentControlRotator.Yaw;
+				interpRot.Yaw = currentControlRotation.Yaw;
 			}
 
 			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
 		}
-		else if (FMath::Abs(deltaRot.Pitch) > 0.1f) // smooth, but quick ease-out
+		else if (FMath::Abs(deltaRot.Pitch) > 0.1f)
 		{
 			float interpSpeed = (1.f / DeltaTime) / 6.f;
-			FRotator interpRot = FMath::RInterpTo(currentControlRotator, RecoilCheckpoint, DeltaTime, interpSpeed);
+			FRotator interpRot = FMath::RInterpTo(currentControlRotation, RecoilCheckpoint, DeltaTime, interpSpeed);
 			if (!bIsRecoilYawRecoveryActive)
 			{
-				interpRot.Yaw = currentControlRotator.Yaw;
+				interpRot.Yaw = currentControlRotation.Yaw;
 			}
-
 			IWeaponWielderInterface::Execute_SetWielderControlRotation(WeaponWielder, interpRot);
 		}
-		else // recoil completes
+		else
 		{
 			bIsRecoilRecoveryActive = false;
 			bIsRecoilYawRecoveryActive = false;
@@ -461,7 +452,42 @@ void UTP_WeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		float interpSpeed = (1.f / DeltaTime) / BloomRecoveryInterpSpeed;
 		CurrentBloom = FMath::FInterpConstantTo(CurrentBloom, 0.f, DeltaTime, interpSpeed);
 	}
-	//UE_LOG(LogTemp, Display, TEXT("CurrentBloom: %f"), CurrentBloom);
+}
+
+void UTP_WeaponComponent::StartRecoil()
+{
+	InitialRecoilPitchForce = BaseRecoilPitchForce;
+	InitialRecoilYawForce = BaseRecoilYawForce;
+
+	if (FireMode == EFireMode::Auto)
+	{
+		CurrentADSHeat = ADSAlpha > 0.f ? CurrentADSHeat + 1.f : 0.f;
+		float ADSHeatModifier = FMath::Clamp(CurrentADSHeat / MaxADSHeat, 0.f, ADSHeatModifierMax);
+		InitialRecoilPitchForce *= 1.f - ADSHeatModifier;
+		InitialRecoilYawForce *= 1.f - ADSHeatModifier;
+	}
+
+	RecoilPitchVelocity = InitialRecoilPitchForce;
+	RecoilPitchDamping = RecoilPitchVelocity / 0.1f;
+
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	float directionStat = RecoilDirectionCurve->GetFloatValue(RecoilStat);
+	float directionScaleModifier = directionStat / 100.f;
+	float stddev = InitialRecoilYawForce * (1.f - RecoilStat / 100.f);
+
+	std::normal_distribution<float> d(InitialRecoilYawForce * directionScaleModifier, stddev);
+	RecoilYawVelocity = d(gen);
+	RecoilYawDamping = (RecoilYawVelocity * -1.f) / 0.1f;
+
+	bIsRecoilActive = true;
+}
+
+void UTP_WeaponComponent::StartRecoilRecovery()
+{
+	bIsRecoilRecoveryActive = true;
+	bIsRecoilYawRecoveryActive = true;
 }
 
 void UTP_WeaponComponent::ADSTLCallback(float val)
@@ -472,42 +498,6 @@ void UTP_WeaponComponent::ADSTLCallback(float val)
 void UTP_WeaponComponent::FireTimerFunction()
 {
 	GetWorld()->GetTimerManager().PauseTimer(FireTimer);
-}
-
-void UTP_WeaponComponent::StartRecoil()
-{
-	// may want to add skill or stat modifier here to constrict or enlarge the recoil, or when ads-ing
-	// or even have different scale for mouse n keyboard and controller like destiny (mouse has lower recoil)
-	InitialRecoilPitchForce = BaseRecoilPitchForce;
-	InitialRecoilYawForce = BaseRecoilYawForce;
-
-	if (FireMode == EFireMode::Auto)
-	{
-		CurrentADSHeat = ADSAlpha > 0.f ? CurrentADSHeat + 1.f: 0.f; // will reset heat value if not ads
-		float ADSHeatModifier = FMath::Clamp(CurrentADSHeat / MaxADSHeat, 0.f, ADSHeatModifierMax);
-		InitialRecoilPitchForce *= 1.f - ADSHeatModifier;
-		InitialRecoilYawForce *= 1.f - ADSHeatModifier;
-	}
-	RecoilPitchVelocity = InitialRecoilPitchForce;
-	RecoilPitchDamping = RecoilPitchVelocity / 0.1f;
-
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	float directionStat = RecoilDirectionCurve->GetFloatValue(RecoilStat);
-	float directionScaleModifier = directionStat / 100.f; // yield between -1 and 1
-	float stddev = InitialRecoilYawForce * (1.f - RecoilStat / 100.f);
-	std::normal_distribution<float> d(InitialRecoilYawForce * directionScaleModifier, stddev);
-	RecoilYawVelocity = d(gen);
-	//RecoilYawVelocity = FMath::RandRange(InitialRecoilYawForce * -1.f, InitialRecoilYawForce);
-	RecoilYawDamping = (RecoilYawVelocity * -1.f) / 0.1f;
-
-	bIsRecoilActive = true;
-}
-
-void UTP_WeaponComponent::StartRecoilRecovery()
-{
-	bIsRecoilRecoveryActive = true;
-	bIsRecoilYawRecoveryActive = true;
 }
 
 void UTP_WeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

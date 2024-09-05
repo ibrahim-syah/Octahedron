@@ -37,6 +37,53 @@ protected:
 
 public:
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	UCurveFloat* RecoilDirectionCurve = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float RecoilStat = 85.f;
+
+	void StartRecoil();
+	bool bIsRecoilActive;
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilPitchForce = 5.f;
+	float InitialRecoilPitchForce;
+	float RecoilPitchDamping;
+	float RecoilPitchVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float BaseRecoilYawForce = 8.f;
+	float InitialRecoilYawForce;
+	float RecoilYawDamping;
+	float RecoilYawVelocity;
+
+	void StartRecoilRecovery();
+	bool bIsRecoilRecoveryActive;
+	bool bIsRecoilNeutral = true;
+	FRotator RecoilCheckpoint;
+
+	bool bUpdateRecoilPitchCheckpointInNextShot = false;
+
+	bool bIsRecoilYawRecoveryActive;
+	bool bUpdateRecoilYawCheckpointInNextShot = false;
+
+	float BloomStep = 0.5f;
+	UPROPERTY(BlueprintReadOnly, Category = Recoil)
+	float CurrentBloom = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float ADSBloomModifier = 0.2f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float BloomRecoveryInterpSpeed = 20.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float MaxBloom = 10.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
+	float MaxADSHeat = 10.f;
+	float CurrentADSHeat = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
+	float ADSHeatModifierMax = 0.6;
+
 	/** projectile class to spawn */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Projectile)
 	bool IsProjectileWeapon = true;
@@ -104,12 +151,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	float Range{ 10000.f };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float MinSpread{ 0.f };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	float MaxSpread{ 0.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	bool CanSwitchFireMode{ false };
@@ -233,59 +274,6 @@ public:
 
 	FTimerHandle FireTimer;
 	void FireTimerFunction();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	UCurveFloat* RecoilDirectionCurve = nullptr;
-
-	// affects recoil camera direction and randomness.
-	// check out how destiny does this stat
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float RecoilStat = 85.f;
-
-	// to track bloom in full auto weapons
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Recoil)
-	float MaxBloom = 5.f;
-
-	UPROPERTY(BlueprintReadOnly, Category = Recoil)
-	float CurrentBloom = 0.f;
-	float BloomStep = 0.5f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float ADSBloomModifier = 0.2f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float BloomRecoveryInterpSpeed = 20.f;
-
-
-	// how much rounds until the recoil stabilizes.
-	// when ADS, full auto weapon will have a normal recoil at first but will
-	// stabilize over time
-	// generally 1/3 of the base magazine?
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float MaxADSHeat = 10.f;
-	float CurrentADSHeat = 0.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
-	float ADSHeatModifierMax = 0.6f;
-
-	void StartRecoil();
-	bool bIsRecoilActive;
-	void StartRecoilRecovery();
-	bool bIsRecoilRecoveryActive;
-	bool bIsRecoilYawRecoveryActive;
-	bool bIsRecoilNeutral = true;
-	bool bUpdateRecoilPitchCheckpointInNextShot = false;
-	bool bUpdateRecoilYawCheckpointInNextShot = false;
-	FRotator RecoilCheckpoint;
-
-	UPROPERTY(EditAnywhere)
-	float BaseRecoilPitchForce = 5.f;
-	float InitialRecoilPitchForce;
-	float RecoilPitchDamping;
-	float RecoilPitchVelocity;
-
-	UPROPERTY(EditAnywhere)
-	float BaseRecoilYawForce = 8.f;
-	float InitialRecoilYawForce;
-	float RecoilYawDamping;
-	float RecoilYawVelocity;
 
 	// Weapon Mesh Recoil/Kick
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Recoil)
