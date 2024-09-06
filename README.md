@@ -19,3 +19,4 @@ and aren't comfortable with your work being distributed here, feel free to let m
 - [Kakky](https://www.unrealengine.com/marketplace/en-US/product/a36bac8b05004e999dd4b1d332501f49) Lightning VFX
 - [Infinity Blade: Effects](https://www.unrealengine.com/marketplace/en-US/product/infinity-blade-effects) Projectile VFX
 - [Paragon: Gideon](https://www.unrealengine.com/marketplace/en-US/product/paragon-gideon) Projectile and Impact VFX
+- [ArtofSith](https://www.artofsith.com/dynamic-reticles) Dynamic Reticles
